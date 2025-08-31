@@ -7,6 +7,10 @@ import LandingPage from "./pages/LandingPage";
 import AdminLogin from "./pages/admin/Login";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import SignUp from "./pages/SignUp";
+import BusinessLogin from "./pages/business/Login";
+import CompanyLandingPage from "./pages/company/[slug]";
+import BusinessDashboard from "./pages/business/Dashboard";
+import BusinessBookings from "./pages/business/Bookings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,8 +24,12 @@ const App = () => (
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/login" element={<BusinessLogin />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/superAdminDev" element={<SuperAdminDashboard />} />
+          <Route path="/:slug" element={<CompanyLandingPage />} />
+          <Route path="/:slug/dashboard" element={<BusinessDashboard />} />
+          <Route path="/:slug/agendamentos" element={<BusinessBookings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
