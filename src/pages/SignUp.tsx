@@ -13,9 +13,9 @@ export default function SignUp() {
     customUrl: "",
     ownerName: "",
     ownerCpf: "",
-    //ownerMail: "",
-    //ownerPass: "",
-    //ownerPassRepeat:"",
+    ownerMail: "",
+    ownerPass: "",
+    ownerPassRepeat:"",
     companyCnpj: ""
   });
   const [urlAvailable, setUrlAvailable] = useState<boolean | null>(null);
@@ -212,30 +212,30 @@ export default function SignUp() {
                 </div>
               </div>
               {/* Email  */}
-              {/*<div>
+              <div>
                 <Label htmlFor="ownerMail">Email da Empresa</Label>
                 <div>
                   <Input
                    id="ownerMail"
                    placeholder="barbearia@jhonDoe.com"
-                   value={formatData.ownerMail}
-                   onChange={(e) => handleInputChange("companyMail", formatMail(e.target.value))}
+                   value={formData.ownerMail}
+                   onChange={(e) => handleInputChange("ownerMail", formMail(e.target.value))}
                   />
                 </div>
-              </div>*/}
+              </div>
               {/*senha */}
-              {/*<div>
-                <Label>Senha</Label>
+              <div>
+                <Label htmlFor="ownerPass">Senha</Label>
                 <div>
                   <Input
-                   id="companyPass"
+                   id="ownerPass"
                    placeholder="digite uma senha"
-                   value={formData.ownerPassPass}
-                   onChange={(e) => handleInputChange('companyPass', formatPass(e.target.value))}
+                   value={formData.ownerPass}
+                   onChange={(e) => handleInputChange('ownerPass', formPass(e.target.value))}
 
                   />
                 </div>
-              </div>*/}
+              </div>
               {/* CNPJ */}
               <div className="space-y-2">
                 <Label htmlFor="companyCnpj">CNPJ da Empresa (opcional)</Label>
