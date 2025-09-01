@@ -213,7 +213,7 @@ export default function CreateCompany() {
                     id="email"
                     name="email"
                     value={formData.email}
-                    placeholder="ex: joaodoe@gmail.com"
+                    placeholder="ex: joaodoe@gmail.com"/>
                 </div>
                 <div>
                   <Label htmlFor="password">Insira uma senha</Label>
@@ -221,7 +221,7 @@ export default function CreateCompany() {
                     id="password"
                     name="password"
                     value={formData.password}
-                    placeholder="Digite uma senha"
+                    placeholder="Digite uma senha"/>
                 </div>
 
                 <div className="space-y-2">
