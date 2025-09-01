@@ -13,9 +13,9 @@ export default function SignUp() {
     customUrl: "",
     ownerName: "",
     ownerCpf: "",
-    ownerMail: "",
-    ownerPass: "",
-    ownerPassRepeat:"",
+    //ownerMail: "",
+    //ownerPass: "",
+    //ownerPassRepeat:"",
     companyCnpj: ""
   });
   const [urlAvailable, setUrlAvailable] = useState<boolean | null>(null);
@@ -212,7 +212,7 @@ export default function SignUp() {
                 </div>
               </div>
               {/* Email  */}
-              <div>
+              {/*<div>
                 <Label htmlFor="ownerMail">Email da Empresa</Label>
                 <div>
                   <Input
@@ -222,9 +222,9 @@ export default function SignUp() {
                    onChange={(e) => handleInputChange("companyMail", formatMail(e.target.value))}
                   />
                 </div>
-              </div>
+              </div>*/}
               {/*senha */}
-              <div>
+              {/*<div>
                 <Label>Senha</Label>
                 <div>
                   <Input
@@ -235,7 +235,7 @@ export default function SignUp() {
 
                   />
                 </div>
-              </div>
+              </div>*/}
               {/* CNPJ */}
               <div className="space-y-2">
                 <Label htmlFor="companyCnpj">CNPJ da Empresa (opcional)</Label>
