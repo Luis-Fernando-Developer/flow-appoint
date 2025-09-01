@@ -15,6 +15,7 @@ interface CompanyForm {
   slug: string;
   owner_name: string;
   owner_email: string;
+  owner_password: string;
   owner_cpf: string;
   cnpj: string;
   phone: string;
@@ -33,6 +34,7 @@ export default function CreateCompany() {
     slug: "",
     owner_name: "",
     owner_email: "",
+    owner_password: "",
     owner_cpf: "",
     cnpj: "",
     phone: "",
@@ -82,7 +84,20 @@ export default function CreateCompany() {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase
+      // 1. Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.owner_email,
+        password: formData.owner_password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Erro ao criar usuário");
+
+      // 2. Criar empresa no banco
+      const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert([{
           name: formData.name,
@@ -98,13 +113,29 @@ export default function CreateCompany() {
           zip_code: formData.zip_code,
           status: 'active',
           plan: 'starter'
+        }])
+        .select()
+        .single();
+
+      if (companyError) throw companyError;
+
+      // 3. Criar funcionário (proprietário) vinculado à empresa
+      const { error: employeeError } = await supabase
+        .from('employees')
+        .insert([{
+          company_id: companyData.id,
+          user_id: authData.user.id,
+          name: formData.owner_name,
+          email: formData.owner_email,
+          role: 'owner',
+          is_active: true
         }]);
 
-      if (error) throw error;
+      if (employeeError) throw employeeError;
 
       toast({
         title: "Empresa criada com sucesso!",
-        description: "A empresa foi cadastrada no sistema.",
+        description: "A empresa foi cadastrada e o proprietário pode fazer login.",
       });
 
       navigate("/superAdminDev");
@@ -198,6 +229,20 @@ export default function CreateCompany() {
                     value={formData.owner_email}
                     onChange={handleInputChange}
                     placeholder="joao@exemplo.com"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="owner_password">Senha do Proprietário *</Label>
+                  <Input
+                    id="owner_password"
+                    name="owner_password"
+                    type="password"
+                    value={formData.owner_password}
+                    onChange={handleInputChange}
+                    placeholder="Digite uma senha segura"
+                    minLength={6}
                     required
                   />
                 </div>
