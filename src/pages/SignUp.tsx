@@ -13,6 +13,9 @@ export default function SignUp() {
     customUrl: "",
     ownerName: "",
     ownerCpf: "",
+    ownerMail: "",
+    ownerPass: "",
+    ownerPassRepeat:"",
     companyCnpj: ""
   });
   const [urlAvailable, setUrlAvailable] = useState<boolean | null>(null);
@@ -208,7 +211,31 @@ export default function SignUp() {
                   />
                 </div>
               </div>
+              {/* Email  */}
+              <div>
+                <Label htmlFor="ownerMail">Email da Empresa</Label>
+                <div>
+                  <Input
+                   id="ownerMail"
+                   placeholder="barbearia@jhonDoe.com"
+                   value={formatData.ownerMail}
+                   onChange={(e) => handleInputChange("companyMail", formatMail(e.target.value))}
+                  />
+                </div>
+              </div>
+              {/*senha */}
+              <div>
+                <Label>Senha</Label>
+                <div>
+                  <Input
+                   id="companyPass"
+                   placeholder="digite uma senha"
+                   value={formData.ownerPassPass}
+                   onChange={(e) => handleInputChange('companyPass', formatPass(e.target.value))}
 
+                  />
+                </div>
+              </div>
               {/* CNPJ */}
               <div className="space-y-2">
                 <Label htmlFor="companyCnpj">CNPJ da Empresa (opcional)</Label>
