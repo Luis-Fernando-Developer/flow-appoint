@@ -1,9 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Calendar, Users, Zap } from "lucide-react";
 import { BookingLogo } from "@/components/BookingLogo";
+import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-booking.jpg";
 
 export function Hero() {
+  const navigate = useNavigate();
+
+  const handleStartClick = () => {
+    navigate("/signup");
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Gradient */}
@@ -35,11 +42,11 @@ export function Hero() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
-              <Button variant="hero" className="group">
+              <Button variant="hero" className="group" onClick={handleStartClick}>
                 Começar Agora
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="glass" size="lg">
+              <Button variant="glass" size="lg" onClick={() => navigate("/demo")}>
                 Ver Demonstração
               </Button>
             </div>

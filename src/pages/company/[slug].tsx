@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BookingLogo } from "@/components/BookingLogo";
-import { Calendar, Clock, Star, MapPin, Phone, Mail, User, Lock } from "lucide-react";
+import { Calendar, Clock, Star, MapPin, Phone, Mail, User, Lock, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CompanyLandingPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [company, setCompany] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [showLogin, setShowLogin] = useState(false);
@@ -118,11 +119,17 @@ export default function CompanyLandingPage() {
               <h1 className="text-2xl font-bold text-gradient">{company.name}</h1>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={() => setShowLogin(true)}>
-                Entrar
+              <Button 
+                variant="outline" 
+                onClick={() => navigate(`/${company.slug}/meus-agendamentos`)}
+              >
+                Meus Agendamentos
               </Button>
-              <Button variant="neon" onClick={() => setShowSignup(true)}>
-                Cadastrar
+              <Button 
+                variant="neon" 
+                onClick={() => navigate(`/${company.slug}/agendar`)}
+              >
+                Agendar Agora
               </Button>
             </div>
           </div>
@@ -139,10 +146,22 @@ export default function CompanyLandingPage() {
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
             Escolha o melhor horário para você. Sistema de agendamento rápido e fácil.
           </p>
-          <Button variant="hero" size="lg" onClick={() => setShowSignup(true)}>
-            Agendar Serviço
-            <Calendar className="ml-2 h-5 w-5" />
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              variant="neon"
+              onClick={() => navigate(`/${company.slug}/agendar`)}
+              className="group"
+            >
+              Agendar Horário
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <Button 
+              variant="glass"
+              onClick={() => navigate(`/${company.slug}/meus-agendamentos`)}
+            >
+              Meus Agendamentos
+            </Button>
+          </div>
         </div>
 
         {/* Services Grid */}
@@ -179,7 +198,11 @@ export default function CompanyLandingPage() {
                         4.9
                       </div>
                     </div>
-                    <Button variant="neon" className="w-full" onClick={() => setShowSignup(true)}>
+                    <Button 
+                      variant="neon" 
+                      className="w-full" 
+                      onClick={() => navigate(`/${company.slug}/agendar`)}
+                    >
                       Agendar Este Serviço
                     </Button>
                   </CardContent>

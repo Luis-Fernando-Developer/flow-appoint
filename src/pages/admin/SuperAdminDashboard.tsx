@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +81,7 @@ const getStatusBadge = (status: string) => {
 };
 
 export default function SuperAdminDashboard() {
+  const navigate = useNavigate();
   const [companies] = useState(mockCompanies);
 
   const stats = {
@@ -178,7 +180,7 @@ export default function SuperAdminDashboard() {
                   Gerencie todas as empresas do sistema
                 </CardDescription>
               </div>
-              <Button variant="neon">
+              <Button variant="neon" onClick={() => navigate("/admin/create-company")}>
                 <Plus className="w-4 h-4 mr-2" />
                 Adicionar Empresa
               </Button>
