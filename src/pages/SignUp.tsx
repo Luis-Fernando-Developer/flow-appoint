@@ -219,7 +219,7 @@ export default function SignUp() {
                    id="ownerMail"
                    placeholder="barbearia@jhonDoe.com"
                    value={formData.ownerMail}
-                   onChange={(e) => handleInputChange("ownerMail", formMail(e.target.value))}
+                   onChange={(e) => handleInputChange("ownerMail", formatMail(e.target.value))}
                   />
                 </div>
               </div>
@@ -231,7 +231,7 @@ export default function SignUp() {
                    id="ownerPass"
                    placeholder="digite uma senha"
                    value={formData.ownerPass}
-                   onChange={(e) => handleInputChange('ownerPass', formPass(e.target.value))}
+                   onChange={(e) => handleInputChange('ownerPass', formatPass(e.target.value))}
 
                   />
                 </div>
