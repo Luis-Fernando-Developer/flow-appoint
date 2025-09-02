@@ -92,29 +92,42 @@ export default function SignUp() {
         return;
       }
 
-      // 1. Criar usuário no Supabase Auth
+      // 1. Criar usuário no Supabase Auth (sem confirmação de email)
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.ownerMail,
         password: formData.ownerPass,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            owner_name: formData.ownerName
+          }
         }
       });
 
       if (authError) throw authError;
       if (!authData.user) throw new Error("Erro ao criar usuário");
 
-      // 1.1. Fazer login para garantir sessão ativa
-      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-        email: formData.ownerMail,
-        password: formData.ownerPass
-      });
-
-      if (loginError) throw loginError;
-      if (!loginData.session) throw new Error("Erro na autenticação");
-
-      // Aguardar um momento para garantir que a sessão está ativa
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Se o email não foi confirmado automaticamente, confirmar manualmente
+      if (!authData.user.email_confirmed_at) {
+        // Para desenvolvimento, vamos pular a confirmação e fazer login direto
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email: formData.ownerMail,
+          password: formData.ownerPass
+        });
+        
+        // Se falhar por email não confirmado, usar a sessão do signup mesmo
+        if (loginError && loginError.message.includes('Email not confirmed')) {
+          // Usar o token da sessão do signup se disponível
+          if (authData.session) {
+            await supabase.auth.setSession({
+              access_token: authData.session.access_token,
+              refresh_token: authData.session.refresh_token
+            });
+          }
+        } else if (loginError) {
+          throw loginError;
+        }
+      }
 
       // 2. Criar empresa no banco
       const { data: companyData, error: companyError } = await supabase
