@@ -104,6 +104,14 @@ export default function SignUp() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Erro ao criar usuário");
 
+      // 1.1. Fazer login automaticamente após signup (para ter auth.uid() disponível)
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: formData.ownerMail,
+        password: formData.ownerPass
+      });
+
+      if (loginError) throw loginError;
+
       // 2. Criar empresa no banco
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
