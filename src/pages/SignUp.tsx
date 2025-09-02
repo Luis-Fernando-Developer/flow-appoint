@@ -266,7 +266,7 @@ export default function SignUp() {
             <div className="mt-6 pt-6 border-t border-primary/20 text-center">
               <p className="text-sm text-muted-foreground">
                 Já tem uma conta?{" "}
-                <a href="/login" className="text-primary hover:text-primary-glow transition-colors">
+                <a href="/src/pages/business/Login" className="text-primary hover:text-primary-glow transition-colors">
                   Faça login aqui
                 </a>
               </p>
