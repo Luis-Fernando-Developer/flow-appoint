@@ -92,44 +92,7 @@ export default function SignUp() {
         return;
       }
 
-      // 1. Criar usuário no Supabase Auth (sem confirmação de email)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.ownerMail,
-        password: formData.ownerPass,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            owner_name: formData.ownerName
-          }
-        }
-      });
-
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Erro ao criar usuário");
-
-      // Se o email não foi confirmado automaticamente, confirmar manualmente
-      if (!authData.user.email_confirmed_at) {
-        // Para desenvolvimento, vamos pular a confirmação e fazer login direto
-        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-          email: formData.ownerMail,
-          password: formData.ownerPass
-        });
-        
-        // Se falhar por email não confirmado, usar a sessão do signup mesmo
-        if (loginError && loginError.message.includes('Email not confirmed')) {
-          // Usar o token da sessão do signup se disponível
-          if (authData.session) {
-            await supabase.auth.setSession({
-              access_token: authData.session.access_token,
-              refresh_token: authData.session.refresh_token
-            });
-          }
-        } else if (loginError) {
-          throw loginError;
-        }
-      }
-
-      // 2. Criar empresa no banco
+      // 1. Primeiro criar a empresa diretamente (sem autenticação)
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert([{
@@ -147,12 +110,26 @@ export default function SignUp() {
 
       if (companyError) throw companyError;
 
+      // 2. Depois criar o usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.ownerMail,
+        password: formData.ownerPass,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            owner_name: formData.ownerName,
+            company_id: companyData.id
+          }
+        }
+      });
+
+      if (authError) throw authError;
       // 3. Criar funcionário (proprietário) vinculado à empresa
       const { error: employeeError } = await supabase
         .from('employees')
         .insert([{
           company_id: companyData.id,
-          user_id: authData.user.id,
+          user_id: authData.user?.id,
           name: formData.ownerName,
           email: formData.ownerMail,
           role: 'owner',
