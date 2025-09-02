@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BookingLogo } from "@/components/BookingLogo";
 import { Building2, User, Mail, FileText, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -69,25 +70,89 @@ export default function SignUp() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Validation
-    if (!urlAvailable) {
+    try {
+      // Validation
+      if (!urlAvailable) {
+        toast({
+          title: "URL indisponível",
+          description: "Por favor, escolha uma URL personalizada disponível.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (formData.ownerPass !== formData.ownerPassRepeat) {
+        toast({
+          title: "Senhas não conferem",
+          description: "Por favor, verifique se as senhas são iguais.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // 1. Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.ownerMail,
+        password: formData.ownerPass,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Erro ao criar usuário");
+
+      // 2. Criar empresa no banco
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .insert([{
+          name: formData.companyName,
+          slug: formData.customUrl,
+          owner_name: formData.ownerName,
+          owner_email: formData.ownerMail,
+          owner_cpf: formData.ownerCpf.replace(/\D/g, ""),
+          cnpj: formData.companyCnpj.replace(/\D/g, ""),
+          status: 'active',
+          plan: 'starter'
+        }])
+        .select()
+        .single();
+
+      if (companyError) throw companyError;
+
+      // 3. Criar funcionário (proprietário) vinculado à empresa
+      const { error: employeeError } = await supabase
+        .from('employees')
+        .insert([{
+          company_id: companyData.id,
+          user_id: authData.user.id,
+          name: formData.ownerName,
+          email: formData.ownerMail,
+          role: 'owner',
+          is_active: true
+        }]);
+
+      if (employeeError) throw employeeError;
+
       toast({
-        title: "URL indisponível",
-        description: "Por favor, escolha uma URL personalizada disponível.",
+        title: "Cadastro realizado com sucesso!",
+        description: `Sua empresa ${formData.companyName} foi cadastrada!`,
+      });
+
+      // Redirecionar para o login da empresa
+      window.location.href = `/${formData.customUrl}/admin/login`;
+      
+    } catch (error) {
+      console.error("Erro ao cadastrar empresa:", error);
+      toast({
+        title: "Erro ao cadastrar empresa",
+        description: "Ocorreu um erro ao cadastrar a empresa. Tente novamente.",
         variant: "destructive",
       });
       setIsLoading(false);
-      return;
     }
-
-    // Simulate registration
-    setTimeout(() => {
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: `Sua empresa ${formData.companyName} foi cadastrada. URL: bookingfy.com.br/${formData.customUrl}`,
-      });
-      setIsLoading(false);
-    }, 2000);
   };
 
   return (
@@ -223,19 +288,39 @@ export default function SignUp() {
                   />
                 </div>
               </div>
-              {/*senha */}
-              <div>
-                <Label htmlFor="ownerPass">Senha</Label>
-                <div>
-                  <Input
-                   id="ownerPass"
-                   placeholder="digite uma senha"
-                   value={formData.ownerPass}
-                   onChange={(e) => handleInputChange('ownerPass', e.target.value)}
+               {/* Senha */}
+               <div className="space-y-2">
+                 <Label htmlFor="ownerPass">Senha *</Label>
+                 <div className="relative">
+                   <Input
+                     id="ownerPass"
+                     type="password"
+                     placeholder="Digite uma senha"
+                     value={formData.ownerPass}
+                     onChange={(e) => handleInputChange('ownerPass', e.target.value)}
+                     className="bg-background/50 border-primary/30 focus:border-primary"
+                     minLength={6}
+                     required
+                   />
+                 </div>
+               </div>
 
-                  />
-                </div>
-              </div>
+               {/* Repetir Senha */}
+               <div className="space-y-2">
+                 <Label htmlFor="ownerPassRepeat">Confirmar Senha *</Label>
+                 <div className="relative">
+                   <Input
+                     id="ownerPassRepeat"
+                     type="password"
+                     placeholder="Digite a senha novamente"
+                     value={formData.ownerPassRepeat}
+                     onChange={(e) => handleInputChange('ownerPassRepeat', e.target.value)}
+                     className="bg-background/50 border-primary/30 focus:border-primary"
+                     minLength={6}
+                     required
+                   />
+                 </div>
+               </div>
               {/* CNPJ */}
               <div className="space-y-2">
                 <Label htmlFor="companyCnpj">CNPJ da Empresa (opcional)</Label>

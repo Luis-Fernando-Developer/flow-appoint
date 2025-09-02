@@ -207,22 +207,6 @@ export default function CreateCompany() {
                     required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="email">Insira seu email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    placeholder="ex: joaodoe@gmail.com"/>
-                </div>
-                <div>
-                  <Label htmlFor="password">Insira uma senha</Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    placeholder="Digite uma senha"/>
-                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="owner_name">Nome do Proprietário *</Label>
