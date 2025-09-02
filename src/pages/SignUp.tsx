@@ -104,13 +104,17 @@ export default function SignUp() {
       if (authError) throw authError;
       if (!authData.user) throw new Error("Erro ao criar usuário");
 
-      // 1.1. Fazer login automaticamente após signup (para ter auth.uid() disponível)
+      // 1.1. Fazer login para garantir sessão ativa
       const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
         email: formData.ownerMail,
         password: formData.ownerPass
       });
 
       if (loginError) throw loginError;
+      if (!loginData.session) throw new Error("Erro na autenticação");
+
+      // Aguardar um momento para garantir que a sessão está ativa
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // 2. Criar empresa no banco
       const { data: companyData, error: companyError } = await supabase
