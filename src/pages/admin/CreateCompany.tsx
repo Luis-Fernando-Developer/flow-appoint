@@ -84,19 +84,24 @@ export default function CreateCompany() {
     setIsLoading(true);
 
     try {
-      // 1. Criar usuário no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.owner_email,
-        password: formData.owner_password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
+      // 1. Verificar se o slug já existe
+      const { data: existingCompany } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('slug', formData.slug)
+        .single();
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Erro ao criar usuário");
+      if (existingCompany) {
+        toast({
+          title: "URL já existe",
+          description: "Esta URL personalizada já está em uso. Escolha outra.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
 
-      // 2. Criar empresa no banco
+      // 2. Primeiro criar a empresa diretamente
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert([{
@@ -119,7 +124,23 @@ export default function CreateCompany() {
 
       if (companyError) throw companyError;
 
-      // 3. Criar funcionário (proprietário) vinculado à empresa
+      // 3. Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.owner_email,
+        password: formData.owner_password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            owner_name: formData.owner_name,
+            company_id: companyData.id
+          }
+        }
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Erro ao criar usuário");
+
+      // 4. Criar funcionário (proprietário) vinculado à empresa
       const { error: employeeError } = await supabase
         .from('employees')
         .insert([{

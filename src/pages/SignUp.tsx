@@ -38,13 +38,29 @@ export default function SignUp() {
     
     setIsCheckingUrl(true);
     
-    // Simulate API call - in real app would check against database
-    setTimeout(() => {
-      // For demo purposes, consider URLs with "test" as unavailable
-      const available = !formData.customUrl.toLowerCase().includes('test');
-      setUrlAvailable(available);
+    try {
+      // Verificar se o slug já existe no banco
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('slug', formData.customUrl)
+        .single();
+      
+      if (error && error.code === 'PGRST116') {
+        // Nenhum resultado encontrado - slug disponível
+        setUrlAvailable(true);
+      } else if (data) {
+        // Slug já existe
+        setUrlAvailable(false);
+      } else {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Erro ao verificar URL:', error);
+      setUrlAvailable(false);
+    } finally {
       setIsCheckingUrl(false);
-    }, 1000);
+    }
   };
 
   const formatCpf = (value: string) => {
