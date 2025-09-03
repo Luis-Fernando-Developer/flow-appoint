@@ -44,16 +44,17 @@ export default function SignUp() {
         .from('companies')
         .select('id')
         .eq('slug', formData.customUrl)
-        .single();
+        .maybeSingle();
       
-      if (error && error.code === 'PGRST116') {
-        // Nenhum resultado encontrado - slug disponível
-        setUrlAvailable(true);
+      if (error) {
+        console.error('Erro ao verificar URL:', error);
+        setUrlAvailable(false);
       } else if (data) {
         // Slug já existe
         setUrlAvailable(false);
       } else {
-        throw error;
+        // Nenhum resultado encontrado - slug disponível
+        setUrlAvailable(true);
       }
     } catch (error) {
       console.error('Erro ao verificar URL:', error);
@@ -87,8 +88,11 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
+      console.log('🔄 Iniciando cadastro da empresa...');
+      
       // Validation
       if (!urlAvailable) {
+        console.log('❌ URL não disponível');
         toast({
           title: "URL indisponível",
           description: "Por favor, escolha uma URL personalizada disponível.",
@@ -99,6 +103,7 @@ export default function SignUp() {
       }
 
       if (formData.ownerPass !== formData.ownerPassRepeat) {
+        console.log('❌ Senhas não conferem');
         toast({
           title: "Senhas não conferem",
           description: "Por favor, verifique se as senhas são iguais.",
@@ -107,6 +112,8 @@ export default function SignUp() {
         setIsLoading(false);
         return;
       }
+
+      console.log('✅ Validações passaram, criando empresa...');
 
       // 1. Primeiro criar a empresa diretamente (sem autenticação)
       const { data: companyData, error: companyError } = await supabase
@@ -124,9 +131,15 @@ export default function SignUp() {
         .select()
         .single();
 
-      if (companyError) throw companyError;
+      if (companyError) {
+        console.error('❌ Erro ao criar empresa:', companyError);
+        throw companyError;
+      }
+
+      console.log('✅ Empresa criada com sucesso:', companyData);
 
       // 2. Depois criar o usuário no Supabase Auth
+      console.log('🔄 Criando usuário no Supabase Auth...');
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.ownerMail,
         password: formData.ownerPass,
@@ -139,8 +152,15 @@ export default function SignUp() {
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('❌ Erro ao criar usuário:', authError);
+        throw authError;
+      }
+
+      console.log('✅ Usuário criado com sucesso:', authData);
+
       // 3. Criar funcionário (proprietário) vinculado à empresa
+      console.log('🔄 Criando funcionário...');
       const { error: employeeError } = await supabase
         .from('employees')
         .insert([{
@@ -152,7 +172,12 @@ export default function SignUp() {
           is_active: true
         }]);
 
-      if (employeeError) throw employeeError;
+      if (employeeError) {
+        console.error('❌ Erro ao criar funcionário:', employeeError);
+        throw employeeError;
+      }
+
+      console.log('✅ Funcionário criado com sucesso!');
 
       toast({
         title: "Cadastro realizado com sucesso!",
@@ -163,7 +188,7 @@ export default function SignUp() {
       window.location.href = `/${formData.customUrl}/admin/login`;
       
     } catch (error) {
-      console.error("Erro ao cadastrar empresa:", error);
+      console.error("❌ Erro geral ao cadastrar empresa:", error);
       toast({
         title: "Erro ao cadastrar empresa",
         description: "Ocorreu um erro ao cadastrar a empresa. Tente novamente.",
