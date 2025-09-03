@@ -27,11 +27,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const menuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Agendamentos", url: "/agendamentos", icon: Calendar },
-  { title: "Serviços", url: "/servicos", icon: Briefcase },
-  { title: "Colaboradores", url: "/colaboradores", icon: Users },
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
+  { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
+  { title: "Agendamentos", url: "/admin/agendamentos", icon: Calendar },
+  { title: "Serviços", url: "/admin/servicos", icon: Briefcase },
+  { title: "Colaboradores", url: "/admin/colaboradores", icon: Users },
+  { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
 
 interface BusinessSidebarProps {
@@ -128,7 +128,7 @@ export function BusinessSidebar({ companySlug, companyName, userRole }: Business
           <div className="space-y-2">
             <SidebarMenuButton asChild>
               <NavLink 
-                to={`${basePath}/perfil`}
+                to={`${basePath}/admin/perfil`}
                 className="flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-primary/10"
               >
                 <User className="w-5 h-5" />
