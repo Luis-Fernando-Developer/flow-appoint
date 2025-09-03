@@ -54,7 +54,7 @@ export default function BusinessLogin() {
           });
           
           // Redirecionar para o dashboard da empresa
-          navigate(`/${employee.company.slug}/dashboard`);
+          navigate(`/${employee.company.slug}/admin/dashboard`);
         } else {
           toast({
             title: "Acesso negado",
