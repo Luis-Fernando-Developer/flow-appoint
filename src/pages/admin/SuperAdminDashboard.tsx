@@ -4,6 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingLogo } from "@/components/BookingLogo";
+import { EditCompanyDialog } from "@/components/admin/EditCompanyDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Users, 
   Building2, 
@@ -34,10 +45,16 @@ interface Company {
   name: string;
   owner_name: string;
   owner_email: string;
+  owner_cpf: string;
   status: string;
   plan: string;
   slug: string;
   created_at: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  cnpj?: string;
 }
 
 const getStatusBadge = (status: string) => {
@@ -61,6 +78,10 @@ export default function SuperAdminDashboard() {
   const { toast } = useToast();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   const [stats, setStats] = useState({
     totalCompanies: 0,
     activeCompanies: 0,
@@ -127,6 +148,45 @@ export default function SuperAdminDashboard() {
       toast({
         title: "Erro",
         description: "Erro ao atualizar status da empresa.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditCompany = (company: Company) => {
+    setEditingCompany(company);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteCompany = (company: Company) => {
+    setCompanyToDelete(company);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteCompany = async () => {
+    if (!companyToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', companyToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Empresa excluída",
+        description: "A empresa foi excluída com sucesso.",
+      });
+
+      await fetchData();
+      setDeleteDialogOpen(false);
+      setCompanyToDelete(null);
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir empresa.",
         variant: "destructive",
       });
     }
@@ -275,7 +335,7 @@ export default function SuperAdminDashboard() {
                       <DropdownMenuContent align="end" className="bg-card border-primary/20">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditCompany(company)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
@@ -292,7 +352,7 @@ export default function SuperAdminDashboard() {
                           Bloquear
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteCompany(company)}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Excluir
                         </DropdownMenuItem>
@@ -305,6 +365,33 @@ export default function SuperAdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Company Dialog */}
+      <EditCompanyDialog
+        company={editingCompany}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={fetchData}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-card border-primary/20">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a empresa "{companyToDelete?.name}"? 
+              Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCompany} className="bg-destructive hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
