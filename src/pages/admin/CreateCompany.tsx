@@ -89,7 +89,7 @@ export default function CreateCompany() {
         .from('companies')
         .select('id')
         .eq('slug', formData.slug)
-        .single();
+        .maybeSingle();
 
       if (existingCompany) {
         toast({

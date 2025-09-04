@@ -76,7 +76,7 @@ export default function BusinessBookings() {
         .from('companies')
         .select('*')
         .eq('slug', slug)
-        .single();
+        .maybeSingle();
 
       setCompany(companyData);
 
@@ -89,7 +89,7 @@ export default function BusinessBookings() {
           .select('*')
           .eq('company_id', companyData.id)
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         setEmployee(employeeData);
 

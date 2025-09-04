@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Plus, Edit, Trash2, Mail, Phone, UserCheck, UserX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AddEmployeeDialog } from "@/components/business/AddEmployeeDialog";
 
 interface Employee {
   id: string;
@@ -159,10 +160,10 @@ export default function BusinessEmployees() {
             <p className="text-muted-foreground">Gerencie a equipe da sua empresa</p>
           </div>
           {canManageEmployees && (
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Convidar Colaborador
-            </Button>
+            <AddEmployeeDialog 
+              companyId={company.id} 
+              onEmployeeAdded={fetchData}
+            />
           )}
         </div>
 

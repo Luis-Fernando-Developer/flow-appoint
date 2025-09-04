@@ -282,7 +282,7 @@ export default function BusinessDashboard() {
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <a 
-                  href={`/${company.slug}/agendamentos`}
+                  href={`/${company.slug}/admin/agendamentos`}
                   className="flex flex-col items-center gap-2 p-4 bg-background/50 rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   <Calendar className="w-8 h-8 text-primary" />
@@ -290,7 +290,7 @@ export default function BusinessDashboard() {
                 </a>
                 
                 <a 
-                  href={`/${company.slug}/servicos`}
+                  href={`/${company.slug}/admin/servicos`}
                   className="flex flex-col items-center gap-2 p-4 bg-background/50 rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   <Clock className="w-8 h-8 text-primary" />
@@ -298,7 +298,7 @@ export default function BusinessDashboard() {
                 </a>
                 
                 <a 
-                  href={`/${company.slug}/colaboradores`}
+                  href={`/${company.slug}/admin/colaboradores`}
                   className="flex flex-col items-center gap-2 p-4 bg-background/50 rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   <Users className="w-8 h-8 text-primary" />
@@ -306,7 +306,7 @@ export default function BusinessDashboard() {
                 </a>
                 
                 <a 
-                  href={`/${company.slug}/configuracoes`}
+                  href={`/${company.slug}/admin/configuracoes`}
                   className="flex flex-col items-center gap-2 p-4 bg-background/50 rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   <TrendingUp className="w-8 h-8 text-primary" />
