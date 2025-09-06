@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Save, Building, Globe, Clock, Bell } from "lucide-react";
+import { Save, Building, Globe, Clock, Bell, Palette } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { LandingPageCustomizer } from "@/components/business/LandingPageCustomizer";
 
 interface Company {
   id: string;
@@ -364,6 +365,13 @@ export default function BusinessSettings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Personalização da Landing Page */}
+        <LandingPageCustomizer 
+          companyId={company.id}
+          companyPlan={company.plan}
+          canEdit={canEditSettings}
+        />
 
         {/* Plano Atual */}
         <Card>
