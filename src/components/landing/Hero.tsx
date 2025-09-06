@@ -1,14 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Calendar, Users, Zap } from "lucide-react";
 import { BookingLogo } from "@/components/BookingLogo";
-import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-booking.jpg";
 
-export function Hero() {
-  const navigate = useNavigate();
+interface HeroProps {
+  customization?: any;
+}
 
+export function Hero({ customization }: HeroProps) {
   const handleStartClick = () => {
-    navigate("/signup");
+    window.location.href = "/signup";
   };
 
   return (
@@ -46,7 +47,7 @@ export function Hero() {
                 Começar Agora
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button variant="glass" size="lg" onClick={() => navigate("/demo")}>
+              <Button variant="glass" size="lg" onClick={() => window.location.href = "/demo"}>
                 Ver Demonstração
               </Button>
             </div>
