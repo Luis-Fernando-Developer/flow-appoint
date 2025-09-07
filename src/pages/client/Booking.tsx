@@ -32,6 +32,13 @@ interface Service {
   image_url?: string;
 }
 
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url?: string;
+}
+
 interface Company {
   id: string;
   name: string;
@@ -53,10 +60,13 @@ export default function ClientBooking() {
   
   const [company, setCompany] = useState<Company | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [availableDates, setAvailableDates] = useState<Date[]>([]);
   const [formData, setFormData] = useState<BookingForm>({
     client_name: "",
     client_email: "",
@@ -64,17 +74,29 @@ export default function ClientBooking() {
     notes: ""
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: Service, 2: DateTime, 3: ClientInfo, 4: Confirmation
+  const [step, setStep] = useState(1); // 1: Service, 2: Employee, 3: Date, 4: Time, 5: ClientInfo, 6: Confirmation
 
   useEffect(() => {
     fetchCompanyAndServices();
   }, [slug]);
 
   useEffect(() => {
-    if (selectedDate && selectedService) {
+    if (selectedService) {
+      fetchEmployeesForService();
+    }
+  }, [selectedService]);
+
+  useEffect(() => {
+    if (selectedEmployee) {
+      generateAvailableDates();
+    }
+  }, [selectedEmployee]);
+
+  useEffect(() => {
+    if (selectedDate && selectedEmployee && selectedService) {
       generateAvailableTimes();
     }
-  }, [selectedDate, selectedService]);
+  }, [selectedDate, selectedEmployee, selectedService]);
 
   const fetchCompanyAndServices = async () => {
     try {
@@ -110,14 +132,96 @@ export default function ClientBooking() {
     }
   };
 
-  const generateAvailableTimes = () => {
-    // Gerar horários disponíveis (9h às 17h, de 30 em 30 minutos)
-    const times: string[] = [];
-    for (let hour = 9; hour < 17; hour++) {
-      times.push(`${hour.toString().padStart(2, '0')}:00`);
-      times.push(`${hour.toString().padStart(2, '0')}:30`);
+  const fetchEmployeesForService = async () => {
+    if (!selectedService || !company) return;
+
+    try {
+      const { data: employeesData, error } = await supabase
+        .from('employees')
+        .select('id, name, email, avatar_url')
+        .eq('company_id', company.id)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      setEmployees(employeesData || []);
+    } catch (error) {
+      console.error("Erro ao carregar funcionários:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os funcionários.",
+        variant: "destructive"
+      });
     }
-    setAvailableTimes(times);
+  };
+
+  const generateAvailableDates = () => {
+    // Gerar próximos 30 dias (excluindo domingos para exemplo)
+    const dates: Date[] = [];
+    const today = new Date();
+    
+    for (let i = 1; i <= 30; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      
+      // Excluir domingos (dia 0)
+      if (date.getDay() !== 0) {
+        dates.push(date);
+      }
+    }
+    
+    setAvailableDates(dates);
+  };
+
+  const generateAvailableTimes = async () => {
+    if (!selectedDate || !selectedEmployee || !selectedService || !company) return;
+
+    try {
+      // Buscar agendamentos existentes para a data e funcionário
+      const { data: existingBookings, error } = await supabase
+        .from('bookings')
+        .select('booking_time, duration_minutes')
+        .eq('employee_id', selectedEmployee.id)
+        .eq('booking_date', format(selectedDate, 'yyyy-MM-dd'))
+        .eq('booking_status', 'confirmed');
+
+      if (error) throw error;
+
+      // Gerar horários disponíveis (9h às 17h, de 30 em 30 minutos)
+      const allTimes: string[] = [];
+      for (let hour = 9; hour < 17; hour++) {
+        allTimes.push(`${hour.toString().padStart(2, '0')}:00`);
+        allTimes.push(`${hour.toString().padStart(2, '0')}:30`);
+      }
+
+      // Filtrar horários já ocupados
+      const availableTimes = allTimes.filter(time => {
+        const [hours, minutes] = time.split(':').map(Number);
+        const timeInMinutes = hours * 60 + minutes;
+        
+        return !existingBookings?.some(booking => {
+          const [bookingHours, bookingMinutes] = booking.booking_time.split(':').map(Number);
+          const bookingTimeInMinutes = bookingHours * 60 + bookingMinutes;
+          const bookingEndTime = bookingTimeInMinutes + booking.duration_minutes;
+          const serviceEndTime = timeInMinutes + selectedService.duration_minutes;
+          
+          // Verificar se há conflito de horários
+          return (
+            (timeInMinutes >= bookingTimeInMinutes && timeInMinutes < bookingEndTime) ||
+            (serviceEndTime > bookingTimeInMinutes && serviceEndTime <= bookingEndTime) ||
+            (timeInMinutes <= bookingTimeInMinutes && serviceEndTime >= bookingEndTime)
+          );
+        });
+      });
+
+      setAvailableTimes(availableTimes);
+    } catch (error) {
+      console.error("Erro ao carregar horários:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os horários disponíveis.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -126,7 +230,7 @@ export default function ClientBooking() {
   };
 
   const handleBookingSubmit = async () => {
-    if (!selectedService || !selectedDate || !selectedTime || !company) return;
+    if (!selectedService || !selectedEmployee || !selectedDate || !selectedTime || !company) return;
 
     setIsLoading(true);
     try {
@@ -157,6 +261,7 @@ export default function ClientBooking() {
             company_id: company.id,
             client_id: clientData.id,
             service_id: selectedService.id,
+            employee_id: selectedEmployee.id,
             booking_date: format(selectedDate, 'yyyy-MM-dd'),
             booking_time: selectedTime,
             duration_minutes: selectedService.duration_minutes,
@@ -168,7 +273,7 @@ export default function ClientBooking() {
 
       if (bookingError) throw bookingError;
 
-      setStep(4);
+      setStep(6);
       toast({
         title: "Agendamento realizado!",
         description: "Seu agendamento foi registrado com sucesso."
@@ -241,25 +346,114 @@ export default function ClientBooking() {
         return (
           <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
             <CardHeader>
-              <CardTitle className="text-gradient">Data e Horário</CardTitle>
-              <CardDescription>Selecione quando deseja ser atendido</CardDescription>
+              <CardTitle className="text-gradient">Escolha o Profissional</CardTitle>
+              <CardDescription>Selecione quem irá realizar o atendimento</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {employees.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum profissional disponível para este serviço.
+                  </p>
+                ) : (
+                  employees.map((employee) => (
+                    <div
+                      key={employee.id}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        selectedEmployee?.id === employee.id
+                          ? "border-primary bg-primary/10"
+                          : "border-primary/20 hover:border-primary/50"
+                      }`}
+                      onClick={() => setSelectedEmployee(employee)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+                            <User className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-lg">{employee.name}</h3>
+                            <p className="text-muted-foreground text-sm">{employee.email}</p>
+                          </div>
+                        </div>
+                        {selectedEmployee?.id === employee.id && (
+                          <Check className="w-6 h-6 text-primary" />
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <div className="flex gap-2 mt-6">
+                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
+                  Voltar
+                </Button>
+                {selectedEmployee && (
+                  <Button onClick={() => setStep(3)} className="flex-1" variant="neon">
+                    Continuar
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 3:
+        return (
+          <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
+            <CardHeader>
+              <CardTitle className="text-gradient">Escolha a Data</CardTitle>
+              <CardDescription>Selecione uma data disponível</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
-                <Label className="text-base font-medium">Escolha a data</Label>
+                <Label className="text-base font-medium">Datas disponíveis</Label>
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={setSelectedDate}
                   locale={ptBR}
-                  disabled={(date) => date < new Date()}
+                  disabled={(date) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return date < today || !availableDates.some(availableDate => 
+                      availableDate.toDateString() === date.toDateString()
+                    );
+                  }}
                   className="rounded-md border border-primary/20 bg-background/50"
                 />
               </div>
-              
-              {selectedDate && (
+
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
+                  Voltar
+                </Button>
+                {selectedDate && (
+                  <Button onClick={() => setStep(4)} className="flex-1" variant="neon">
+                    Continuar
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case 4:
+        return (
+          <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
+            <CardHeader>
+              <CardTitle className="text-gradient">Escolha o Horário</CardTitle>
+              <CardDescription>Selecione um horário disponível</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {availableTimes.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  Nenhum horário disponível para esta data.
+                </p>
+              ) : (
                 <div>
-                  <Label className="text-base font-medium">Escolha o horário</Label>
+                  <Label className="text-base font-medium">Horários disponíveis</Label>
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {availableTimes.map((time) => (
                       <Button
@@ -275,21 +469,21 @@ export default function ClientBooking() {
                 </div>
               )}
 
-              {selectedDate && selectedTime && (
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
-                    Voltar
-                  </Button>
-                  <Button onClick={() => setStep(3)} className="flex-1" variant="neon">
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setStep(3)} className="flex-1">
+                  Voltar
+                </Button>
+                {selectedTime && (
+                  <Button onClick={() => setStep(5)} className="flex-1" variant="neon">
                     Continuar
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </CardContent>
           </Card>
         );
 
-      case 3:
+      case 5:
         return (
           <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
             <CardHeader>
@@ -349,7 +543,7 @@ export default function ClientBooking() {
               </div>
 
               <div className="flex gap-2 mt-6">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
+                <Button variant="outline" onClick={() => setStep(4)} className="flex-1">
                   Voltar
                 </Button>
                 <Button
@@ -365,7 +559,7 @@ export default function ClientBooking() {
           </Card>
         );
 
-      case 4:
+      case 6:
         return (
           <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
             <CardHeader className="text-center">
@@ -380,6 +574,10 @@ export default function ClientBooking() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Serviço:</span>
                   <span className="font-medium">{selectedService?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Profissional:</span>
+                  <span className="font-medium">{selectedEmployee?.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Data:</span>
