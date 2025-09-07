@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Hero } from "@/components/landing/Hero";
-import { Features } from "@/components/landing/Features";
-import { Pricing } from "@/components/landing/Pricing";
-import { Footer } from "@/components/landing/Footer";
+import { MapPin, Phone, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface CustomizationData {
@@ -40,6 +37,7 @@ interface CustomizationData {
 export default function CustomLandingPage() {
   const { slug } = useParams();
   const [company, setCompany] = useState<any>(null);
+  const [services, setServices] = useState<any[]>([]);
   const [customization, setCustomization] = useState<CustomizationData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -65,6 +63,15 @@ export default function CustomLandingPage() {
       }
 
       setCompany(companyData);
+
+      // Fetch services data
+      const { data: servicesData } = await supabase
+        .from('services')
+        .select('*')
+        .eq('company_id', companyData.id)
+        .eq('is_active', true);
+
+      setServices(servicesData || []);
 
       // Fetch customization data
       const { data: customizationData } = await supabase
@@ -281,15 +288,102 @@ export default function CustomLandingPage() {
           </section>
         )}
 
-        {/* Features */}
-        <Features />
+        {/* Serviços */}
+        <section className="py-16 bg-card/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-gradient mb-4">Nossos Serviços</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Conheça todos os serviços que oferecemos para você
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {services.map((service) => (
+                <div key={service.id} className="bg-card rounded-lg border border-primary/20 p-6 hover:border-primary/40 transition-colors">
+                  {service.image_url && (
+                    <img 
+                      src={service.image_url} 
+                      alt={service.name}
+                      className="w-full h-48 object-cover rounded-lg mb-4"
+                    />
+                  )}
+                  <h3 className="text-xl font-semibold mb-2">{service.name}</h3>
+                  {service.description && (
+                    <p className="text-muted-foreground mb-4">{service.description}</p>
+                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold text-primary">
+                      R$ {Number(service.price).toFixed(2)}
+                    </span>
+                    <span className="text-sm text-muted-foreground">
+                      {service.duration_minutes} min
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="text-center mt-12">
+              <button className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+                Agendar Agora
+              </button>
+            </div>
+          </div>
+        </section>
 
-        {/* Pricing */}
-        <Pricing />
+        {/* Informações da Empresa */}
+        <section className="py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <h2 className="text-3xl font-bold text-gradient mb-6">Sobre {company.name}</h2>
+                <div className="space-y-4">
+                  {company.address && (
+                    <div className="flex items-center gap-3">
+                      <MapPin className="w-5 h-5 text-primary" />
+                      <span>{company.address}, {company.city} - {company.state}</span>
+                    </div>
+                  )}
+                  {company.phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-5 h-5 text-primary" />
+                      <span>{company.phone}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-5 h-5 text-primary" />
+                    <span>{company.owner_email}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-card/50 rounded-lg p-8 border border-primary/20">
+                <h3 className="text-xl font-semibold mb-4">Horário de Funcionamento</h3>
+                <div className="space-y-2 text-muted-foreground">
+                  <p>Segunda a Sexta: 8:00 - 18:00</p>
+                  <p>Sábado: 8:00 - 16:00</p>
+                  <p>Domingo: Fechado</p>
+                </div>
+                <div className="mt-6">
+                  <button className="w-full bg-neon-violet text-white px-6 py-3 rounded-lg font-semibold hover:bg-neon-violet/90 transition-colors">
+                    Fazer Agendamento
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {/* Footer */}
-        <footer className={`${customization?.footer_background_type ? 'footer-custom-bg' : ''}`}>
-          <Footer />
+        {/* Footer Simples */}
+        <footer className={`py-8 border-t border-primary/20 ${customization?.footer_background_type ? 'footer-custom-bg' : 'bg-card/30'}`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <p className="text-muted-foreground">
+                © 2024 {company.name}. Todos os direitos reservados.
+              </p>
+            </div>
+          </div>
         </footer>
       </div>
     </div>
