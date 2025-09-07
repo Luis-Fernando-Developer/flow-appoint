@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { MapPin, Phone, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,6 +36,7 @@ interface CustomizationData {
 
 export default function CustomLandingPage() {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [company, setCompany] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [customization, setCustomization] = useState<CustomizationData | null>(null);
@@ -325,7 +326,10 @@ export default function CustomLandingPage() {
             </div>
             
             <div className="text-center mt-12">
-              <button className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors">
+              <button 
+                onClick={() => navigate(`/${slug}/agendar`)}
+                className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+              >
                 Agendar Agora
               </button>
             </div>
@@ -366,7 +370,10 @@ export default function CustomLandingPage() {
                   <p>Domingo: Fechado</p>
                 </div>
                 <div className="mt-6">
-                  <button className="w-full bg-neon-violet text-white px-6 py-3 rounded-lg font-semibold hover:bg-neon-violet/90 transition-colors">
+                  <button 
+                    onClick={() => navigate(`/${slug}/agendar`)}
+                    className="w-full bg-neon-violet text-white px-6 py-3 rounded-lg font-semibold hover:bg-neon-violet/90 transition-colors"
+                  >
                     Fazer Agendamento
                   </button>
                 </div>
