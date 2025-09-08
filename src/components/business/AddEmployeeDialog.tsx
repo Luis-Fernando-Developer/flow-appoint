@@ -23,6 +23,7 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
     name: "",
     email: "",
     phone: "",
+    password: "",
     role: "employee" as const,
     is_active: true
   });
@@ -32,21 +33,37 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
     setLoading(true);
 
     try {
-      // Por enquanto, vamos criar apenas o registro do funcionário sem user_id
-      // Em uma implementação completa, você criaria o usuário no Auth e enviaria convite por email
-      const { error } = await supabase
-        .from('employees')
-        .insert([{
-          company_id: companyId,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          role: formData.role,
-          is_active: formData.is_active,
-          user_id: null // Será definido quando o funcionário aceitar o convite
-        }]);
+      // Criar conta no Auth do Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: formData.name,
+            phone: formData.phone
+          }
+        }
+      });
 
-      if (error) throw error;
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Criar registro do funcionário com user_id
+        const { error: employeeError } = await supabase
+          .from('employees')
+          .insert([{
+            company_id: companyId,
+            user_id: authData.user.id,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            role: formData.role,
+            is_active: formData.is_active
+          }]);
+
+        if (employeeError) throw employeeError;
+      }
 
       toast({
         title: "Colaborador adicionado",
@@ -58,6 +75,7 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
         name: "",
         email: "",
         phone: "",
+        password: "",
         role: "employee",
         is_active: true
       });
@@ -137,16 +155,29 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="password">Senha *</Label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              placeholder="••••••••"
+              required
+              minLength={6}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="role">Função *</Label>
             <Select value={formData.role} onValueChange={(value: any) => setFormData(prev => ({ ...prev, role: value }))}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a função" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="employee">Funcionário</SelectItem>
+                <SelectItem value="employee">Colaborador</SelectItem>
                 <SelectItem value="receptionist">Recepcionista</SelectItem>
+                <SelectItem value="supervisor">Encarregado</SelectItem>
                 <SelectItem value="manager">Gerente</SelectItem>
-                <SelectItem value="admin">Administrador</SelectItem>
               </SelectContent>
             </Select>
           </div>
