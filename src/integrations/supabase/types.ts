@@ -317,12 +317,49 @@ export type Database = {
           },
         ]
       }
+      employee_services: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_services_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           avatar_url: string | null
           company_id: string
           created_at: string
           email: string
+          employee_type: string
           id: string
           is_active: boolean | null
           name: string
@@ -337,6 +374,7 @@ export type Database = {
           company_id: string
           created_at?: string
           email: string
+          employee_type?: string
           id?: string
           is_active?: boolean | null
           name: string
@@ -351,6 +389,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           email?: string
+          employee_type?: string
           id?: string
           is_active?: boolean | null
           name?: string

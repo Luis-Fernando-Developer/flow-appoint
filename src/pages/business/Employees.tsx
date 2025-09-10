@@ -16,6 +16,7 @@ interface Employee {
   email: string;
   phone?: string;
   role: string;
+  employee_type: string;
   is_active: boolean;
   avatar_url?: string;
   created_at: string;
@@ -194,6 +195,9 @@ export default function BusinessEmployees() {
                       </CardTitle>
                       <div className="flex items-center gap-2 mt-1">
                         {getRoleBadge(employee.role)}
+                        <Badge variant="outline" className="text-xs">
+                          {employee.employee_type === 'autonomo' ? 'Autônomo' : 'Fixo'}
+                        </Badge>
                         {!employee.is_active && (
                           <Badge variant="destructive">Inativo</Badge>
                         )}

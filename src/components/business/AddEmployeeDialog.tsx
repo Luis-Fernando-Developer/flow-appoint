@@ -1,13 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+interface Service {
+  id: string;
+  name: string;
+}
 
 interface AddEmployeeDialogProps {
   companyId: string;
@@ -17,6 +23,7 @@ interface AddEmployeeDialogProps {
 export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [services, setServices] = useState<Service[]>([]);
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -25,8 +32,30 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
     phone: "",
     password: "",
     role: "employee" as const,
-    is_active: true
+    employee_type: "fixo" as const,
+    is_active: true,
+    services: [] as string[]
   });
+
+  useEffect(() => {
+    if (open) {
+      fetchServices();
+    }
+  }, [open, companyId]);
+
+  const fetchServices = async () => {
+    try {
+      const { data } = await supabase
+        .from('services')
+        .select('id, name')
+        .eq('company_id', companyId)
+        .eq('is_active', true);
+      
+      setServices(data || []);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +79,7 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
 
       if (authData.user) {
         // Criar registro do funcionário com user_id
-        const { error: employeeError } = await supabase
+        const { data: employeeData, error: employeeError } = await supabase
           .from('employees')
           .insert([{
             company_id: companyId,
@@ -59,10 +88,26 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
             email: formData.email,
             phone: formData.phone,
             role: formData.role,
+            employee_type: formData.employee_type,
             is_active: formData.is_active
-          }]);
+          }])
+          .select();
 
         if (employeeError) throw employeeError;
+
+        // Vincular serviços ao funcionário
+        if (employeeData && employeeData[0] && formData.services.length > 0) {
+          const serviceInserts = formData.services.map(serviceId => ({
+            employee_id: employeeData[0].id,
+            service_id: serviceId
+          }));
+
+          const { error: servicesError } = await supabase
+            .from('employee_services')
+            .insert(serviceInserts);
+
+          if (servicesError) throw servicesError;
+        }
       }
 
       toast({
@@ -77,7 +122,9 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
         phone: "",
         password: "",
         role: "employee",
-        is_active: true
+        employee_type: "fixo",
+        is_active: true,
+        services: []
       });
 
       setOpen(false);
@@ -180,6 +227,52 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
                 <SelectItem value="manager">Gerente</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="employee_type">Tipo de Funcionário *</Label>
+            <Select value={formData.employee_type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, employee_type: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixo">Funcionário Fixo</SelectItem>
+                <SelectItem value="autonomo">Funcionário Autônomo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Serviços Vinculados</Label>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {services.map((service) => (
+                <div key={service.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={service.id}
+                    checked={formData.services.includes(service.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          services: [...prev.services, service.id] 
+                        }));
+                      } else {
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          services: prev.services.filter(s => s !== service.id) 
+                        }));
+                      }
+                    }}
+                  />
+                  <Label htmlFor={service.id} className="text-sm font-normal">
+                    {service.name}
+                  </Label>
+                </div>
+              ))}
+              {services.length === 0 && (
+                <p className="text-sm text-muted-foreground">Nenhum serviço cadastrado</p>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
