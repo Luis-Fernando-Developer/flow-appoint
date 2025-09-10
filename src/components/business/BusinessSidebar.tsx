@@ -75,8 +75,24 @@ export function BusinessSidebar({ companySlug, companyName, companyId, userRole,
 
   // Filtrar itens do menu baseado nas permissões
   const filteredMenuItems = menuItems.filter(item => {
-    if (loading || !permissions) return false;
+    // Durante o carregamento, mostrar itens básicos
+    if (loading) {
+      return ['Dashboard', 'Agendamentos', 'Serviços'].includes(item.title);
+    }
 
+    // Se não temos permissões, usar role como fallback
+    if (!permissions) {
+      switch (item.title) {
+        case "Colaboradores":
+          return ['owner', 'manager', 'supervisor'].includes(userRole);
+        case "Configurações":
+          return ['owner', 'manager'].includes(userRole);
+        default:
+          return true;
+      }
+    }
+
+    // Usar permissões quando disponíveis
     switch (item.title) {
       case "Colaboradores":
         return permissions.canViewEmployees;

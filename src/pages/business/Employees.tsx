@@ -37,6 +37,7 @@ export default function BusinessEmployees() {
   const { slug } = useParams<{ slug: string }>();
   const [company, setCompany] = useState<Company | null>(null);
   const [currentEmployee, setCurrentEmployee] = useState<CurrentEmployee | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -62,6 +63,7 @@ export default function BusinessEmployees() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      setCurrentUser(user);
       const { data: currentEmployeeData } = await supabase
         .from('employees')
         .select('*, company:companies(*)')
@@ -155,6 +157,7 @@ export default function BusinessEmployees() {
       companyName={company.name}
       companyId={company.id}
       userRole={currentEmployee.role}
+      currentUser={currentUser}
     >
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">

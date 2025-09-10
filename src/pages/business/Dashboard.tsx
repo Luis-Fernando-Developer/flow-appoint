@@ -19,6 +19,7 @@ export default function BusinessDashboard() {
   const { slug } = useParams();
   const [company, setCompany] = useState<any>(null);
   const [employee, setEmployee] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [stats, setStats] = useState({
     todayBookings: 0,
     weekBookings: 0,
@@ -59,6 +60,7 @@ export default function BusinessDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        setCurrentUser(user);
         const { data: employeeData } = await supabase
           .from('employees')
           .select('*')
@@ -168,6 +170,7 @@ export default function BusinessDashboard() {
       companyName={company.name}
       companyId={company.id}
       userRole={employee.role}
+      currentUser={currentUser}
     >
       <div className="p-6 space-y-8">
         {/* Welcome Header */}
