@@ -34,7 +34,7 @@ export function BusinessLayout({ children, companySlug, companyName, companyId, 
           </header>
           
           {/* Main Content */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1">
             {children}
           </div>
         </main>
