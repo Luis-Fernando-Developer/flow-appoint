@@ -112,6 +112,7 @@ export default function BusinessServices() {
       <BusinessLayout
         companySlug={slug || ""}
         companyName="Carregando..."
+        companyId=""
         userRole="loading"
       >
         <div className="flex items-center justify-center h-64">
@@ -129,6 +130,7 @@ export default function BusinessServices() {
       <BusinessLayout
         companySlug={slug || ""}
         companyName="Acesso Negado"
+        companyId=""
         userRole="unauthorized"
       >
         <div className="flex items-center justify-center h-64">
@@ -145,6 +147,7 @@ export default function BusinessServices() {
     <BusinessLayout
       companySlug={company.slug}
       companyName={company.name}
+      companyId={company.id}
       userRole={employee.role}
     >
       <div className="p-6">

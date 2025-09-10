@@ -211,6 +211,7 @@ export default function BusinessBookings() {
     <BusinessLayout 
       companySlug={company.slug} 
       companyName={company.name}
+      companyId={company.id}
       userRole={employee.role}
     >
       <div className="p-6 space-y-6">

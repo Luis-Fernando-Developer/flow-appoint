@@ -115,6 +115,7 @@ export default function BusinessEmployees() {
       <BusinessLayout
         companySlug={slug || ""}
         companyName="Carregando..."
+        companyId=""
         userRole="loading"
       >
         <div className="flex items-center justify-center h-64">
@@ -132,6 +133,7 @@ export default function BusinessEmployees() {
       <BusinessLayout
         companySlug={slug || ""}
         companyName="Acesso Negado"
+        companyId=""
         userRole="unauthorized"
       >
         <div className="flex items-center justify-center h-64">
@@ -148,9 +150,10 @@ export default function BusinessEmployees() {
   const canManageEmployees = ['owner', 'admin', 'manager'].includes(currentEmployee.role);
 
   return (
-    <BusinessLayout
-      companySlug={company.slug}
+    <BusinessLayout 
+      companySlug={company.slug} 
       companyName={company.name}
+      companyId={company.id}
       userRole={currentEmployee.role}
     >
       <div className="p-6">

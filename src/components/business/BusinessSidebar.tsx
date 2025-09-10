@@ -25,6 +25,8 @@ import { BookingLogo } from "@/components/BookingLogo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/use-permissions";
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 const menuItems = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
@@ -37,14 +39,17 @@ const menuItems = [
 interface BusinessSidebarProps {
   companySlug: string;
   companyName: string;
+  companyId: string;
   userRole: string;
+  currentUser?: SupabaseUser | null;
 }
 
-export function BusinessSidebar({ companySlug, companyName, userRole }: BusinessSidebarProps) {
+export function BusinessSidebar({ companySlug, companyName, companyId, userRole, currentUser }: BusinessSidebarProps) {
   const { state } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { permissions, loading } = usePermissions(companyId, currentUser);
 
   const currentPath = location.pathname;
   const basePath = `/${companySlug}`;
@@ -68,15 +73,18 @@ export function BusinessSidebar({ companySlug, companyName, userRole }: Business
     }
   };
 
-  // Filtrar itens do menu baseado no role do usuário
+  // Filtrar itens do menu baseado nas permissões
   const filteredMenuItems = menuItems.filter(item => {
-    if (userRole === 'employee' && (item.title === 'Colaboradores' || item.title === 'Configurações')) {
-      return false;
+    if (loading || !permissions) return false;
+
+    switch (item.title) {
+      case "Colaboradores":
+        return permissions.canViewEmployees;
+      case "Configurações":
+        return permissions.canManageSettings;
+      default:
+        return true;
     }
-    if (userRole === 'receptionist' && item.title === 'Colaboradores') {
-      return false;
-    }
-    return true;
   });
 
   return (

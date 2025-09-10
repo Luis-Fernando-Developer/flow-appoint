@@ -422,6 +422,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_role: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: string
+      }
+      has_permission_level: {
+        Args: { _company_id: string; _required_level: string; _user_id: string }
+        Returns: boolean
+      }
       is_company_admin: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
