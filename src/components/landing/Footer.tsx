@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 
 export function Footer() {
+
+  const newYear = new Date().getFullYear();
   return (
     <footer className="bg-gradient-secondary border-t border-primary/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -93,7 +95,7 @@ export function Footer() {
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <a href="#" className="hover:text-primary transition-colors">Privacidade</a>
               <a href="#" className="hover:text-primary transition-colors">Termos</a>
-              <span>© 2024 BookingFy. Todos os direitos reservados.</span>
+              <span>© {newYear} BookingFy. Todos os direitos reservados.</span>
             </div>
           </div>
         </div>

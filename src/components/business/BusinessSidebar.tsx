@@ -103,6 +103,7 @@ export function BusinessSidebar({ companySlug, companyName, userRole }: Business
             Menu Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
+            
             <SidebarMenu>
               {filteredMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
