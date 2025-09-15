@@ -3,22 +3,28 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { BusinessSidebar } from "@/components/business/BusinessSidebar";
 import { Button } from "../ui/button";
 import { Copy } from "lucide-react";
+import { User as SupabaseUser } from '@supabase/supabase-js';
+
 
 interface BusinessLayoutProps {
   children: ReactNode;
   companySlug: string;
   companyName: string;
+  companyId: string;
   userRole: string;
+  currentUser?: SupabaseUser | null;
 }
 
-export function BusinessLayout({ children, companySlug, companyName, userRole }: BusinessLayoutProps) {
+export function BusinessLayout({ children, companySlug, companyName, companyId, userRole, currentUser }: BusinessLayoutProps) {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-hero">
         <BusinessSidebar 
           companySlug={companySlug} 
           companyName={companyName}
+          companyId={companyId}
           userRole={userRole}
+          currentUser={currentUser}
         />
         
         <main className="flex-1 flex flex-col ">
@@ -35,7 +41,7 @@ export function BusinessLayout({ children, companySlug, companyName, userRole }:
           </header>
           
           {/* Main Content */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1">
             {children}
           </div>
         </main>

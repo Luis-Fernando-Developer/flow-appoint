@@ -19,6 +19,7 @@ export default function BusinessDashboard() {
   const { slug } = useParams();
   const [company, setCompany] = useState<any>(null);
   const [employee, setEmployee] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [stats, setStats] = useState({
     todayBookings: 0,
     weekBookings: 0,
@@ -59,6 +60,7 @@ export default function BusinessDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        setCurrentUser(user);
         const { data: employeeData } = await supabase
           .from('employees')
           .select('*')
@@ -166,7 +168,9 @@ export default function BusinessDashboard() {
     <BusinessLayout 
       companySlug={company.slug} 
       companyName={company.name}
+      companyId={company.id}
       userRole={employee.role}
+      currentUser={currentUser}
     >
       <div className="p-6 space-y-8">
         {/* Welcome Header */}
@@ -282,7 +286,7 @@ export default function BusinessDashboard() {
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <a 
-                  href={`/${company.slug}/agendamentos`}
+                  href={`/${company.slug}/admin/agendamentos`}
                   className="flex flex-col items-center gap-2 p-4 bg-background/50 rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   <Calendar className="w-8 h-8 text-primary" />
@@ -290,7 +294,7 @@ export default function BusinessDashboard() {
                 </a>
                 
                 <a 
-                  href={`/${company.slug}/servicos`}
+                  href={`/${company.slug}/admin/servicos`}
                   className="flex flex-col items-center gap-2 p-4 bg-background/50 rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   <Clock className="w-8 h-8 text-primary" />
@@ -298,7 +302,7 @@ export default function BusinessDashboard() {
                 </a>
                 
                 <a 
-                  href={`/${company.slug}/colaboradores`}
+                  href={`/${company.slug}/admin/colaboradores`}
                   className="flex flex-col items-center gap-2 p-4 bg-background/50 rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   <Users className="w-8 h-8 text-primary" />
@@ -306,7 +310,7 @@ export default function BusinessDashboard() {
                 </a>
                 
                 <a 
-                  href={`/${company.slug}/configuracoes`}
+                  href={`/${company.slug}/admin/configuracoes`}
                   className="flex flex-col items-center gap-2 p-4 bg-background/50 rounded-lg hover:bg-primary/10 transition-colors"
                 >
                   <TrendingUp className="w-8 h-8 text-primary" />

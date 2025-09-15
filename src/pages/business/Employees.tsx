@@ -5,9 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Edit, Trash2, Mail, Phone, UserCheck, UserX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AddEmployeeDialog } from "@/components/business/AddEmployeeDialog";
+import { EditEmployeeDialog } from "@/components/business/EditEmployeeDialog";
 
 interface Employee {
   id: string;
@@ -15,6 +18,7 @@ interface Employee {
   email: string;
   phone?: string;
   role: string;
+  employee_type: string;
   is_active: boolean;
   avatar_url?: string;
   created_at: string;
@@ -36,8 +40,11 @@ export default function BusinessEmployees() {
   const { slug } = useParams<{ slug: string }>();
   const [company, setCompany] = useState<Company | null>(null);
   const [currentEmployee, setCurrentEmployee] = useState<CurrentEmployee | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -61,6 +68,7 @@ export default function BusinessEmployees() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      setCurrentUser(user);
       const { data: currentEmployeeData } = await supabase
         .from('employees')
         .select('*, company:companies(*)')
@@ -109,11 +117,51 @@ export default function BusinessEmployees() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteEmployee = async (employeeId: string) => {
+    try {
+      // Primeiro, deletar serviços vinculados
+      const { error: servicesError } = await supabase
+        .from('employee_services')
+        .delete()
+        .eq('employee_id', employeeId);
+
+      if (servicesError) throw servicesError;
+
+      // Depois, deletar o funcionário
+      const { error: employeeError } = await supabase
+        .from('employees')
+        .delete()
+        .eq('id', employeeId);
+
+      if (employeeError) throw employeeError;
+
+      toast({
+        title: "Colaborador removido",
+        description: "O colaborador foi removido com sucesso.",
+      });
+
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o colaborador.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <BusinessLayout
         companySlug={slug || ""}
         companyName="Carregando..."
+        companyId=""
         userRole="loading"
       >
         <div className="flex items-center justify-center h-64">
@@ -131,6 +179,7 @@ export default function BusinessEmployees() {
       <BusinessLayout
         companySlug={slug || ""}
         companyName="Acesso Negado"
+        companyId=""
         userRole="unauthorized"
       >
         <div className="flex items-center justify-center h-64">
@@ -147,10 +196,12 @@ export default function BusinessEmployees() {
   const canManageEmployees = ['owner', 'admin', 'manager'].includes(currentEmployee.role);
 
   return (
-    <BusinessLayout
-      companySlug={company.slug}
+    <BusinessLayout 
+      companySlug={company.slug} 
       companyName={company.name}
+      companyId={company.id}
       userRole={currentEmployee.role}
+      currentUser={currentUser}
     >
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
@@ -159,10 +210,10 @@ export default function BusinessEmployees() {
             <p className="text-muted-foreground">Gerencie a equipe da sua empresa</p>
           </div>
           {canManageEmployees && (
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Convidar Colaborador
-            </Button>
+            <AddEmployeeDialog 
+              companyId={company.id} 
+              onEmployeeAdded={fetchData}
+            />
           )}
         </div>
 
@@ -187,6 +238,9 @@ export default function BusinessEmployees() {
                       </CardTitle>
                       <div className="flex items-center gap-2 mt-1">
                         {getRoleBadge(employee.role)}
+                        <Badge variant="outline" className="text-xs">
+                          {employee.employee_type === 'autonomo' ? 'Autônomo' : 'Fixo'}
+                        </Badge>
                         {!employee.is_active && (
                           <Badge variant="destructive">Inativo</Badge>
                         )}
@@ -195,12 +249,37 @@ export default function BusinessEmployees() {
                   </div>
                   {canManageEmployees && employee.role !== 'owner' && (
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditEmployee(employee)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja remover o colaborador {employee.name}? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteEmployee(employee.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   )}
                 </div>
@@ -222,6 +301,14 @@ export default function BusinessEmployees() {
             </Card>
           ))}
         </div>
+
+        <EditEmployeeDialog
+          employee={editingEmployee}
+          companyId={company.id}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onEmployeeUpdated={fetchData}
+        />
       </div>
     </BusinessLayout>
   );

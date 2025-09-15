@@ -50,6 +50,7 @@ export default function BusinessBookings() {
   const { slug } = useParams();
   const [company, setCompany] = useState<any>(null);
   const [employee, setEmployee] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,32 +73,81 @@ export default function BusinessBookings() {
   const fetchData = async () => {
     try {
       // Buscar dados da empresa
-      const { data: companyData } = await supabase
+      const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .select('*')
         .eq('slug', slug)
-        .single();
+        .maybeSingle();
+
+      if (companyError) {
+        console.error('Error fetching company:', companyError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os dados da empresa.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!companyData) {
+        console.error('Company not found for slug:', slug);
+        toast({
+          title: "Empresa não encontrada",
+          description: "A empresa especificada não foi encontrada.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       setCompany(companyData);
 
       // Buscar dados do funcionário
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
       
+      if (userError) {
+        console.error('Error fetching user:', userError);
+        toast({
+          title: "Erro de autenticação",
+          description: "Não foi possível verificar o usuário logado.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (user) {
-        const { data: employeeData } = await supabase
+        setCurrentUser(user);
+        
+        const { data: employeeData, error: employeeError } = await supabase
           .from('employees')
-          .select('*')
-          .eq('company_id', companyData.id)
+          .select('*, company:companies(*)')
           .eq('user_id', user.id)
-          .single();
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (employeeError) {
+          console.error('Error fetching employee:', employeeError);
+          toast({
+            title: "Erro",
+            description: "Não foi possível verificar suas permissões.",
+            variant: "destructive",
+          });
+          return;
+        }
 
         setEmployee(employeeData);
 
-        // Buscar agendamentos
-        await fetchBookings(companyData.id);
+        // Buscar agendamentos se tiver permissão
+        if (employeeData && employeeData.company_id === companyData.id) {
+          await fetchBookings(companyData.id);
+        }
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -196,12 +246,24 @@ export default function BusinessBookings() {
     );
   }
 
-  if (!company || !employee) {
+  if (!company) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gradient mb-4">Empresa não encontrada</h2>
+          <p className="text-muted-foreground">A empresa especificada não foi encontrada ou não existe.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!employee || employee.company_id !== company.id) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gradient mb-4">Acesso Negado</h2>
-          <p className="text-muted-foreground">Você não tem permissão para acessar esta página.</p>
+          <p className="text-muted-foreground">Você não tem permissão para acessar os agendamentos desta empresa.</p>
+          <p className="text-sm text-muted-foreground mt-2">Faça login com uma conta autorizada.</p>
         </div>
       </div>
     );
@@ -211,7 +273,9 @@ export default function BusinessBookings() {
     <BusinessLayout 
       companySlug={company.slug} 
       companyName={company.name}
+      companyId={company.id}
       userRole={employee.role}
+      currentUser={currentUser}
     >
       <div className="p-6 space-y-6">
         {/* Header */}

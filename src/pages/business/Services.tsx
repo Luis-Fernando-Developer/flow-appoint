@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Clock, DollarSign, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AddServiceDialog } from "@/components/business/AddServiceDialog";
 
 interface Service {
   id: string;
@@ -111,6 +112,7 @@ export default function BusinessServices() {
       <BusinessLayout
         companySlug={slug || ""}
         companyName="Carregando..."
+        companyId=""
         userRole="loading"
       >
         <div className="flex items-center justify-center h-64">
@@ -128,6 +130,7 @@ export default function BusinessServices() {
       <BusinessLayout
         companySlug={slug || ""}
         companyName="Acesso Negado"
+        companyId=""
         userRole="unauthorized"
       >
         <div className="flex items-center justify-center h-64">
@@ -144,6 +147,7 @@ export default function BusinessServices() {
     <BusinessLayout
       companySlug={company.slug}
       companyName={company.name}
+      companyId={company.id}
       userRole={employee.role}
     >
       <div className="p-6">
@@ -152,10 +156,10 @@ export default function BusinessServices() {
             <h1 className="text-3xl font-bold text-gradient">Serviços</h1>
             <p className="text-muted-foreground">Gerencie os serviços oferecidos pela sua empresa</p>
           </div>
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" />
-            Novo Serviço
-          </Button>
+          <AddServiceDialog 
+            companyId={company.id} 
+            onServiceAdded={fetchData}
+          />
         </div>
 
         {services.length === 0 ? (
@@ -166,10 +170,10 @@ export default function BusinessServices() {
               <p className="text-muted-foreground text-center mb-4">
                 Comece criando seu primeiro serviço para que os clientes possam fazer agendamentos.
               </p>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Criar Primeiro Serviço
-              </Button>
+              <AddServiceDialog 
+                companyId={company.id} 
+                onServiceAdded={fetchData}
+              />
             </CardContent>
           </Card>
         ) : (

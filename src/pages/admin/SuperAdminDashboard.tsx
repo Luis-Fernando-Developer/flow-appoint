@@ -1,9 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookingLogo } from "@/components/BookingLogo";
+import { EditCompanyDialog } from "@/components/admin/EditCompanyDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Users, 
   Building2, 
@@ -26,43 +37,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data para demonstração
-const mockCompanies = [
-  {
-    id: 1,
-    name: "Viking Barbearia",
-    owner: "João Silva",
-    email: "joao@viking.com",
-    status: "active",
-    plan: "Professional",
-    monthlyRevenue: 2500,
-    totalBookings: 156,
-    createdAt: "2024-01-15"
-  },
-  {
-    id: 2,
-    name: "Clínica Beleza",
-    owner: "Maria Santos",
-    email: "maria@beleza.com",
-    status: "paused",
-    plan: "Enterprise",
-    monthlyRevenue: 4800,
-    totalBookings: 234,
-    createdAt: "2024-02-20"
-  },
-  {
-    id: 3,
-    name: "Spa Relax",
-    owner: "Ana Costa",
-    email: "ana@relax.com",
-    status: "blocked",
-    plan: "Starter",
-    monthlyRevenue: 890,
-    totalBookings: 67,
-    createdAt: "2024-03-10"
-  }
-];
+interface Company {
+  id: string;
+  name: string;
+  owner_name: string;
+  owner_email: string;
+  owner_cpf: string;
+  status: string;
+  plan: string;
+  slug: string;
+  created_at: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  cnpj?: string;
+}
 
 const getStatusBadge = (status: string) => {
   const variants = {
@@ -82,14 +75,133 @@ const getStatusBadge = (status: string) => {
 
 export default function SuperAdminDashboard() {
   const navigate = useNavigate();
-  const [companies] = useState(mockCompanies);
+  const { toast } = useToast();
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  const [stats, setStats] = useState({
+    totalCompanies: 0,
+    activeCompanies: 0,
+    totalRevenue: 0,
+    totalBookings: 0
+  });
 
-  const stats = {
-    totalCompanies: companies.length,
-    activeCompanies: companies.filter(c => c.status === 'active').length,
-    totalRevenue: companies.reduce((acc, c) => acc + c.monthlyRevenue, 0),
-    totalBookings: companies.reduce((acc, c) => acc + c.totalBookings, 0)
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      // Buscar empresas
+      const { data: companiesData } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (companiesData) {
+        setCompanies(companiesData);
+
+        // Calcular estatísticas básicas
+        const totalCompanies = companiesData.length;
+        const activeCompanies = companiesData.filter(c => c.status === 'active').length;
+
+        setStats({
+          totalCompanies,
+          activeCompanies,
+          totalRevenue: 0, // Será calculado quando implementarmos o módulo financeiro
+          totalBookings: 0 // Será calculado quando implementarmos o módulo de agendamentos
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar dados do dashboard.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const updateCompanyStatus = async (companyId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .update({ status: newStatus })
+        .eq('id', companyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Status atualizado",
+        description: "Status da empresa atualizado com sucesso.",
+      });
+
+      // Atualizar lista
+      await fetchData();
+    } catch (error) {
+      console.error('Error updating company status:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar status da empresa.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditCompany = (company: Company) => {
+    setEditingCompany(company);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteCompany = (company: Company) => {
+    setCompanyToDelete(company);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteCompany = async () => {
+    if (!companyToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', companyToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Empresa excluída",
+        description: "A empresa foi excluída com sucesso.",
+      });
+
+      await fetchData();
+      setDeleteDialogOpen(false);
+      setCompanyToDelete(null);
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir empresa.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -196,7 +308,7 @@ export default function SuperAdminDashboard() {
                     </div>
                     <div>
                       <h3 className="font-semibold">{company.name}</h3>
-                      <p className="text-sm text-muted-foreground">{company.owner} • {company.email}</p>
+                      <p className="text-sm text-muted-foreground">{company.owner_name} • {company.owner_email}</p>
                     </div>
                   </div>
 
@@ -207,7 +319,7 @@ export default function SuperAdminDashboard() {
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium">Receita</p>
-                      <p className="text-xs text-muted-foreground">R$ {company.monthlyRevenue}</p>
+                      <p className="text-xs text-muted-foreground">R$ 0</p>
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium">Status</p>
@@ -223,24 +335,24 @@ export default function SuperAdminDashboard() {
                       <DropdownMenuContent align="end" className="bg-card border-primary/20">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditCompany(company)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateCompanyStatus(company.id, 'active')}>
                           <Play className="mr-2 h-4 w-4" />
                           Ativar
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateCompanyStatus(company.id, 'paused')}>
                           <Pause className="mr-2 h-4 w-4" />
                           Pausar
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateCompanyStatus(company.id, 'blocked')}>
                           <Ban className="mr-2 h-4 w-4" />
                           Bloquear
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteCompany(company)}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Excluir
                         </DropdownMenuItem>
@@ -253,6 +365,33 @@ export default function SuperAdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Company Dialog */}
+      <EditCompanyDialog
+        company={editingCompany}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onSuccess={fetchData}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-card border-primary/20">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a empresa "{companyToDelete?.name}"? 
+              Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCompany} className="bg-destructive hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

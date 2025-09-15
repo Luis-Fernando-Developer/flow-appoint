@@ -204,12 +204,162 @@ export type Database = {
         }
         Relationships: []
       }
+      company_customizations: {
+        Row: {
+          cards_color: string | null
+          cards_color_type: string | null
+          cards_font_family: string | null
+          cards_gradient: Json | null
+          cards_layout: string | null
+          cards_show_images: boolean | null
+          company_id: string
+          created_at: string
+          extra_section_code: string | null
+          extra_section_enabled: boolean | null
+          font_color: string | null
+          font_color_type: string | null
+          font_family: string | null
+          font_gradient: Json | null
+          font_size_base: number | null
+          footer_background_color: string | null
+          footer_background_gradient: Json | null
+          footer_background_type: string | null
+          footer_font_family: string | null
+          header_background_color: string | null
+          header_background_gradient: Json | null
+          header_background_type: string | null
+          header_position: string | null
+          hero_background_color: string | null
+          hero_background_gradient: Json | null
+          hero_background_type: string | null
+          hero_banner_type: string | null
+          hero_banner_urls: string[] | null
+          hero_description: string | null
+          hero_title: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          cards_color?: string | null
+          cards_color_type?: string | null
+          cards_font_family?: string | null
+          cards_gradient?: Json | null
+          cards_layout?: string | null
+          cards_show_images?: boolean | null
+          company_id: string
+          created_at?: string
+          extra_section_code?: string | null
+          extra_section_enabled?: boolean | null
+          font_color?: string | null
+          font_color_type?: string | null
+          font_family?: string | null
+          font_gradient?: Json | null
+          font_size_base?: number | null
+          footer_background_color?: string | null
+          footer_background_gradient?: Json | null
+          footer_background_type?: string | null
+          footer_font_family?: string | null
+          header_background_color?: string | null
+          header_background_gradient?: Json | null
+          header_background_type?: string | null
+          header_position?: string | null
+          hero_background_color?: string | null
+          hero_background_gradient?: Json | null
+          hero_background_type?: string | null
+          hero_banner_type?: string | null
+          hero_banner_urls?: string[] | null
+          hero_description?: string | null
+          hero_title?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          cards_color?: string | null
+          cards_color_type?: string | null
+          cards_font_family?: string | null
+          cards_gradient?: Json | null
+          cards_layout?: string | null
+          cards_show_images?: boolean | null
+          company_id?: string
+          created_at?: string
+          extra_section_code?: string | null
+          extra_section_enabled?: boolean | null
+          font_color?: string | null
+          font_color_type?: string | null
+          font_family?: string | null
+          font_gradient?: Json | null
+          font_size_base?: number | null
+          footer_background_color?: string | null
+          footer_background_gradient?: Json | null
+          footer_background_type?: string | null
+          footer_font_family?: string | null
+          header_background_color?: string | null
+          header_background_gradient?: Json | null
+          header_background_type?: string | null
+          header_position?: string | null
+          hero_background_color?: string | null
+          hero_background_gradient?: Json | null
+          hero_background_type?: string | null
+          hero_banner_type?: string | null
+          hero_banner_urls?: string[] | null
+          hero_description?: string | null
+          hero_title?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_customizations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_services: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          service_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          service_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_services_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           avatar_url: string | null
           company_id: string
           created_at: string
           email: string
+          employee_type: string
           id: string
           is_active: boolean | null
           name: string
@@ -224,6 +374,7 @@ export type Database = {
           company_id: string
           created_at?: string
           email: string
+          employee_type?: string
           id?: string
           is_active?: boolean | null
           name: string
@@ -238,6 +389,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           email?: string
+          employee_type?: string
           id?: string
           is_active?: boolean | null
           name?: string
@@ -309,6 +461,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_role: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: string
+      }
+      has_permission_level: {
+        Args: { _company_id: string; _required_level: string; _user_id: string }
+        Returns: boolean
+      }
       is_company_admin: {
         Args: { _company_id: string; _user_id: string }
         Returns: boolean
