@@ -46,7 +46,7 @@ export default function ClientLogin() {
         if (pendingSignup) {
           try {
             const signupData = JSON.parse(pendingSignup);
-            if (signupData.user_id === data.user.id && signupData.slug === slug) {
+            if (signupData.slug === slug) {
               // Create client profile from pending data using SECURITY DEFINER function
               const { error: clientError } = await supabase.rpc('create_client_profile', {
                 _company_slug: slug,
