@@ -237,6 +237,9 @@ export type Database = {
           hero_description: string | null
           hero_title: string | null
           id: string
+          logo_type: string | null
+          logo_upload_path: string | null
+          logo_url: string | null
           updated_at: string
         }
         Insert: {
@@ -271,6 +274,9 @@ export type Database = {
           hero_description?: string | null
           hero_title?: string | null
           id?: string
+          logo_type?: string | null
+          logo_upload_path?: string | null
+          logo_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -305,6 +311,9 @@ export type Database = {
           hero_description?: string | null
           hero_title?: string | null
           id?: string
+          logo_type?: string | null
+          logo_upload_path?: string | null
+          logo_url?: string | null
           updated_at?: string
         }
         Relationships: [

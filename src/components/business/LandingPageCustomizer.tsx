@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ColorPicker } from "./ColorPicker";
 import { CodeEditor } from "./CodeEditor";
+import { LogoUploader } from "./LogoUploader";
 import { Save, Lock, Unlock, Upload, Link, Palette, Type, Image, Layout, Code, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,8 +33,9 @@ interface LandingPageCustomizerProps {
 interface CustomizationData {
   // Header
   header_position: string;
-  // logo_definition: string;
-  // logo_url?: string;
+  logo_type: string;
+  logo_url: string;
+  logo_upload_path: string;
   header_background_type: string;
   header_background_color: string;
   header_background_gradient: any;
@@ -96,8 +98,9 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
   // Default customization data moved outside for global access
   const defaultData: CustomizationData = {
     header_position: 'fixed',
-    // logo_definition: 'imageUpload',
-  
+    logo_type: 'url',
+    logo_url: '',
+    logo_upload_path: '',
     header_background_type: 'solid',
     header_background_color: 'hsl(251, 91%, 65%)',
     header_background_gradient: { type: "linear", angle: 45, colors: ["hsl(251, 91%, 65%)", "hsl(308, 56%, 85%)"] },
@@ -332,6 +335,49 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
           <TabsContent value="header" className="space-y-4">
             <div className="space-y-8">
               <div className="space-y-2">
+                <Label>Logo</Label>
+                <div className="space-y-4">
+                  <Select 
+                    value={customization.logo_type || 'url'} 
+                    onValueChange={(value) => {
+                      updateCustomization('logo_type', value);
+                      if (value === 'url') {
+                        updateCustomization('logo_upload_path', '');
+                      } else {
+                        updateCustomization('logo_url', '');
+                      }
+                    }}
+                    disabled={isLocked}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="url">Por URL</SelectItem>
+                      <SelectItem value="upload">Por Upload</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {customization.logo_type === 'url' ? (
+                    <div>
+                      <Input
+                        placeholder="URL da logo (deixe vazio para usar o nome da empresa)"
+                        value={customization.logo_url || ''}
+                        onChange={(e) => updateCustomization('logo_url', e.target.value)}
+                        disabled={isLocked}
+                      />
+                    </div>
+                  ) : (
+                    <LogoUploader
+                      currentLogo={customization.logo_upload_path || undefined}
+                      onLogoChange={(path) => updateCustomization('logo_upload_path', path)}
+                      companyId={companyId}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
                 <Label>Posição do Header</Label>
                 <Select 
                   value={customization.header_position} 
@@ -347,51 +393,6 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
                   </SelectContent>
                 </Select>
               </div>
-
-              
-              {/* <div className=" flex flex-col space-y-4 ">
-                <Label>Definição de Logotipo</Label>
-                <Select value={customization.logo_definition} onValueChange={(value) => updateCustomization('logo_definition', value)} disabled={isLocked}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="urlLogo">Por Link de URL</SelectItem>
-                    <SelectItem value="imageUpload">Adicionar Da Galeria</SelectItem>
-                  </SelectContent>
-                </Select>
-                {customization.logo_definition === 'urlLogo' ? (
-                  <div className="flex items-center">
-                    <Input
-                      value={customization.logo_url }
-                      onChange={(e) => updateCustomization('logo_url', e.target.value)}
-                      placeholder="https://exemplo.com/logo.png"
-                      disabled={isLocked}
-                    />
-                  </div>
-                ): (
-
-                  <div className="flex items-center">
-                    <div className="relative">  
-                      <Avatar className=" border rounded-full p-0 flex items-center justify-center w-20 h-20 bg-muted">
-                        <AvatarImage src={employee.avatar_url} className="border border-white"/>
-                        <AvatarFallback className="text-xl">
-                          {getInitials(employee.name) || <Image className="w-8 h-8" />}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -bottom-1 -right-0">
-                        <Button
-                          onClick={() => handleLogoClick()}
-                          variant="outline"
-                          className=" rounded-full w-8 h-8 p-1 flex items-center justify-center"
-                        >
-                          <Camera className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div> */}
 
               <ColorPicker
                 type={customization.header_background_type as "solid" | "gradient"}

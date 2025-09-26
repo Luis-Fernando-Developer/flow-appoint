@@ -2,14 +2,18 @@ import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MapPin, Phone, Mail, Menu, LogInIcon, UserPlus2, ChevronDown, DoorClosedIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { BookingLogo } from "@/components/BookingLogo";
 import { Button } from "@/components/ui/button";
-import { Divide as Hamburger } from 'hamburger-react'
+import { Divide as Hamburger } from 'hamburger-react';
 
 interface CustomizationData {
   header_position: string;
   header_background_type: string;
   header_background_color: string;
   header_background_gradient: any;
+  logo_type?: string;
+  logo_url?: string;
+  logo_upload_path?: string;
   font_family: string;
   font_size_base: number;
   font_color_type: string;
@@ -127,6 +131,23 @@ export default function CustomLandingPage() {
     if (customization?.hero_banner_urls && customization.hero_banner_urls.length > 1) {
       setBannerIndex((prevIndex) => (prevIndex - 1 + customization.hero_banner_urls.length) % customization.hero_banner_urls.length);
     }
+  };
+
+  const getLogoUrl = () => {
+    if (!customization) return null;
+    
+    if (customization.logo_type === 'upload' && customization.logo_upload_path) {
+      const { data } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(customization.logo_upload_path);
+      return data.publicUrl;
+    }
+    
+    if (customization.logo_type === 'url' && customization.logo_url) {
+      return customization.logo_url;
+    }
+    
+    return null;
   };
 
 
@@ -259,8 +280,14 @@ export default function CustomLandingPage() {
           <div className="max-w-7xl  mx-auto  px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center  justify-between">
               <div className="w-full justify-between flex items-center gap-4 ">
-                {company.logo_url && (
-                  <img src={company.logo_url} alt={company.name} className="w-10 h-20  rounded-lg" />
+                {getLogoUrl() ? (
+                  <img 
+                    src={getLogoUrl()!} 
+                    alt={`Logo ${company.name}`}
+                    className="w-8 h-8 object-contain"
+                  />
+                ) : (
+                  <BookingLogo showText={false} className="pt-0" />
                 )}
                 <h1 className={`text-2xl font-bold ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
                   {company.name}
@@ -305,8 +332,14 @@ export default function CustomLandingPage() {
           <div className="max-w-7xl  mx-auto  px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center  justify-between">
               <div className="w-full justify-between flex items-center gap-4 ">
-                {company.logo_url && (
-                  <img src={company.logo_url} alt={company.name} className="w-10 h-20  rounded-lg" />
+                {getLogoUrl() ? (
+                  <img 
+                    src={getLogoUrl()!} 
+                    alt={`Logo ${company.name}`}
+                    className="w-8 h-8 object-contain"
+                  />
+                ) : (
+                  <BookingLogo showText={false} className="pt-0" />
                 )}
                 <h1 className={`text-2xl font-bold ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
                   {company.name}
