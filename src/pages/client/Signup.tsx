@@ -134,16 +134,13 @@ export default function ClientSignup() {
         navigate(`/${slug}/entrar`);
       } else if (authData.user && authData.session) {
         // User is immediately logged in (email confirmation disabled)
-        // Create client profile
-        const { error: clientError } = await supabase
-          .from('clients')
-          .insert({
-            user_id: authData.user.id,
-            company_id: companyData.id,
-            name: `${validatedData.firstName} ${validatedData.lastName}`,
-            email: validatedData.email,
-            phone: validatedData.phone
-          });
+        // Create client profile using the SECURITY DEFINER function
+        const { error: clientError } = await supabase.rpc('create_client_profile', {
+          _company_slug: slug,
+          _name: `${validatedData.firstName} ${validatedData.lastName}`,
+          _email: validatedData.email,
+          _phone: validatedData.phone
+        });
 
         if (clientError) {
           console.error('Error creating client profile:', clientError);
