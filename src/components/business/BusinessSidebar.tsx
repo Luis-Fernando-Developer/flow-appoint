@@ -75,8 +75,15 @@ export function BusinessSidebar({ companySlug, companyName, companyId, userRole,
 
   // Filtrar itens do menu baseado nas permissões
   const filteredMenuItems = menuItems.filter(item => {
-    // Priorizar permissões quando disponíveis
-    if (permissions) {
+    const role = resolvedRole ?? userRole;
+
+    // Owner sempre vê todos os itens, independente de is_active/permissões
+    if (role === 'owner') {
+      return true;
+    }
+
+    // Priorizar permissões quando disponíveis e não estiver carregando
+    if (permissions && !loading) {
       switch (item.title) {
         case "Colaboradores":
           return permissions.canViewEmployees;
@@ -88,7 +95,6 @@ export function BusinessSidebar({ companySlug, companyName, companyId, userRole,
     }
 
     // Fallback por role (inclusive durante o carregamento)
-    const role = resolvedRole ?? userRole;
     switch (item.title) {
       case "Colaboradores":
         return ['owner', 'manager', 'supervisor'].includes(role);
