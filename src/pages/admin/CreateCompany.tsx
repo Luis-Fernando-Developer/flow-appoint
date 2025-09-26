@@ -137,8 +137,14 @@ export default function CreateCompany() {
         }
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Erro ao criar usuário");
+      if (authError) {
+        console.error("Erro no Auth:", authError);
+        throw new Error(`Erro ao criar usuário: ${authError.message}`);
+      }
+      if (!authData.user) throw new Error("Usuário não foi criado");
+
+      // Aguardar um momento para garantir que o usuário esteja disponível no banco
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // 4. Criar funcionário (proprietário) vinculado à empresa
       const { error: employeeError } = await supabase
@@ -152,7 +158,10 @@ export default function CreateCompany() {
           is_active: true
         }]);
 
-      if (employeeError) throw employeeError;
+      if (employeeError) {
+        console.error("Erro ao criar employee:", employeeError);
+        throw new Error(`Erro ao criar funcionário: ${employeeError.message}`);
+      }
 
       toast({
         title: "Empresa criada com sucesso!",
@@ -179,7 +188,7 @@ export default function CreateCompany() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <BookingLogo />
-            <Button variant="outline" onClick={() => navigate("/superAdminDev")}>
+            <Button variant="outline" onClick={() => navigate("/super-admin/painel")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Voltar
             </Button>
