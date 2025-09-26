@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapPin, Phone, Mail } from "lucide-react";
+import { MapPin, Phone, Mail, Menu, LogInIcon, UserPlus2, ChevronDown, DoorClosedIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Divide as Hamburger } from 'hamburger-react'
 
 interface CustomizationData {
   header_position: string;
@@ -41,12 +43,25 @@ export default function CustomLandingPage() {
   const [services, setServices] = useState<any[]>([]);
   const [customization, setCustomization] = useState<CustomizationData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bannerIndex, setBannerIndex] = useState(0);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [optionHeader, setOptionHeader] = useState(false);
 
   useEffect(() => {
-    if (slug) {
+    if ( slug) {
       fetchData();
     }
+    if (customization?.header_position === 'fixed' && headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    }
   }, [slug]);
+
+  useLayoutEffect(() => {
+    if (customization?.header_position === 'fixed' && headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    }
+  }, [customization, company]);
 
   const fetchData = async () => {
     try {
@@ -97,6 +112,23 @@ export default function CustomLandingPage() {
       ? `linear-gradient(${angle}deg, ${colorString})`
       : `radial-gradient(${colorString})`;
   };
+
+  // const handlerOptionsHeader = () => {
+  //   setOptionHeader(true);
+  // }
+
+  const nextBanner = () => {
+    if (customization?.hero_banner_urls && customization.hero_banner_urls.length > 1) {
+      setBannerIndex((prevIndex) => (prevIndex + 1) % customization.hero_banner_urls.length);
+    }
+  };
+
+  const prevBanner = () => {
+    if (customization?.hero_banner_urls && customization.hero_banner_urls.length > 1) {
+      setBannerIndex((prevIndex) => (prevIndex - 1 + customization.hero_banner_urls.length) % customization.hero_banner_urls.length);
+    }
+  };
+
 
   const applyCustomStyles = () => {
     if (!customization) return {};
@@ -221,47 +253,128 @@ export default function CustomLandingPage() {
 
       {/* Header */}
       {customization?.header_position === 'fixed' && (
-        <header className={`fixed top-0 left-0 right-0 z-50 border-b border-primary/20 backdrop-blur-sm ${customization.header_background_type ? 'header-custom-bg' : 'bg-card/30'}`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+        <header 
+          ref={headerRef}
+          className={`fixed top-0 left-0 right-0 z-50  backdrop-blur-sm ${customization.header_background_type ? 'header-custom-bg' : 'bg-card/30'}`}>
+          <div className="max-w-7xl  mx-auto  px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center  justify-between">
+              <div className="w-full justify-between flex items-center gap-4 ">
                 {company.logo_url && (
-                  <img src={company.logo_url} alt={company.name} className="w-10 h-10 rounded-lg" />
+                  <img src={company.logo_url} alt={company.name} className="w-10 h-20  rounded-lg" />
                 )}
                 <h1 className={`text-2xl font-bold ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
                   {company.name}
                 </h1>
+              <div className="flex items-center">
+                  <Button variant={optionHeader ? "none2" : "none"} onClick={() => setOptionHeader(!optionHeader)} className="transparent p-0 ">
+                  <Hamburger size={20} duration={1} toggled={optionHeader} toggle={setOptionHeader} color="white" />
+                </Button>
+              </div>
               </div>
             </div>
+              {optionHeader && (
+                <div className={`flex ${customization?.header_background_type ? 'p-0 mt-2 border-t border-primary/40 pt-2' : ''}`}>
+                  <div className="flex gap-1 justify-end items-center w-full ">
+                    <Button variant="ghost" className=" bg-black/20 font-bold">
+                      <LogInIcon />
+                      ENTRAR
+                    </Button>
+                    <Button variant="ghost" className="bg-black/20 font-bold">
+                      <UserPlus2 />
+                      CADASTRAR
+                    </Button>
+                  </div>
+                  
+                </div>
+              )}
+          </div>
+        </header>
+      )}
+      {customization?.header_position === 'relative' && (
+        <header 
+          ref={headerRef}
+          className={`relative top-0 left-0 right-0 z-50  backdrop-blur-sm ${customization.header_background_type ? 'header-custom-bg' : 'bg-card/30'}`}>
+          <div className="max-w-7xl  mx-auto  px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center  justify-between">
+              <div className="w-full justify-between flex items-center gap-4 ">
+                {company.logo_url && (
+                  <img src={company.logo_url} alt={company.name} className="w-10 h-20  rounded-lg" />
+                )}
+                <h1 className={`text-2xl font-bold ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
+                  {company.name}
+                </h1>
+              <div className="flex items-center">
+                <Button variant={optionHeader ? "ghost" : "link"} onClick={() => setOptionHeader(!optionHeader)} className="transparent p-0">
+                  <Hamburger size={20} duration={1} toggled={optionHeader} toggle={setOptionHeader} color="white" />
+                </Button>
+              </div>
+              </div>
+            </div>
+              {optionHeader && (
+                <div className={`flex ${customization?.header_background_type ? 'p-0 mt-2 border-t border-primary/40 pt-2' : ''}`}>
+                  <div className="flex gap-1 justify-end items-center w-full ">
+                    <Button variant="ghost" className=" bg-black/20 font-bold">
+                      <LogInIcon />
+                      ENTRAR
+                    </Button>
+                    <Button variant="ghost" className="bg-black/20 font-bold">
+                      <UserPlus2 />
+                      CADASTRAR
+                    </Button>
+                  </div>
+                  
+                </div>
+              )}
           </div>
         </header>
       )}
 
       {/* Main Content */}
-      <div className={customization?.header_position === 'fixed' ? 'pt-20' : ''}>
+      <div style={customization?.header_position === 'fixed' ? {paddingTop: headerHeight} : {}}>
         {/* Hero Section with Custom Styling */}
-        <section className={`relative min-h-screen flex items-center justify-center overflow-hidden ${customization?.hero_background_type ? 'hero-custom-bg' : 'bg-gradient-hero'}`}>
+        <section className={`relative h-[500px] flex items-center justify-center overflow-hidden ${customization?.hero_background_type ? 'hero-custom-bg' : 'bg-gradient-hero'}`}>
           {/* Background Elements */}
           <div className="absolute inset-0">
             {customization?.hero_banner_urls && customization.hero_banner_urls.length > 0 && (
-              customization.hero_banner_type === 'carousel' ? (
-                <div className="absolute inset-0">
-                  {/* Carousel implementation would go here */}
-                  <img 
-                    src={customization.hero_banner_urls[0]} 
-                    alt="Hero banner"
-                    className="w-full h-full object-cover opacity-20"
-                  />
-                </div>
-              ) : (
-                <div className="absolute inset-0">
-                  <img 
-                    src={customization.hero_banner_urls[0]} 
-                    alt="Hero banner"
-                    className="w-full h-full object-cover opacity-20"
-                  />
-                </div>
-              )
+              <div className="absolute inset-0 ">
+                <img
+                  src={customization.hero_banner_urls[bannerIndex]}
+                  alt="Hero banner"
+                  className="w-full h-full object-fit opacity-50"
+                />
+                {customization.hero_banner_urls.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevBanner}
+                      className=" absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition"
+                      style={{ zIndex: 20 }}
+                    >&#8592;</button>
+                    <button
+                      onClick={nextBanner}
+                      className=" absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition"
+                      style={{ zIndex: 20 }}
+                    >&#8594;</button>
+                  </>
+                )}
+              </div>
+              // customization.hero_banner_type === 'carousel' ? (
+              //   <div className="absolute inset-0">
+              //     {/* Carousel implementation would go here */}
+              //     <img 
+              //       src={customization.hero_banner_urls[0]} 
+              //       alt="Hero banner"
+              //       className="w-full h-full object-cover opacity-20"
+              //     />
+              //   </div>
+              // ) : (
+              //   <div className="absolute inset-0">
+              //     <img 
+              //       src={customization.hero_banner_urls[0]} 
+              //       alt="Hero banner"
+              //       className="w-full h-full object-cover opacity-20"
+              //     />
+              //   </div>
+              // )
             )}
             <div className="absolute top-20 left-10 w-72 h-72 bg-neon-violet/10 rounded-full blur-3xl animate-pulse-glow"></div>
             <div className="absolute bottom-20 right-10 w-96 h-96 bg-neon-pink/10 rounded-full blur-3xl animate-float"></div>

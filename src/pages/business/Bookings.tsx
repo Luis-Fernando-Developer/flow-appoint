@@ -15,10 +15,10 @@ import {
   Filter,
   Plus,
   Edit,
-  MoreHorizontal,
   Check,
   X,
-  AlertCircle
+  AlertCircle,
+  MoreVertical
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -64,13 +64,15 @@ export default function BusinessBookings() {
 
   useEffect(() => {
     fetchData();
+    console.log('Slug:', slug);
   }, [slug]);
 
   useEffect(() => {
     applyFilters();
   }, [bookings, filters]);
 
-  const fetchData = async () => {
+  async function fetchData() {
+    console.log('fetchData chamado');
     try {
       // Buscar dados da empresa
       const { data: companyData, error: companyError } = await supabase
@@ -139,6 +141,7 @@ export default function BusinessBookings() {
         // Buscar agendamentos se tiver permissão
         if (employeeData && employeeData.company_id === companyData.id) {
           await fetchBookings(companyData.id);
+          
         }
       }
     } catch (error) {
@@ -166,6 +169,7 @@ export default function BusinessBookings() {
       .order('booking_date', { ascending: false })
       .order('booking_time', { ascending: true });
 
+    console.log('bookingsData:', bookingsData);
     setBookings(bookingsData || []);
   };
 
@@ -192,7 +196,7 @@ export default function BusinessBookings() {
         booking.employee?.name.toLowerCase().includes(searchLower)
       );
     }
-
+    console.log('filteredBookings:', filtered);
     setFilteredBookings(filtered);
   };
 
@@ -277,11 +281,11 @@ export default function BusinessBookings() {
       userRole={employee.role}
       currentUser={currentUser}
     >
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-6  max-w-[430px]">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gradient mb-2">Agendamentos</h1>
+        <div className="flex flex-col space-y-2 justify-between">
+          <div className="flex flex-col mb-1">
+            <h1 className="text-3xl font-bold text-gradient mb-1">Agendamentos</h1>
             <p className="text-muted-foreground">
               Gerencie todos os agendamentos do estabelecimento
             </p>
@@ -301,20 +305,20 @@ export default function BusinessBookings() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="w-full flex flex-col sm:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <Input
                 placeholder="Buscar cliente, serviço..."
                 value={filters.search}
                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                className="bg-background/50"
+                className="bg-background/50 w-full"
               />
               
               <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger className="bg-background/50">
+                <SelectTrigger className="w-full flex bg-background/50">
                   <SelectValue placeholder="Status do agendamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
                   <SelectItem value="confirmed">Confirmado</SelectItem>
                   <SelectItem value="cancelled">Cancelado</SelectItem>
@@ -324,11 +328,11 @@ export default function BusinessBookings() {
               </Select>
 
               <Select value={filters.payment} onValueChange={(value) => setFilters(prev => ({ ...prev, payment: value }))}>
-                <SelectTrigger className="bg-background/50">
+                <SelectTrigger className="w-full bg-background/50">
                   <SelectValue placeholder="Status do pagamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os pagamentos</SelectItem>
+                  <SelectItem value="all">Todos os pagamentos</SelectItem>
                   <SelectItem value="pending">Pendente</SelectItem>
                   <SelectItem value="confirmed">Pago</SelectItem>
                   <SelectItem value="cancelled">Cancelado</SelectItem>
@@ -337,10 +341,15 @@ export default function BusinessBookings() {
               </Select>
 
               <Input
-                type="date"
+                type="text"
                 value={filters.date}
                 onChange={(e) => setFilters(prev => ({ ...prev, date: e.target.value }))}
-                className="bg-background/50"
+                onTouchStart={(e) => (e.currentTarget.type = 'date')}
+                onMouseDown={(e) => (e.currentTarget.type = 'date')}
+                onFocus={(e) => (e.currentTarget.type = 'date')}
+                onBlur={(e) => (e.currentTarget.type = 'text')}
+                className=" flex w-[348px] focus:max-w-[348px] sm:min-w-40 bg-background/50 "
+                placeholder="Filtrar por data"
               />
 
               <Button 
@@ -354,7 +363,7 @@ export default function BusinessBookings() {
         </Card>
 
         {/* Bookings List */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredBookings.length === 0 ? (
             <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
               <CardContent className="text-center py-12">
@@ -367,12 +376,12 @@ export default function BusinessBookings() {
             </Card>
           ) : (
             filteredBookings.map((booking) => (
-              <Card key={booking.id} className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-6">
+              <Card key={booking.id} className="flex flex-col card-glow bg-card/50 backdrop-blur-sm border-primary/20">
+                <CardContent className="relative w-full p-6 flex flex-col">
+                  <div className="w-full flex flex-col">
+                    <div className="flex flex-col space-y-4">
                       {/* Status Badges */}
-                      <div className="flex flex-col gap-2">
+                      <div className="flex w-full gap-2">
                         <Badge variant={statusConfig[booking.booking_status as keyof typeof statusConfig].variant}>
                           <div className={`w-2 h-2 rounded-full ${statusConfig[booking.booking_status as keyof typeof statusConfig].color} mr-1`}></div>
                           {statusConfig[booking.booking_status as keyof typeof statusConfig].label}
@@ -384,9 +393,12 @@ export default function BusinessBookings() {
                       </div>
 
                       {/* Service & Price */}
-                      <div>
-                        <h3 className="font-semibold text-lg">{booking.service?.name}</h3>
-                        <p className="text-2xl font-bold text-primary">R$ {booking.price}</p>
+                      <div className=" w-full flex flex-col ">
+                        <h3 className=" text-muted-foreground">Serviço</h3>
+                        <div className="flex gap-3 items-center">
+                          <p className="font-medium ">{booking.service?.name}</p>
+                          <p className=" font-medium text-primary">R$ {booking.price}</p>
+                        </div>
                       </div>
 
                       {/* Professional */}
@@ -396,7 +408,7 @@ export default function BusinessBookings() {
                       </div>
 
                       {/* Date & Time */}
-                      <div>
+                      <div className=" w-full flex flex-col">
                         <p className="text-sm text-muted-foreground">Data e Horário</p>
                         <div className="flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
@@ -409,14 +421,14 @@ export default function BusinessBookings() {
                       </div>
 
                       {/* Client Info */}
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
+                      <div className=" w-full flex justify-between flex-col py-2 border-t border-primary/40 bg-slate-700/5 rounded-lg mt-8 ">
+                        <div className="flex flex-col items-center gap-2 mb-2 ">
                           <div className="w-10 h-10 bg-gradient-primary rounded-full flex items-center justify-center">
                             <User className="w-5 h-5 text-white" />
                           </div>
                           <span className="font-medium">{booking.client?.name}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex flex-col items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
                             <Phone className="w-3 h-3" />
                             {booking.client?.phone}
@@ -430,38 +442,40 @@ export default function BusinessBookings() {
                     </div>
 
                     {/* Actions */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-card border-primary/20">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'confirmed')}>
-                          <Check className="mr-2 h-4 w-4" />
-                          Confirmar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'completed')}>
-                          <Check className="mr-2 h-4 w-4" />
-                          Marcar como Concluído
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'no_show')}>
-                          <AlertCircle className="mr-2 h-4 w-4" />
-                          Não Realizado
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'cancelled')}>
-                          <X className="mr-2 h-4 w-4" />
-                          Cancelar
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="absolute top-5 right-3">
+                      <DropdownMenu >
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-card border-primary/20">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'confirmed')}>
+                            <Check className="mr-2 h-4 w-4" />
+                            Confirmar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'completed')}>
+                            <Check className="mr-2 h-4 w-4" />
+                            Marcar como Concluído
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'no_show')}>
+                            <AlertCircle className="mr-2 h-4 w-4" />
+                            Não Realizado
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => updateBookingStatus(booking.id, 'cancelled')}>
+                            <X className="mr-2 h-4 w-4" />
+                            Cancelar
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
 
                   {booking.notes && (
