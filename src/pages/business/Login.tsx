@@ -44,7 +44,6 @@ export default function BusinessLogin() {
             company:companies(*)
           `)
           .eq('user_id', data.user.id)
-          .eq('is_active', true)
           .single();
 
         if (employee) {
