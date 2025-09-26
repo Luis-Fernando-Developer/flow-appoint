@@ -159,7 +159,7 @@ export default function CreateCompany() {
         description: "A empresa foi cadastrada e o proprietário pode fazer login.",
       });
 
-      navigate("/superAdminDev");
+      navigate("/super-admin/painel");
     } catch (error) {
       console.error("Erro ao criar empresa:", error);
       toast({
@@ -365,7 +365,7 @@ export default function CreateCompany() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/superAdminDev")}
+                  onClick={() => navigate("/super-admin/painel")}
                   className="flex-1"
                 >
                   Cancelar
