@@ -313,8 +313,9 @@ export default function ClientBooking() {
             booking_time: selectedTime,
             duration_minutes: selectedService.duration_minutes,
             price: selectedService.price,
-            notes: formData.notes,
-            booking_status: 'pending'
+            notes: formData.notes || null,
+            booking_status: 'pending',
+            payment_status: 'pending'
           }
         ]);
 
