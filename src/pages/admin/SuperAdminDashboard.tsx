@@ -292,7 +292,7 @@ export default function SuperAdminDashboard() {
                   Gerencie todas as empresas do sistema
                 </CardDescription>
               </div>
-              <Button variant="neon" onClick={() => navigate("/admin/create-company")}>
+              <Button variant="neon" onClick={() => navigate("/super-admin/add-company")}>
                 <Plus className="w-4 h-4 mr-2" />
                 Adicionar Empresa
               </Button>
