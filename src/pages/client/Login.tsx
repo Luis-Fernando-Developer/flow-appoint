@@ -47,8 +47,9 @@ export default function ClientLogin() {
           try {
             const signupData = JSON.parse(pendingSignup);
             if (signupData.slug === slug) {
+              console.log('Creating client profile from pending signup:', signupData);
               // Create client profile from pending data using SECURITY DEFINER function
-              const { error: clientError } = await supabase.rpc('create_client_profile', {
+              const { data: clientId, error: clientError } = await supabase.rpc('create_client_profile', {
                 _company_slug: slug,
                 _name: signupData.name,
                 _email: signupData.email,
@@ -57,7 +58,13 @@ export default function ClientLogin() {
 
               if (clientError) {
                 console.error('Error creating client profile:', clientError);
+                toast({
+                  title: "Erro ao criar perfil",
+                  description: clientError.message,
+                  variant: "destructive",
+                });
               } else {
+                console.log('Client profile created successfully with ID:', clientId);
                 localStorage.removeItem('pending_client_signup');
               }
             }
@@ -75,7 +82,20 @@ export default function ClientLogin() {
           .eq('status', 'active')
           .maybeSingle();
 
-        if (companyError || !companyData) {
+        if (companyError) {
+          console.error('Company error:', companyError);
+          toast({
+            title: "Erro",
+            description: "Erro ao verificar empresa: " + companyError.message,
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+          setIsLoading(false);
+          return;
+        }
+
+        if (!companyData) {
+          console.log('Company not found for slug:', slug);
           toast({
             title: "Erro",
             description: "Empresa não encontrada ou inativa.",
@@ -85,6 +105,8 @@ export default function ClientLogin() {
           setIsLoading(false);
           return;
         }
+
+        console.log('Company found:', companyData);
 
         // Busca o cliente vinculado ao usuário autenticado e à empresa
         const { data: client, error: clientError } = await supabase
@@ -98,7 +120,7 @@ export default function ClientLogin() {
           console.error('Error fetching client:', clientError);
           toast({
             title: "Erro no login",
-            description: "Erro ao verificar dados do cliente. Tente novamente.",
+            description: "Erro ao verificar dados do cliente: " + clientError.message,
             variant: "destructive",
           });
           await supabase.auth.signOut();
@@ -106,7 +128,52 @@ export default function ClientLogin() {
           return;
         }
 
+        console.log('Client search result:', client);
+        console.log('User ID:', data.user.id);
+        console.log('Company ID:', companyData.id);
+
         if (!client) {
+          // Try to create client profile if it doesn't exist and we have pending data
+          const pendingSignupRetry = localStorage.getItem('pending_client_signup');
+          if (pendingSignupRetry) {
+            try {
+              const signupDataRetry = JSON.parse(pendingSignupRetry);
+              if (signupDataRetry.slug === slug) {
+                console.log('Attempting to create client profile during login');
+                const { data: clientId, error: clientCreateError } = await supabase.rpc('create_client_profile', {
+                  _company_slug: slug,
+                  _name: signupDataRetry.name,
+                  _email: signupDataRetry.email,
+                  _phone: signupDataRetry.phone
+                });
+
+                if (!clientCreateError && clientId) {
+                  console.log('Client profile created during login with ID:', clientId);
+                  localStorage.removeItem('pending_client_signup');
+                  
+                  // Re-fetch the client data
+                  const { data: newClient, error: newClientError } = await supabase
+                    .from('clients')
+                    .select(`*`)
+                    .eq('user_id', data.user.id)
+                    .eq('company_id', companyData.id)
+                    .maybeSingle();
+
+                  if (!newClientError && newClient) {
+                    toast({
+                      title: "Login realizado com sucesso!",
+                      description: `Bem-vindo(a), ${newClient.name}`,
+                    });
+                    navigate(`/${slug}/agendamentos`);
+                    return;
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error in retry create client:', error);
+            }
+          }
+
           toast({
             title: "Acesso negado",
             description: "Usuário não está cadastrado como cliente desta empresa.",
