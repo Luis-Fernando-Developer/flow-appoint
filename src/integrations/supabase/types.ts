@@ -461,6 +461,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_client_profile: {
+        Args: {
+          _company_slug: string
+          _email: string
+          _name: string
+          _phone: string
+        }
+        Returns: string
+      }
       get_user_role: {
         Args: { _company_id: string; _user_id: string }
         Returns: string
