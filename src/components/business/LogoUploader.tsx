@@ -99,40 +99,48 @@ export function LogoUploader({ currentLogo, onLogoChange, companyId, disabled = 
   return (
     <div className="space-y-4">
       <div className="flex flex-col items-center gap-4">
-        {preview ? (
-          <div className="relative">
-            <img 
-              src={preview} 
-              alt="Logo preview" 
-              className="w-24 h-24 object-contain rounded-lg border border-border"
-            />
+        <div className="relative">
+          {preview ? (
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-muted border-2 border-border">
+              <img 
+                src={preview} 
+                alt="Logo preview" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-border">
+              <span className="text-sm font-medium text-muted-foreground">LOGO</span>
+            </div>
+          )}
+          
+          {preview ? (
             <Button
               variant="destructive"
               size="sm"
-              className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+              className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full p-0 shadow-lg"
               onClick={handleRemoveLogo}
               disabled={disabled}
             >
-              <X className="h-3 w-3" />
+              <X className="h-4 w-4" />
             </Button>
-          </div>
-        ) : (
-          <label className={`flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-border rounded-lg transition-colors ${
-            disabled 
-              ? 'cursor-not-allowed opacity-50' 
-              : 'cursor-pointer hover:border-primary'
-          }`}>
-            <Camera className="w-8 h-8 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground mt-1">Upload</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              disabled={uploading || disabled}
-              className="hidden"
-            />
-          </label>
-        )}
+          ) : (
+            <label className={`absolute -bottom-1 -right-1 h-8 w-8 rounded-full bg-background border-2 border-border shadow-lg flex items-center justify-center transition-colors ${
+              disabled 
+                ? 'cursor-not-allowed opacity-50' 
+                : 'cursor-pointer hover:bg-accent'
+            }`}>
+              <Camera className="h-4 w-4 text-foreground" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                disabled={uploading || disabled}
+                className="hidden"
+              />
+            </label>
+          )}
+        </div>
       </div>
       
       {uploading && (
