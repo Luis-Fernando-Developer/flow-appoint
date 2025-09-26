@@ -17,8 +17,10 @@ import BusinessEmployees from "./pages/business/Employees";
 import BusinessSettings from "./pages/business/Settings";
 import BusinessProfile from "./pages/business/Profile";
 import ClientBooking from "./pages/client/Booking";
-import ClientDashboard from "./pages/client/Dashboard";
+import ClientLayout from "./components/client/ClientLayout";
+// import ClientLayout from "./pages/client/";
 import NotFound from "./pages/NotFound";
+import ClientLogin from "./pages/client/Login";
 
 const queryClient = new QueryClient();
 
@@ -29,23 +31,48 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* rota landipage para empresarios */}
           <Route path="/" element={<LandingPage />} />
+          {/* rota cadastro para empresarios via landipage */}
           <Route path="/signup" element={<SignUp />} />
+
+          {/* rotas login para empresarios via landingpage ou diretamente via slog */}
           <Route path="/login" element={<BusinessLogin />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/superAdminDev" element={<SuperAdminDashboard />} />
-          <Route path="/admin/create-company" element={<CreateCompany />} />
-          <Route path="/:slug" element={<CompanyLandingPage />} />
-          <Route path="/:slug/agendar" element={<ClientBooking />} />
-          <Route path="/:slug/meus-agendamentos" element={<ClientDashboard />} />
           <Route path="/:slug/admin/login" element={<BusinessLogin />} />
+
+          {/* rota admin do sistema */}
+          <Route path="/super-admin/login" element={<AdminLogin />} />
+          {/* rota painel admin super admin */}
+          <Route path="/super-admin/painel" element={<SuperAdminDashboard />} />
+          {/* rota para criar/adicionar empresa via painel super admin */}
+          <Route path="/super-admin/add-company" element={<CreateCompany />} />
+
+          {/* rota painel admin empresa */}
           <Route path="/:slug/admin/dashboard" element={<BusinessDashboard />} />
+          {/* rota agendamentos painel admin empresa */}
           <Route path="/:slug/admin/agendamentos" element={<BusinessBookings />} />
+          {/* rota serviços painel admin empresa */}
           <Route path="/:slug/admin/servicos" element={<BusinessServices />} />
+          {/* rota colaboradores painel admin empresa */}
           <Route path="/:slug/admin/colaboradores" element={<BusinessEmployees />} />
+          {/* rota config painel admin empresa */}
           <Route path="/:slug/admin/configuracoes" element={<BusinessSettings />} />
+          {/* rota perfil painel admin empresa com base */}
           <Route path="/:slug/admin/perfil" element={<BusinessProfile />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
+          {/* rota landingpage empresa por parametro [slug] */}
+          <Route path="/:slug" element={<CompanyLandingPage />} />
+          
+          {/* rota para cliente final agendar procedimentos na empresa via slug */}
+          <Route path="/:slug/agendar" element={<ClientBooking />} />
+          {/* rota para cliente realizar login na empresa via slug */}
+          <Route path="/:slug/entrar" element={<ClientLogin />} />
+          {/* rota para cliente realizar cadastro na empresa via slug */}
+          <Route path="/:slug/cadastro" element={<ClientLayout />} />
+          {/* rota para cliente realizar cadastro na empresa via slug */}
+          <Route path="/:slug/[user]/agendamentos" element={<ClientLayout />} />
+
+          {/* rota não existente '404' */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

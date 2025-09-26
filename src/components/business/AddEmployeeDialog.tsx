@@ -153,13 +153,13 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger asChild  className=''>
         <Button className="gap-2">
           <Plus className="w-4 h-4" />
           Convidar Colaborador
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-[380px] sm:min-w-[425px] max-h-[600px] overflow-y-auto ">
         <DialogHeader>
           <DialogTitle>Convidar Colaborador</DialogTitle>
           <DialogDescription>
@@ -167,7 +167,7 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 ">
           <div className="space-y-2">
             <Label htmlFor="name">Nome Completo *</Label>
             <Input

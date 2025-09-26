@@ -110,7 +110,7 @@ export function BusinessSidebar({ companySlug, companyName, companyId, userRole,
         <div className="p-4 border-b border-primary/20">
           {state !== "collapsed" ? (
             <div>
-              <BookingLogo showText={false} className="mb-2" />
+              <BookingLogo showText={true} className="mb-2" />
               <h2 className="font-semibold text-gradient truncate">{companyName}</h2>
               <p className="text-sm text-muted-foreground capitalize">{userRole}</p>
             </div>

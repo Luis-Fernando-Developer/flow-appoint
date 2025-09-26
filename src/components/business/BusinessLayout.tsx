@@ -29,7 +29,7 @@ export function BusinessLayout({ children, companySlug, companyName, companyId, 
         
         <main className="flex-1 flex flex-col ">
           {/* Header with Trigger */}
-          <header className=" border border-white h-fit flex items-center border-b border-primary/20 bg-card/30 backdrop-blur-sm px-4">
+          <header className=" h-fit flex items-center border-b border-primary/20 bg-card/30 backdrop-blur-sm px-4">
             <SidebarTrigger className="text-foreground hover:bg-primary/10 " />
             <div className="ml-4 flex flex-col -space-y-2 py-3">
               <h1 className="text-lg font-semibold text-gradient">{companyName} - Painel Administrativo</h1>

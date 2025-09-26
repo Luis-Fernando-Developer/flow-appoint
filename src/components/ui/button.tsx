@@ -21,6 +21,9 @@ const buttonVariants = cva(
         neon: "bg-gradient-primary text-primary-foreground btn-neon hover:scale-105",
         hero: "bg-gradient-primary text-primary-foreground btn-neon text-lg font-bold px-8 py-4 h-auto",
         glass: "bg-card/30 backdrop-blur-sm border border-primary/30 text-foreground hover:bg-card/50 hover:border-primary/50",
+        none: "bg-transparent text-foreground shadow-none hover:bg-transparent focus:bg-transparent active:bg-transparent px-0 py-0 focus:none",
+        none2: "bg-black/5 text-foreground shadow-none hover:bg-black/5 focus:bg-black/5 active:bg-black/5 px-0 py-0 focus:bg-black/5",
+    
       },
       size: {
         default: "h-10 px-4 py-2",

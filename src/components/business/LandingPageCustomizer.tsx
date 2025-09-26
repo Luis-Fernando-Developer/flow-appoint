@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,28 +6,38 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ColorPicker } from "./ColorPicker";
 import { CodeEditor } from "./CodeEditor";
-import { Save, Lock, Unlock, Upload, Link, Palette, Type, Image, Layout, Code } from "lucide-react";
+import { Save, Lock, Unlock, Upload, Link, Palette, Type, Image, Layout, Code, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { BookingLogo } from "../BookingLogo";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { log } from "console";
 
+interface Employee {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+}
 interface LandingPageCustomizerProps {
   companyId: string;
   companyPlan: string;
   canEdit: boolean;
+  className: string;
 }
 
 interface CustomizationData {
   // Header
   header_position: string;
+  // logo_definition: string;
+  // logo_url?: string;
   header_background_type: string;
   header_background_color: string;
   header_background_gradient: any;
-  
+
   // Font
   font_family: string;
   font_size_base: number;
@@ -72,14 +82,50 @@ const fontOptions = [
   { value: "Montserrat", label: "Montserrat" },
 ];
 
-export function LandingPageCustomizer({ companyId, companyPlan, canEdit }: LandingPageCustomizerProps) {
+export function LandingPageCustomizer({ companyId, companyPlan, canEdit, className }: LandingPageCustomizerProps) {
   const [customization, setCustomization] = useState<CustomizationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const [employee, setEmployee] = useState<Employee>({ id: '1', name: 'Luis Fernando', avatar_url: null });
+  
 
   const isPremiumPlan = companyPlan !== "starter";
   const isLocked = !isPremiumPlan || !canEdit;
+
+  // Default customization data moved outside for global access
+  const defaultData: CustomizationData = {
+    header_position: 'fixed',
+    // logo_definition: 'imageUpload',
+  
+    header_background_type: 'solid',
+    header_background_color: 'hsl(251, 91%, 65%)',
+    header_background_gradient: { type: "linear", angle: 45, colors: ["hsl(251, 91%, 65%)", "hsl(308, 56%, 85%)"] },
+    font_family: 'Inter',
+    font_size_base: 16,
+    font_color_type: 'solid',
+    font_color: 'hsl(240, 10%, 3.9%)',
+    font_gradient: { type: "linear", angle: 45, colors: ["hsl(240, 10%, 3.9%)", "hsl(251, 91%, 65%)"] },
+    hero_banner_type: 'single',
+    hero_banner_urls: [],
+    hero_background_type: 'gradient',
+    hero_background_color: 'hsl(240, 10%, 3.9%)',
+    hero_background_gradient: { type: "linear", angle: 135, colors: ["hsl(251, 91%, 65%)", "hsl(308, 56%, 85%)", "hsl(240, 10%, 3.9%)"] },
+    hero_title: 'Agendamentos Inteligentes',
+    hero_description: 'Transforme a gestão do seu negócio com nossa plataforma completa de agendamentos online.',
+    cards_show_images: false,
+    cards_layout: 'vertical',
+    cards_font_family: 'Inter',
+    cards_color_type: 'solid',
+    cards_color: 'hsl(240, 10%, 3.9%)',
+    cards_gradient: { type: "linear", angle: 45, colors: ["hsl(240, 10%, 3.9%)", "hsl(251, 91%, 65%)"] },
+    extra_section_enabled: false,
+    extra_section_code: '',
+    footer_background_type: 'gradient',
+    footer_background_color: 'hsl(240, 10%, 3.9%)',
+    footer_background_gradient: { type: "linear", angle: 180, colors: ["hsl(240, 10%, 3.9%)", "hsl(251, 91%, 65%)"] },
+    footer_font_family: 'Inter',
+  };
 
   useEffect(() => {
     fetchCustomization();
@@ -96,40 +142,8 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit }: Landi
       if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
-        setCustomization(data);
+        setCustomization({...defaultData, ...data});
       } else {
-        // Create default customization
-        const defaultData = {
-          header_position: 'fixed',
-          header_background_type: 'solid',
-          header_background_color: 'hsl(251, 91%, 65%)',
-          header_background_gradient: { type: "linear", angle: 45, colors: ["hsl(251, 91%, 65%)", "hsl(308, 56%, 85%)"] },
-          font_family: 'Inter',
-          font_size_base: 16,
-          font_color_type: 'solid',
-          font_color: 'hsl(240, 10%, 3.9%)',
-          font_gradient: { type: "linear", angle: 45, colors: ["hsl(240, 10%, 3.9%)", "hsl(251, 91%, 65%)"] },
-          hero_banner_type: 'single',
-          hero_banner_urls: [],
-          hero_background_type: 'gradient',
-          hero_background_color: 'hsl(240, 10%, 3.9%)',
-          hero_background_gradient: { type: "linear", angle: 135, colors: ["hsl(251, 91%, 65%)", "hsl(308, 56%, 85%)", "hsl(240, 10%, 3.9%)"] },
-          hero_title: 'Agendamentos Inteligentes',
-          hero_description: 'Transforme a gestão do seu negócio com nossa plataforma completa de agendamentos online.',
-          cards_show_images: false,
-          cards_layout: 'vertical',
-          cards_font_family: 'Inter',
-          cards_color_type: 'solid',
-          cards_color: 'hsl(240, 10%, 3.9%)',
-          cards_gradient: { type: "linear", angle: 45, colors: ["hsl(240, 10%, 3.9%)", "hsl(251, 91%, 65%)"] },
-          extra_section_enabled: false,
-          extra_section_code: '',
-          footer_background_type: 'gradient',
-          footer_background_color: 'hsl(240, 10%, 3.9%)',
-          footer_background_gradient: { type: "linear", angle: 180, colors: ["hsl(240, 10%, 3.9%)", "hsl(251, 91%, 65%)"] },
-          footer_font_family: 'Inter',
-        };
-        
         setCustomization(defaultData);
       }
     } catch (error) {
@@ -149,11 +163,13 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit }: Landi
 
     setSaving(true);
     try {
+      const hero_banner_urls = customization.hero_banner_urls.filter(url => url.trim() !== "");
       const { error } = await supabase
         .from('company_customizations')
         .upsert({
           company_id: companyId,
-          ...customization
+          ...customization,
+          hero_banner_urls
         });
 
       if (error) throw error;
@@ -178,6 +194,7 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit }: Landi
     if (!customization) return;
     setCustomization({ ...customization, [field]: value });
   };
+
 
   const addBannerUrl = () => {
     if (!customization) return;
@@ -210,25 +227,86 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit }: Landi
 
   if (!customization) return null;
 
+  // function getInitials(name: string): ReactNode {
+  //   if (!name) return null;
+  //   const words = name.trim().split(/\s+/);
+  //   const initials = words.slice(0, 2).map(w => w[0].toUpperCase()).join('');
+  //   return initials;
+  // }
+
+  // async function handleLogoClick(): Promise<void> {
+  //   if (isLocked) return;
+  //   // Open file picker for image upload
+  //   const input = document.createElement('input');
+  //   input.type = 'file';
+  //   input.accept = 'image/*';
+  //   input.onchange = async (e: any) => {
+  //     const file = e.target.files?.[0];
+  //     if (!file) return;
+
+  //     try {
+  //       // Upload to Supabase Storage (assuming 'avatars' bucket)
+  //       const fileExt = file.name.split('.').pop();
+  //       const fileName = `${companyId}-logo.${fileExt}`;
+  //       const { data, error } = await supabase.storage
+  //         .from('logo')
+  //         .upload(fileName, file, { upsert: true });
+
+  //       if (error) throw error;
+
+  //       // Get public URL
+  //       const { data: urlData } = supabase.storage
+  //         .from('logo')
+  //         .getPublicUrl(fileName);
+
+  //       const logoUrl = urlData?.publicUrl;
+  //       setEmployee((prev) => ({ ...prev, logo_url: logoUrl }));
+
+  //       toast({
+  //         title: "Sucesso",
+  //         description: "Logotipo atualizado!",
+  //       });
+  //     } catch (err) {
+  //       toast({
+  //         title: "Erro",
+  //         description: "Falha ao atualizar Logotipo.",
+  //         variant: "destructive",
+  //       });
+  //     }
+  //   };
+  //   input.click();
+  // }
+
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Palette className="w-5 h-5" />
-            Personalização da Landing Page
-            {isLocked && (
-              <Badge variant="secondary" className="ml-2">
-                <Lock className="w-3 h-3 mr-1" />
-                {!isPremiumPlan ? "Plano Premium Necessário" : "Sem Permissão"}
-              </Badge>
-            )}
-            {!isLocked && (
-              <Badge variant="outline" className="ml-2">
-                <Unlock className="w-3 h-3 mr-1" />
-                Desbloqueado
-              </Badge>
-            )}
+        <CardTitle className="h-fit flex flex-col items-center justify-between ">
+          <div className="w-full flex flex-col h-full justify-center gap-6 ">
+            <div className="w-full flex items-center gap-2">
+              <Palette className="w-4 h-4" />
+              <h3 className="text-lg font-bold">
+                Personalização da Landing Page
+              </h3>
+            </div>
+            <div className="flex items-center justify-between w-full gap-2 ">
+
+              {isLocked && (
+                <Badge variant="secondary" className="rounded-sm  flex items-center flex-1 h-4 justify-center">
+                  <Lock className="w-3 h-3 mr-1" />
+                  {!isPremiumPlan ? "Plano Premium Necessário" : "Sem Permissão"}
+                </Badge>
+              )}
+              {!isLocked && (
+                <Badge variant="outline" className="rounded-sm  flex items-center flex-1 h-4 p-4 justify-center">
+                  <Unlock className="w-3 h-3 mr-1 " />
+                  Desbloqueado
+                </Badge>
+              )}
+              <Button className="flex-1" onClick={saveCustomization} disabled={saving || isLocked} size="sm">
+                <Save className="w-3 h-3 mr-2" />
+                {saving ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
           </div>
           <div className="flex gap-2">
             {!isPremiumPlan && (
@@ -236,10 +314,7 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit }: Landi
                 Upgrade de Plano
               </Button>
             )}
-            <Button onClick={saveCustomization} disabled={saving || isLocked} size="sm">
-              <Save className="w-4 h-4 mr-2" />
-              {saving ? "Salvando..." : "Salvar"}
-            </Button>
+            
           </div>
         </CardTitle>
       </CardHeader>
@@ -255,7 +330,7 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit }: Landi
           </TabsList>
 
           <TabsContent value="header" className="space-y-4">
-            <div className="space-y-4">
+            <div className="space-y-8">
               <div className="space-y-2">
                 <Label>Posição do Header</Label>
                 <Select 
@@ -272,6 +347,51 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit }: Landi
                   </SelectContent>
                 </Select>
               </div>
+
+              
+              {/* <div className=" flex flex-col space-y-4 ">
+                <Label>Definição de Logotipo</Label>
+                <Select value={customization.logo_definition} onValueChange={(value) => updateCustomization('logo_definition', value)} disabled={isLocked}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="urlLogo">Por Link de URL</SelectItem>
+                    <SelectItem value="imageUpload">Adicionar Da Galeria</SelectItem>
+                  </SelectContent>
+                </Select>
+                {customization.logo_definition === 'urlLogo' ? (
+                  <div className="flex items-center">
+                    <Input
+                      value={customization.logo_url }
+                      onChange={(e) => updateCustomization('logo_url', e.target.value)}
+                      placeholder="https://exemplo.com/logo.png"
+                      disabled={isLocked}
+                    />
+                  </div>
+                ): (
+
+                  <div className="flex items-center">
+                    <div className="relative">  
+                      <Avatar className=" border rounded-full p-0 flex items-center justify-center w-20 h-20 bg-muted">
+                        <AvatarImage src={employee.avatar_url} className="border border-white"/>
+                        <AvatarFallback className="text-xl">
+                          {getInitials(employee.name) || <Image className="w-8 h-8" />}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -bottom-1 -right-0">
+                        <Button
+                          onClick={() => handleLogoClick()}
+                          variant="outline"
+                          className=" rounded-full w-8 h-8 p-1 flex items-center justify-center"
+                        >
+                          <Camera className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div> */}
 
               <ColorPicker
                 type={customization.header_background_type as "solid" | "gradient"}
