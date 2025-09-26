@@ -543,16 +543,30 @@ export default function ClientBooking() {
                 <div className="space-y-4">
                   <div className="bg-background/30 p-4 rounded-lg space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Nome:</span>
-                      <span className="font-medium">{client.name}</span>
+                      <span className="text-muted-foreground">Serviço:</span>
+                      <span className="font-medium">{selectedService?.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Email:</span>
-                      <span className="font-medium">{client.email}</span>
+                      <span className="text-muted-foreground">Profissional:</span>
+                      <span className="font-medium">{selectedEmployee?.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Telefone:</span>
-                      <span className="font-medium">{client.phone}</span>
+                      <span className="text-muted-foreground">Data:</span>
+                      <span className="font-medium">
+                        {selectedDate && format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Horário:</span>
+                      <span className="font-medium">{selectedTime}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Duração:</span>
+                      <span className="font-medium">{selectedService?.duration_minutes} min</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Valor:</span>
+                      <span className="font-medium">R$ {selectedService?.price.toFixed(2)}</span>
                     </div>
                   </div>
 
