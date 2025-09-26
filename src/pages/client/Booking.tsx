@@ -300,26 +300,31 @@ export default function ClientBooking() {
         clientId = clientData.id;
       }
 
-      // Criar agendamento
-      const { error: bookingError } = await supabase
-        .from('bookings')
-        .insert([
-          {
-            company_id: company.id,
-            client_id: clientId,
-            service_id: selectedService.id,
-            employee_id: selectedEmployee.id,
-            booking_date: format(selectedDate, 'yyyy-MM-dd'),
-            booking_time: selectedTime,
-            duration_minutes: selectedService.duration_minutes,
-            price: selectedService.price,
-            notes: formData.notes || null,
-            booking_status: 'pending',
-            payment_status: 'pending'
-          }
-        ]);
+      // Criar agendamento via edge function para contornar RLS
+      const { data: session } = await supabase.auth.getSession();
+      
+      const response = await fetch(`https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/create-booking`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.session?.access_token}`,
+        },
+        body: JSON.stringify({
+          company_id: company.id,
+          service_id: selectedService.id,
+          employee_id: selectedEmployee.id,
+          booking_date: format(selectedDate, 'yyyy-MM-dd'),
+          booking_time: selectedTime,
+          duration_minutes: selectedService.duration_minutes,
+          price: selectedService.price,
+          notes: formData.notes
+        }),
+      });
 
-      if (bookingError) throw bookingError;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao criar agendamento');
+      }
 
       setStep(6);
       toast({
