@@ -27,7 +27,7 @@ export default function AdminLogin() {
       });
       
       setTimeout(() => {
-        navigate("/superAdminDev");
+        navigate("/super-admin/painel");
       }, 1000);
     } else {
       toast({
