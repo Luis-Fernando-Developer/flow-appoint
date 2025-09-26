@@ -49,7 +49,7 @@ export function BusinessSidebar({ companySlug, companyName, companyId, userRole,
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { permissions, loading } = usePermissions(companyId, currentUser);
+  const { permissions, loading, userRole: resolvedRole } = usePermissions(companyId, currentUser);
 
   const currentPath = location.pathname;
   const basePath = `/${companySlug}`;
@@ -88,11 +88,12 @@ export function BusinessSidebar({ companySlug, companyName, companyId, userRole,
     }
 
     // Fallback por role (inclusive durante o carregamento)
+    const role = resolvedRole ?? userRole;
     switch (item.title) {
       case "Colaboradores":
-        return ['owner', 'manager', 'supervisor'].includes(userRole);
+        return ['owner', 'manager', 'supervisor'].includes(role);
       case "Configurações":
-        return ['owner', 'manager'].includes(userRole);
+        return ['owner', 'manager'].includes(role);
       default:
         return true;
     }
