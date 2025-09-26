@@ -110,6 +110,12 @@ export default function ClientBooking() {
   }, [company]);
 
   useEffect(() => {
+    if (selectedService) {
+      fetchEmployeesForService();
+    }
+  }, [selectedService]);
+
+  useEffect(() => {
     if (selectedEmployee) {
       generateAvailableDates();
     }
@@ -159,11 +165,21 @@ export default function ClientBooking() {
     if (!selectedService || !company) return;
 
     try {
+      // Buscar funcionários que oferecem o serviço selecionado
       const { data: employeesData, error } = await supabase
         .from('employees')
-        .select('id, name, email, avatar_url')
-        .eq('company_id', company.id)
-        .eq('is_active', true);
+        .select(`
+          id, 
+          name, 
+          email, 
+          avatar_url,
+          employee_services!inner(
+            service_id
+          )
+        `)
+        .eq('company_id', company.id)  
+        .eq('is_active', true)
+        .eq('employee_services.service_id', selectedService.id);
 
       if (error) throw error;
       setEmployees(employeesData || []);
