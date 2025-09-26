@@ -340,15 +340,19 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
                   <Select 
                     key={`logo-type-${customization.logo_type}`}
                     value={customization.logo_type || 'url'} 
-                    onValueChange={(value) => {
-                      console.log('Logo type changing to:', value);
-                      updateCustomization('logo_type', value);
-                      if (value === 'url') {
-                        updateCustomization('logo_upload_path', '');
-                      } else {
-                        updateCustomization('logo_url', '');
-                      }
-                    }}
+                      onValueChange={(value) => {
+                        // Use functional update to avoid stale state when updating multiple fields
+                        setCustomization((prev) => {
+                          if (!prev) return prev;
+                          const next = { ...prev, logo_type: value } as CustomizationData;
+                          if (value === 'url') {
+                            next.logo_upload_path = '';
+                          } else {
+                            next.logo_url = '';
+                          }
+                          return next;
+                        });
+                      }}
                     disabled={isLocked}
                   >
                     <SelectTrigger>
