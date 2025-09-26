@@ -110,6 +110,12 @@ export default function ClientBooking() {
   }, [company]);
 
   useEffect(() => {
+    if (selectedService) {
+      fetchEmployeesForService();
+    }
+  }, [selectedService, company]);
+
+  useEffect(() => {
     if (selectedEmployee) {
       generateAvailableDates();
     }
