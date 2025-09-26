@@ -74,17 +74,40 @@ export default function ClientBooking() {
     notes: ""
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: Service, 2: Employee, 3: Date, 4: Time, 5: ClientInfo, 6: Confirmation
+  const [step, setStep] = useState(1); // 1: Service, 2: Employee, 3: Date, 4: Time, 5: Auth, 6: Confirmation
+  const [user, setUser] = useState<any>(null);
+  const [client, setClient] = useState<any>(null);
 
   useEffect(() => {
     fetchCompanyAndServices();
+    checkAuthState();
   }, [slug]);
 
-  useEffect(() => {
-    if (selectedService) {
-      fetchEmployeesForService();
+  const checkAuthState = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      setUser(session.user);
+      // Check if user is client in this company
+      if (company) {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('company_id', company.id)
+          .single();
+        
+        if (clientData) {
+          setClient(clientData);
+        }
+      }
     }
-  }, [selectedService]);
+  };
+
+  useEffect(() => {
+    if (company) {
+      checkAuthState();
+    }
+  }, [company]);
 
   useEffect(() => {
     if (selectedEmployee) {
@@ -234,24 +257,32 @@ export default function ClientBooking() {
 
     setIsLoading(true);
     try {
-      // Primeiro, criar ou buscar cliente
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .upsert([
-          {
-            company_id: company.id,
-            name: formData.client_name,
-            email: formData.client_email,
-            phone: formData.client_phone
-          }
-        ], { 
-          onConflict: 'company_id,email',
-          ignoreDuplicates: false
-        })
-        .select()
-        .single();
+      let clientId;
+      
+      if (user && client) {
+        // Use authenticated client
+        clientId = client.id;
+      } else {
+        // This should not happen with the new flow, but keeping as fallback
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .upsert([
+            {
+              company_id: company.id,
+              name: formData.client_name,
+              email: formData.client_email,
+              phone: formData.client_phone
+            }
+          ], { 
+            onConflict: 'company_id,email',
+            ignoreDuplicates: false
+          })
+          .select()
+          .single();
 
-      if (clientError) throw clientError;
+        if (clientError) throw clientError;
+        clientId = clientData.id;
+      }
 
       // Criar agendamento
       const { error: bookingError } = await supabase
@@ -259,7 +290,7 @@ export default function ClientBooking() {
         .insert([
           {
             company_id: company.id,
-            client_id: clientData.id,
+            client_id: clientId,
             service_id: selectedService.id,
             employee_id: selectedEmployee.id,
             booking_date: format(selectedDate, 'yyyy-MM-dd'),
@@ -484,80 +515,110 @@ export default function ClientBooking() {
         );
 
       case 5:
-        return (
-          <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-gradient">Seus Dados</CardTitle>
-              <CardDescription>Informe seus dados para o agendamento</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="client_name">Nome completo *</Label>
-                  <Input
-                    id="client_name"
-                    name="client_name"
-                    value={formData.client_name}
-                    onChange={handleInputChange}
-                    placeholder="Seu nome"
-                    required
-                  />
+        if (user && client) {
+          // User is authenticated, proceed to booking
+          return (
+            <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
+              <CardHeader>
+                <CardTitle className="text-gradient">Confirmação dos Dados</CardTitle>
+                <CardDescription>Confirme seus dados para o agendamento</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-background/30 p-4 rounded-lg space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Nome:</span>
+                      <span className="font-medium">{client.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email:</span>
+                      <span className="font-medium">{client.email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Telefone:</span>
+                      <span className="font-medium">{client.phone}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Observações (opcional)</Label>
+                    <Textarea
+                      id="notes"
+                      name="notes"
+                      value={formData.notes}
+                      onChange={handleInputChange}
+                      placeholder="Alguma observação especial?"
+                      rows={3}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="client_email">E-mail *</Label>
-                  <Input
-                    id="client_email"
-                    name="client_email"
-                    type="email"
-                    value={formData.client_email}
-                    onChange={handleInputChange}
-                    placeholder="seu@email.com"
-                    required
-                  />
+                <div className="flex gap-2 mt-6">
+                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1">
+                    Voltar
+                  </Button>
+                  <Button
+                    onClick={handleBookingSubmit}
+                    disabled={isLoading}
+                    className="flex-1"
+                    variant="neon"
+                  >
+                    {isLoading ? "Agendando..." : "Confirmar Agendamento"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        } else {
+          // User not authenticated, show auth options
+          return (
+            <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
+              <CardHeader className="text-center">
+                <CardTitle className="text-gradient">Acesso Necessário</CardTitle>
+                <CardDescription>
+                  Para continuar com o agendamento, faça login ou crie sua conta
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-center space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Com sua conta você poderá:
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-1 text-left">
+                    <li>• Acompanhar seus agendamentos</li>
+                    <li>• Gerenciar seus dados</li>
+                    <li>• Receber lembretes por email</li>
+                    <li>• Histórico de serviços</li>
+                  </ul>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="client_phone">Telefone *</Label>
-                  <Input
-                    id="client_phone"
-                    name="client_phone"
-                    value={formData.client_phone}
-                    onChange={handleInputChange}
-                    placeholder="(11) 99999-9999"
-                    required
-                  />
+                <div className="space-y-3">
+                  <Button 
+                    className="w-full" 
+                    variant="neon"
+                    onClick={() => navigate(`/${slug}/entrar`)}
+                  >
+                    Já tenho conta - Entrar
+                  </Button>
+                  
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => navigate(`/${slug}/cadastro`)}
+                  >
+                    Criar nova conta
+                  </Button>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Observações (opcional)</Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleInputChange}
-                    placeholder="Alguma observação especial?"
-                    rows={3}
-                  />
+                <div className="flex gap-2 mt-6">
+                  <Button variant="ghost" onClick={() => setStep(4)} className="flex-1">
+                    Voltar
+                  </Button>
                 </div>
-              </div>
-
-              <div className="flex gap-2 mt-6">
-                <Button variant="outline" onClick={() => setStep(4)} className="flex-1">
-                  Voltar
-                </Button>
-                <Button
-                  onClick={handleBookingSubmit}
-                  disabled={!formData.client_name || !formData.client_email || !formData.client_phone || isLoading}
-                  className="flex-1"
-                  variant="neon"
-                >
-                  {isLoading ? "Agendando..." : "Confirmar Agendamento"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        );
+              </CardContent>
+            </Card>
+          );
+        }
 
       case 6:
         return (

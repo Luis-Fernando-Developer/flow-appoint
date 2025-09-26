@@ -17,10 +17,10 @@ import BusinessEmployees from "./pages/business/Employees";
 import BusinessSettings from "./pages/business/Settings";
 import BusinessProfile from "./pages/business/Profile";
 import ClientBooking from "./pages/client/Booking";
-import ClientLayout from "./components/client/ClientLayout";
-// import ClientLayout from "./pages/client/";
-import NotFound from "./pages/NotFound";
 import ClientLogin from "./pages/client/Login";
+import ClientSignup from "./pages/client/Signup";
+import ClientBookings from "./pages/client/Bookings";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -68,9 +68,9 @@ const App = () => (
           {/* rota para cliente realizar login na empresa via slug */}
           <Route path="/:slug/entrar" element={<ClientLogin />} />
           {/* rota para cliente realizar cadastro na empresa via slug */}
-          <Route path="/:slug/cadastro" element={<ClientLayout />} />
-          {/* rota para cliente realizar cadastro na empresa via slug */}
-          <Route path="/:slug/[user]/agendamentos" element={<ClientLayout />} />
+          <Route path="/:slug/cadastro" element={<ClientSignup />} />
+          {/* rota para cliente ver seus agendamentos na empresa via slug */}
+          <Route path="/:slug/agendamentos" element={<ClientBookings />} />
 
           {/* rota não existente '404' */}
           <Route path="*" element={<NotFound />} />

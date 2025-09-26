@@ -1,17 +1,18 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookingLogo } from "@/components/BookingLogo";
-import { Lock, Mail } from "lucide-react";
+import { Lock, Mail, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 // ...imports...
 
 export default function ClientLogin() {
+  const { slug } = useParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -63,8 +64,8 @@ export default function ClientLogin() {
           description: `Bem-vindo(a), ${client.name}`,
         });
 
-        // Redireciona para a página de agendamentos do cliente
-        navigate(`/${client.company_id}/agendamentos`);
+        // Redireciona para a página de agendamentos do cliente  
+        navigate(`/${slug}/agendamentos`);
       }
     } catch (error) {
       console.error('Error signing in:', error);
@@ -145,9 +146,15 @@ export default function ClientLogin() {
           <div className="mt-6 pt-6 border-t border-primary/20 text-center">
             <p className="text-sm text-muted-foreground">
               Não tem uma conta?{" "}
-              <a href="/cadastro" className="text-primary hover:text-primary-glow transition-colors">
+              <Link to={`/${slug}/cadastro`} className="text-primary hover:text-primary-glow transition-colors">
                 Cadastre-se
-              </a>
+              </Link>
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              <Link to={`/${slug}`} className="text-primary hover:text-primary-glow transition-colors inline-flex items-center gap-1">
+                <ArrowLeft className="w-4 h-4" />
+                Voltar à página inicial
+              </Link>
             </p>
           </div>
         </CardContent>

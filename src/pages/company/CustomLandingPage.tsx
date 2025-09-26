@@ -275,11 +275,19 @@ export default function CustomLandingPage() {
               {optionHeader && (
                 <div className={`flex ${customization?.header_background_type ? 'p-0 mt-2 border-t border-primary/40 pt-2' : ''}`}>
                   <div className="flex gap-1 justify-end items-center w-full ">
-                    <Button variant="ghost" className=" bg-black/20 font-bold">
+                    <Button 
+                      variant="ghost" 
+                      className=" bg-black/20 font-bold"
+                      onClick={() => navigate(`/${slug}/entrar`)}
+                    >
                       <LogInIcon />
                       ENTRAR
                     </Button>
-                    <Button variant="ghost" className="bg-black/20 font-bold">
+                    <Button 
+                      variant="ghost" 
+                      className="bg-black/20 font-bold"
+                      onClick={() => navigate(`/${slug}/cadastro`)}
+                    >
                       <UserPlus2 />
                       CADASTRAR
                     </Button>
@@ -313,11 +321,19 @@ export default function CustomLandingPage() {
               {optionHeader && (
                 <div className={`flex ${customization?.header_background_type ? 'p-0 mt-2 border-t border-primary/40 pt-2' : ''}`}>
                   <div className="flex gap-1 justify-end items-center w-full ">
-                    <Button variant="ghost" className=" bg-black/20 font-bold">
+                    <Button 
+                      variant="ghost" 
+                      className=" bg-black/20 font-bold"
+                      onClick={() => navigate(`/${slug}/entrar`)}
+                    >
                       <LogInIcon />
                       ENTRAR
                     </Button>
-                    <Button variant="ghost" className="bg-black/20 font-bold">
+                    <Button 
+                      variant="ghost" 
+                      className="bg-black/20 font-bold"
+                      onClick={() => navigate(`/${slug}/cadastro`)}
+                    >
                       <UserPlus2 />
                       CADASTRAR
                     </Button>
