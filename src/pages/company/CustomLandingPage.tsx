@@ -98,7 +98,7 @@ export default function CustomLandingPage() {
 
       setServices(servicesData || []);
 
-      // Fetch employees data
+      // Fetch employees data - apenas funcionários ativos
       const { data: employeesData } = await supabase
         .from('employees')
         .select('*')

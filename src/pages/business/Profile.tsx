@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Save, User, Camera } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Save, User, Camera, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +17,11 @@ interface Company {
   id: string;
   name: string;
   slug: string;
+}
+
+interface Service {
+  id: string;
+  name: string;
 }
 
 interface Employee {
@@ -25,6 +32,7 @@ interface Employee {
   role: string;
   avatar_url?: string;
   created_at: string;
+  is_active: boolean;
   company: Company;
 }
 
@@ -33,12 +41,15 @@ export default function BusinessProfile() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [services, setServices] = useState<Service[]>([]);
+  const [employeeServices, setEmployeeServices] = useState<string[]>([]);
   const { toast } = useToast();
 
   const [profileData, setProfileData] = useState({
     name: "",
     email: "",
     phone: "",
+    is_active: false,
   });
 
   useEffect(() => {
@@ -74,7 +85,28 @@ export default function BusinessProfile() {
         name: employeeData.name || "",
         email: employeeData.email || "",
         phone: employeeData.phone || "",
+        is_active: employeeData.is_active || false,
       });
+
+      // Se for owner, buscar serviços disponíveis
+      if (employeeData.role === 'owner') {
+        const { data: servicesData } = await supabase
+          .from('services')
+          .select('id, name')
+          .eq('company_id', companyData.id)
+          .eq('is_active', true)
+          .order('name');
+
+        setServices(servicesData || []);
+
+        // Buscar serviços vinculados ao employee
+        const { data: employeeServicesData } = await supabase
+          .from('employee_services')
+          .select('service_id')
+          .eq('employee_id', employeeData.id);
+
+        setEmployeeServices(employeeServicesData?.map(es => es.service_id) || []);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -92,15 +124,46 @@ export default function BusinessProfile() {
     
     setSaving(true);
     try {
+      // Atualizar dados do employee
       const { error } = await supabase
         .from('employees')
         .update({
           name: profileData.name,
           phone: profileData.phone,
+          is_active: profileData.is_active,
         })
         .eq('id', employee.id);
 
       if (error) throw error;
+
+      // Se for owner e estiver ativo, gerenciar serviços vinculados
+      if (employee.role === 'owner' && profileData.is_active) {
+        // Primeiro, deletar serviços existentes
+        await supabase
+          .from('employee_services')
+          .delete()
+          .eq('employee_id', employee.id);
+
+        // Inserir novos serviços selecionados
+        if (employeeServices.length > 0) {
+          const servicesToInsert = employeeServices.map(serviceId => ({
+            employee_id: employee.id,
+            service_id: serviceId,
+          }));
+
+          const { error: servicesError } = await supabase
+            .from('employee_services')
+            .insert(servicesToInsert);
+
+          if (servicesError) throw servicesError;
+        }
+      } else if (!profileData.is_active) {
+        // Se não estiver ativo, remover todos os serviços vinculados
+        await supabase
+          .from('employee_services')
+          .delete()
+          .eq('employee_id', employee.id);
+      }
 
       toast({
         title: "Sucesso",
@@ -112,6 +175,7 @@ export default function BusinessProfile() {
         ...prev,
         name: profileData.name,
         phone: profileData.phone,
+        is_active: profileData.is_active,
       } : null);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -122,6 +186,14 @@ export default function BusinessProfile() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleServiceToggle = (serviceId: string, checked: boolean) => {
+    if (checked) {
+      setEmployeeServices(prev => [...prev, serviceId]);
+    } else {
+      setEmployeeServices(prev => prev.filter(id => id !== serviceId));
     }
   };
 
@@ -269,6 +341,75 @@ export default function BusinessProfile() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Configurações de Profissional - Apenas para proprietários */}
+          {employee.role === 'owner' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5" />
+                  Configurações de Profissional
+                </CardTitle>
+                <CardDescription>
+                  Configure se você atua como profissional realizando serviços
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label htmlFor="is-active">Profissional Ativo</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Marque se você realiza atendimentos/procedimentos na empresa
+                    </p>
+                  </div>
+                  <Switch
+                    id="is-active"
+                    checked={profileData.is_active}
+                    onCheckedChange={(checked) => {
+                      setProfileData(prev => ({ ...prev, is_active: checked }));
+                      if (!checked) {
+                        setEmployeeServices([]);
+                      }
+                    }}
+                  />
+                </div>
+
+                {profileData.is_active && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Serviços Vinculados</Label>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Selecione os serviços que você pode realizar
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {services.map((service) => (
+                        <div key={service.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={service.id}
+                            checked={employeeServices.includes(service.id)}
+                            onCheckedChange={(checked) => 
+                              handleServiceToggle(service.id, checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={service.id} className="text-sm font-normal">
+                            {service.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+
+                    {services.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum serviço cadastrado na empresa ainda.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Informações da Empresa */}
           <Card>
