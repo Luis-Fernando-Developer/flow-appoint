@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -73,17 +73,49 @@ export function BusinessSidebar({ companySlug, companyName, companyId, userRole,
     }
   };
 
+  // Detecta se o usuário logado é o proprietário da empresa (sem depender de is_active)
+  const [isOwnerByCompany, setIsOwnerByCompany] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function checkOwner() {
+      try {
+        if (!companyId || !currentUser?.email) {
+          if (isMounted) setIsOwnerByCompany(false);
+          return;
+        }
+        const { data, error } = await supabase
+          .from('companies')
+          .select('owner_email')
+          .eq('id', companyId)
+          .single();
+        if (error) {
+          if (isMounted) setIsOwnerByCompany(false);
+          return;
+        }
+        const ownerEmail = (data?.owner_email || '').toLowerCase();
+        const currentEmail = currentUser.email?.toLowerCase() || '';
+        if (isMounted) setIsOwnerByCompany(!!ownerEmail && ownerEmail === currentEmail);
+      } catch {
+        if (isMounted) setIsOwnerByCompany(false);
+      }
+    }
+    checkOwner();
+    return () => { isMounted = false; };
+  }, [companyId, currentUser?.email]);
+
   // Filtrar itens do menu baseado nas permissões
   const filteredMenuItems = menuItems.filter(item => {
-    const role = resolvedRole ?? userRole;
+    const role = userRole === 'owner' ? 'owner' : (resolvedRole ?? userRole);
+    const ownerOverride = role === 'owner' || isOwnerByCompany === true;
 
-    // Enquanto carregando OU sem role/permissões resolvidas, mostrar tudo (evita sumir no primeiro render)
-    if (loading || !resolvedRole || !permissions) {
+    // Owner (por propriedade da empresa) sempre vê todos os itens
+    if (ownerOverride) {
       return true;
     }
 
-    // Owner sempre vê todos os itens, independente de is_active/permissões
-    if (role === 'owner') {
+    // Enquanto carregando OU sem role/permissões resolvidas, mostrar tudo (evita sumir no primeiro render)
+    if (loading || !resolvedRole || !permissions) {
       return true;
     }
 
