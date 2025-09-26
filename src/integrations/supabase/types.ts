@@ -461,6 +461,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      company_has_owner: {
+        Args: { _company_id: string }
+        Returns: boolean
+      }
       create_client_profile: {
         Args: {
           _company_slug: string
