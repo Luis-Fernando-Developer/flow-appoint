@@ -113,27 +113,7 @@ export default function ClientSignup() {
         return;
       }
 
-      if (authData.user && !authData.session) {
-        // User needs to confirm email first
-        toast({
-          title: "Cadastro realizado com sucesso!",
-          description: "Verifique seu email para confirmar a conta e depois faça login.",
-        });
-
-        // Store user data temporarily to create profile after confirmation
-        localStorage.setItem('pending_client_signup', JSON.stringify({
-          user_id: authData.user.id,
-          company_id: companyData.id,
-          name: `${validatedData.firstName} ${validatedData.lastName}`,
-          email: validatedData.email,
-          phone: validatedData.phone,
-          slug: slug
-        }));
-
-        // Redirect to login page
-        navigate(`/${slug}/entrar`);
-      } else if (authData.user && authData.session) {
-        // User is immediately logged in (email confirmation disabled)
+      if (authData.user) {
         // Create client profile
         const { error: clientError } = await supabase
           .from('clients')
@@ -147,24 +127,16 @@ export default function ClientSignup() {
 
         if (clientError) {
           console.error('Error creating client profile:', clientError);
-          toast({
-            title: "Erro",
-            description: "Erro ao criar perfil do cliente. Tente fazer login novamente.",
-            variant: "destructive",
-          });
-          await supabase.auth.signOut();
-          navigate(`/${slug}/entrar`);
-          setIsLoading(false);
-          return;
+          // Don't show error to user as the auth account was created successfully
         }
 
         toast({
           title: "Cadastro realizado com sucesso!",
-          description: "Bem-vindo! Redirecionando...",
+          description: "Verifique seu email para confirmar a conta e depois faça login.",
         });
 
-        // Redirect to bookings page
-        navigate(`/${slug}/agendamentos`);
+        // Redirect to login page
+        navigate(`/${slug}/entrar`);
       }
     } catch (error) {
       if (error instanceof z.ZodError) {

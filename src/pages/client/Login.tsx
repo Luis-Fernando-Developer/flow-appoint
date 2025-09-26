@@ -41,78 +41,17 @@ export default function ClientLogin() {
       }
 
       if (data.user) {
-        // Check if there's pending signup data to create client profile
-        const pendingSignup = localStorage.getItem('pending_client_signup');
-        if (pendingSignup) {
-          try {
-            const signupData = JSON.parse(pendingSignup);
-            if (signupData.user_id === data.user.id && signupData.slug === slug) {
-              // Create client profile from pending data
-              const { error: clientError } = await supabase
-                .from('clients')
-                .insert({
-                  user_id: signupData.user_id,
-                  company_id: signupData.company_id,
-                  name: signupData.name,
-                  email: signupData.email,
-                  phone: signupData.phone
-                });
-
-              if (clientError) {
-                console.error('Error creating client profile:', clientError);
-              } else {
-                localStorage.removeItem('pending_client_signup');
-              }
-            }
-          } catch (error) {
-            console.error('Error parsing pending signup:', error);
-            localStorage.removeItem('pending_client_signup');
-          }
-        }
-
-        // First, get company data to verify the slug
-        const { data: companyData, error: companyError } = await supabase
-          .from('companies')
-          .select('id, name')
-          .eq('slug', slug)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (companyError || !companyData) {
-          toast({
-            title: "Erro",
-            description: "Empresa não encontrada ou inativa.",
-            variant: "destructive",
-          });
-          await supabase.auth.signOut();
-          setIsLoading(false);
-          return;
-        }
-
-        // Busca o cliente vinculado ao usuário autenticado e à empresa
+        // Busca o cliente vinculado ao usuário autenticado
         const { data: client, error: clientError } = await supabase
           .from('clients')
           .select(`*`)
           .eq('user_id', data.user.id)
-          .eq('company_id', companyData.id)
-          .maybeSingle();
+          .single();
 
-        if (clientError) {
-          console.error('Error fetching client:', clientError);
-          toast({
-            title: "Erro no login",
-            description: "Erro ao verificar dados do cliente. Tente novamente.",
-            variant: "destructive",
-          });
-          await supabase.auth.signOut();
-          setIsLoading(false);
-          return;
-        }
-
-        if (!client) {
+        if (clientError || !client) {
           toast({
             title: "Acesso negado",
-            description: "Usuário não está cadastrado como cliente desta empresa.",
+            description: "Usuário não está cadastrado como cliente.",
             variant: "destructive",
           });
           await supabase.auth.signOut();
