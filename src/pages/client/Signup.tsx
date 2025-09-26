@@ -122,6 +122,8 @@ export default function ClientSignup() {
 
         // Store user data temporarily to create profile after confirmation
         localStorage.setItem('pending_client_signup', JSON.stringify({
+          user_id: authData.user.id,
+          company_id: companyData.id,
           name: `${validatedData.firstName} ${validatedData.lastName}`,
           email: validatedData.email,
           phone: validatedData.phone,
