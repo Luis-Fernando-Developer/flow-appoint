@@ -89,15 +89,13 @@ export default function ClientBooking() {
       setUser(session.user);
       // Check if user is client in this company
       if (company) {
-        const { data: clientData, error: clientErr } = await supabase
+        const { data: clientData } = await supabase
           .from('clients')
           .select('*')
           .eq('user_id', session.user.id)
           .eq('company_id', company.id)
-          .maybeSingle();
-        if (clientErr) {
-          console.warn('Falha ao buscar cliente (ignorado):', clientErr.message);
-        }
+          .single();
+        
         if (clientData) {
           setClient(clientData);
         }
