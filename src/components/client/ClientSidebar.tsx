@@ -1,7 +1,7 @@
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Calendar, LayoutDashboard, LogOut, User } from 'lucide-react';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '../ui/sidebar';
-import { BookingLogo } from '../BookingLogo';
+import { CompanyLogo } from '../CompanyLogo';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -91,13 +91,15 @@ export function ClientSidebar({  companySlug, companyName, companyId, userRole, 
             <div className="p-4 border-b border-primary/20">
               {state !== "collapsed" ? (
                 <div >
-                  {/* <BookingLogo showText={true} className="mb-2" /> */}
+                  <div className="mb-2">
+                    <CompanyLogo companySlug={companySlug} showText={true} />
+                  </div>
                   <h2 className="font-semibold text-gradient truncate">{companyName}</h2>
                   {/* <p className="text-sm text-muted-foreground capitalize">{userRole}</p> */}
                 </div>
               ) : (
                 <div className="flex justify-center">
-                  <BookingLogo showText={false} />
+                  <CompanyLogo companySlug={companySlug} showText={false} />
                 </div>
               )}
             </div>

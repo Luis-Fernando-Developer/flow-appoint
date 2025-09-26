@@ -8,9 +8,10 @@ interface LogoUploaderProps {
   currentLogo?: string;
   onLogoChange: (logoPath: string | null) => void;
   companyId: string;
+  disabled?: boolean;
 }
 
-export function LogoUploader({ currentLogo, onLogoChange, companyId }: LogoUploaderProps) {
+export function LogoUploader({ currentLogo, onLogoChange, companyId, disabled = false }: LogoUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentLogo || null);
 
@@ -110,19 +111,24 @@ export function LogoUploader({ currentLogo, onLogoChange, companyId }: LogoUploa
               size="sm"
               className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
               onClick={handleRemoveLogo}
+              disabled={disabled}
             >
               <X className="h-3 w-3" />
             </Button>
           </div>
         ) : (
-          <label className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary transition-colors">
+          <label className={`flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-border rounded-lg transition-colors ${
+            disabled 
+              ? 'cursor-not-allowed opacity-50' 
+              : 'cursor-pointer hover:border-primary'
+          }`}>
             <Camera className="w-8 h-8 text-muted-foreground" />
             <span className="text-xs text-muted-foreground mt-1">Upload</span>
             <input
               type="file"
               accept="image/*"
               onChange={handleFileUpload}
-              disabled={uploading}
+              disabled={uploading || disabled}
               className="hidden"
             />
           </label>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookingLogo } from "@/components/BookingLogo";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { Lock, Mail, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -90,7 +90,7 @@ export default function ClientLogin() {
       <Card className="w-full max-w-md card-glow bg-card/50 backdrop-blur-sm border-primary/30 relative z-10">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-6">
-            <BookingLogo />
+            <CompanyLogo companySlug={slug || ''} />
           </div>
           <CardTitle className="text-2xl text-gradient">Acesse sua conta</CardTitle>
           <CardDescription>

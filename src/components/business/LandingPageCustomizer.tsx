@@ -338,8 +338,10 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
                 <Label>Logo</Label>
                 <div className="space-y-4">
                   <Select 
+                    key={`logo-type-${customization.logo_type}`}
                     value={customization.logo_type || 'url'} 
                     onValueChange={(value) => {
+                      console.log('Logo type changing to:', value);
                       updateCustomization('logo_type', value);
                       if (value === 'url') {
                         updateCustomization('logo_upload_path', '');
@@ -372,6 +374,7 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
                       currentLogo={customization.logo_upload_path || undefined}
                       onLogoChange={(path) => updateCustomization('logo_upload_path', path)}
                       companyId={companyId}
+                      disabled={isLocked}
                     />
                   )}
                 </div>
