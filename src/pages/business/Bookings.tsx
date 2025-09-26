@@ -123,7 +123,6 @@ export default function BusinessBookings() {
           .from('employees')
           .select('*, company:companies(*)')
           .eq('user_id', user.id)
-          .eq('is_active', true)
           .maybeSingle();
 
         if (employeeError) {
