@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapPin, Phone, Mail, Menu, LogInIcon, UserPlus2, ChevronDown, DoorClosedIcon, X } from "lucide-react";
+import { MapPin, Phone, Mail, Menu, LogInIcon, UserPlus2, ChevronDown, DoorClosedIcon, X, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingLogo } from "@/components/BookingLogo";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Divide as Hamburger } from 'hamburger-react';
 
 interface CustomizationData {
@@ -45,12 +46,16 @@ export default function CustomLandingPage() {
   const navigate = useNavigate();
   const [company, setCompany] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [employeeServices, setEmployeeServices] = useState<any[]>([]);
   const [customization, setCustomization] = useState<CustomizationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [bannerIndex, setBannerIndex] = useState(0);
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [optionHeader, setOptionHeader] = useState(false);
+  const [visibleServices, setVisibleServices] = useState(4);
+  const [visibleEmployees, setVisibleEmployees] = useState(4);
 
   useEffect(() => {
     if ( slug) {
@@ -92,6 +97,32 @@ export default function CustomLandingPage() {
         .eq('is_active', true);
 
       setServices(servicesData || []);
+
+      // Fetch employees data
+      const { data: employeesData } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('company_id', companyData.id)
+        .eq('is_active', true);
+
+      setEmployees(employeesData || []);
+
+      // Fetch employee services relationship
+      if (employeesData && employeesData.length > 0) {
+        const { data: employeeServicesData } = await supabase
+          .from('employee_services')
+          .select(`
+            employee_id,
+            service_id,
+            services (
+              id,
+              name
+            )
+          `)
+          .in('employee_id', employeesData.map(emp => emp.id));
+
+        setEmployeeServices(employeeServicesData || []);
+      }
 
       // Fetch customization data
       const { data: customizationData } = await supabase
@@ -148,6 +179,35 @@ export default function CustomLandingPage() {
     }
     
     return null;
+  };
+
+  const loadMoreServices = () => {
+    setVisibleServices(prev => Math.min(prev + 2, services.length));
+  };
+
+  const loadMoreEmployees = () => {
+    setVisibleEmployees(prev => Math.min(prev + 2, employees.length));
+  };
+
+  const getEmployeeServices = (employeeId: string) => {
+    return employeeServices
+      .filter(es => es.employee_id === employeeId)
+      .map(es => es.services?.name)
+      .filter(Boolean);
+  };
+
+  const generateCardsStyles = () => {
+    if (!customization) return {};
+    
+    const styles: any = {};
+    
+    if (customization.cards_color_type === 'gradient' && customization.cards_gradient) {
+      styles['--cards-background'] = generateGradient(customization.cards_gradient);
+    } else if (customization.cards_color) {
+      styles['--cards-color'] = customization.cards_color;
+    }
+    
+    return styles;
   };
 
 
@@ -264,9 +324,27 @@ export default function CustomLandingPage() {
           }
           ` : ''}
           
+          ${generateCardsStyles()['--cards-background'] ? `
+          .cards-custom-bg {
+            background: ${generateCardsStyles()['--cards-background']} !important;
+          }
+          ` : ''}
+          
+          ${generateCardsStyles()['--cards-color'] ? `
+          .cards-custom-color {
+            color: ${generateCardsStyles()['--cards-color']} !important;
+          }
+          ` : ''}
+          
           ${customization?.font_family ? `
           body, * {
             font-family: ${customization.font_family}, system-ui, sans-serif !important;
+          }
+          ` : ''}
+          
+          ${customization?.cards_font_family && customization.cards_font_family !== 'Inter' ? `
+          .cards-custom-font {
+            font-family: ${customization.cards_font_family}, system-ui, sans-serif !important;
           }
           ` : ''}
         `}
@@ -455,37 +533,82 @@ export default function CustomLandingPage() {
         <section className="py-16 bg-card/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gradient mb-4">Nossos Serviços</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
+              <h2 className={`text-3xl font-bold mb-4 ${customization?.cards_font_family ? 'cards-custom-font' : ''} ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
+                Nossos Serviços
+              </h2>
+              <p className={`max-w-2xl mx-auto ${customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'}`}>
                 Conheça todos os serviços que oferecemos para você
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {services.map((service) => (
-                <div key={service.id} className="bg-card rounded-lg border border-primary/20 p-6 hover:border-primary/40 transition-colors">
-                  {service.image_url && (
+            <div className={`grid gap-6 ${
+              customization?.cards_layout === 'horizontal' 
+                ? 'grid-cols-1' 
+                : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+            }`}>
+              {services.slice(0, visibleServices).map((service) => (
+                <div 
+                  key={service.id} 
+                  className={`rounded-lg border border-primary/20 p-6 hover:border-primary/40 transition-colors ${
+                    customization?.cards_layout === 'horizontal' ? 'flex gap-6 items-center' : ''
+                  } ${
+                    customization?.cards_color_type === 'gradient' ? 'cards-custom-bg' : 'bg-card'
+                  } ${
+                    customization?.cards_font_family ? 'cards-custom-font' : ''
+                  }`}
+                >
+                  {customization?.cards_show_images && service.image_url && (
                     <img 
                       src={service.image_url} 
                       alt={service.name}
-                      className="w-full h-48 object-cover rounded-lg mb-4"
+                      className={`object-cover rounded-lg ${
+                        customization?.cards_layout === 'horizontal' 
+                          ? 'w-32 h-32 flex-shrink-0' 
+                          : 'w-full h-48 mb-4'
+                      }`}
                     />
                   )}
-                  <h3 className="text-xl font-semibold mb-2">{service.name}</h3>
-                  {service.description && (
-                    <p className="text-muted-foreground mb-4">{service.description}</p>
-                  )}
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-primary">
-                      R$ {Number(service.price).toFixed(2)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {service.duration_minutes} min
-                    </span>
+                  <div className="flex-1">
+                    <h3 className={`text-xl font-semibold mb-2 ${
+                      customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : ''
+                    }`}>
+                      {service.name}
+                    </h3>
+                    {service.description && (
+                      <p className={`mb-4 ${
+                        customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'
+                      }`}>
+                        {service.description}
+                      </p>
+                    )}
+                    <div className={`flex justify-between items-center ${
+                      customization?.cards_layout === 'horizontal' ? 'mt-4' : ''
+                    }`}>
+                      <span className="text-2xl font-bold text-primary">
+                        R$ {Number(service.price).toFixed(2)}
+                      </span>
+                      <span className={`text-sm ${
+                        customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'
+                      }`}>
+                        {service.duration_minutes} min
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
+            
+            {visibleServices < services.length && (
+              <div className="text-center mt-8">
+                <Button 
+                  variant="outline" 
+                  onClick={loadMoreServices}
+                  className="px-6 py-2"
+                >
+                  Carregar mais serviços <ChevronRight className="ml-2 w-4 h-4" />
+                </Button>
+              </div>
+            )}
             
             <div className="text-center mt-12">
               <button 
@@ -497,6 +620,89 @@ export default function CustomLandingPage() {
             </div>
           </div>
         </section>
+
+        {/* Profissionais */}
+        {employees.length > 0 && (
+          <section className="py-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-12">
+                <h2 className={`text-3xl font-bold mb-4 ${customization?.cards_font_family ? 'cards-custom-font' : ''} ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
+                  Nossa Equipe
+                </h2>
+                <p className={`max-w-2xl mx-auto ${customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'}`}>
+                  Conheça nossos profissionais especializados
+                </p>
+              </div>
+              
+              <div className={`grid gap-6 ${
+                customization?.cards_layout === 'horizontal' 
+                  ? 'grid-cols-1' 
+                  : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
+              }`}>
+                {employees.slice(0, visibleEmployees).map((employee) => {
+                  const employeeServiceNames = getEmployeeServices(employee.id);
+                  
+                  return (
+                    <div 
+                      key={employee.id} 
+                      className={`rounded-lg border border-primary/20 p-6 hover:border-primary/40 transition-colors ${
+                        customization?.cards_layout === 'horizontal' ? 'flex gap-6 items-center' : ''
+                      } ${
+                        customization?.cards_color_type === 'gradient' ? 'cards-custom-bg' : 'bg-card'
+                      } ${
+                        customization?.cards_font_family ? 'cards-custom-font' : ''
+                      }`}
+                    >
+                      {customization?.cards_show_images && employee.avatar_url && (
+                        <img 
+                          src={employee.avatar_url} 
+                          alt={employee.name}
+                          className={`object-cover rounded-full ${
+                            customization?.cards_layout === 'horizontal' 
+                              ? 'w-20 h-20 flex-shrink-0' 
+                              : 'w-24 h-24 mx-auto mb-4'
+                          }`}
+                        />
+                      )}
+                      <div className={`flex-1 ${customization?.cards_layout === 'horizontal' ? '' : 'text-center'}`}>
+                        <h3 className={`text-xl font-semibold mb-2 ${
+                          customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : ''
+                        }`}>
+                          {employee.name}
+                        </h3>
+                        {employeeServiceNames.length > 0 && (
+                          <div className="flex flex-wrap gap-2 justify-center">
+                            {employeeServiceNames.map((serviceName, index) => (
+                              <Badge 
+                                key={index}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {serviceName}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {visibleEmployees < employees.length && (
+                <div className="text-center mt-8">
+                  <Button 
+                    variant="outline" 
+                    onClick={loadMoreEmployees}
+                    className="px-6 py-2"
+                  >
+                    Carregar mais profissionais <ChevronRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Informações da Empresa */}
         <section className="py-16">
