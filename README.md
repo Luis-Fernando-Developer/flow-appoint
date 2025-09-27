@@ -1,4 +1,4 @@
-# Welcome to my project "SaaS by Appointments"
+# Welcome to my project "SaaS of Appointments"
 
 ## Project info
 
