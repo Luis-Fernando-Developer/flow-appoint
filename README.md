@@ -1,4 +1,4 @@
-# Welcome to my project "SaaS of Appointments"
+# Welcome to my project "SaaS of scheduling"
 
 ## Project info
 
