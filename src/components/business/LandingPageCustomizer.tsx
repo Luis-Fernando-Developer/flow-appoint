@@ -55,6 +55,12 @@ interface CustomizationData {
   hero_background_gradient: any;
   hero_title: string;
   hero_description: string;
+  hero_content_position: string;
+  
+  // Buttons
+  button_color_type: string;
+  button_color: string;
+  button_gradient: any;
   
   // Cards
   cards_show_images: boolean;
@@ -129,6 +135,10 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
     hero_background_gradient: { type: "linear", angle: 135, colors: ["hsl(251, 91%, 65%)", "hsl(308, 56%, 85%)", "hsl(240, 10%, 3.9%)"] },
     hero_title: 'Agendamentos Inteligentes',
     hero_description: 'Transforme a gestão do seu negócio com nossa plataforma completa de agendamentos online.',
+    hero_content_position: 'absolute',
+    button_color_type: 'solid',
+    button_color: 'hsl(251, 91%, 65%)',
+    button_gradient: { type: "linear", angle: 45, colors: ["hsl(251, 91%, 65%)", "hsl(308, 56%, 85%)"] },
     cards_show_images: false,
     cards_layout: 'vertical',
     cards_font_family: 'Inter',
@@ -336,10 +346,11 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="header" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="header">Header</TabsTrigger>
             <TabsTrigger value="font">Font</TabsTrigger>
             <TabsTrigger value="hero">Hero</TabsTrigger>
+            <TabsTrigger value="buttons">Botões</TabsTrigger>
             <TabsTrigger value="cards">Cards</TabsTrigger>
             <TabsTrigger value="extra">Extra</TabsTrigger>
             <TabsTrigger value="footer">Footer</TabsTrigger>
@@ -541,6 +552,24 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label>Posição do Conteúdo</Label>
+              <Select 
+                value={customization.hero_content_position} 
+                onValueChange={(value) => updateCustomization('hero_content_position', value)}
+                disabled={isLocked}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="absolute">Sobre a Imagem (Absolute)</SelectItem>
+                  <SelectItem value="below">Abaixo da Imagem</SelectItem>
+                  <SelectItem value="above">Acima da Imagem</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <ColorPicker
               type={customization.hero_background_type as "solid" | "gradient"}
               solidColor={customization.hero_background_color}
@@ -550,6 +579,20 @@ export function LandingPageCustomizer({ companyId, companyPlan, canEdit, classNa
               onGradientChange={(gradient) => updateCustomization('hero_background_gradient', gradient)}
               label="Fundo do Hero"
             />
+          </TabsContent>
+
+          <TabsContent value="buttons" className="space-y-4">
+            <div className="space-y-4">
+              <ColorPicker
+                type={customization.button_color_type as "solid" | "gradient"}
+                solidColor={customization.button_color}
+                gradientSettings={customization.button_gradient}
+                onTypeChange={(type) => updateCustomization('button_color_type', type)}
+                onSolidColorChange={(color) => updateCustomization('button_color', color)}
+                onGradientChange={(gradient) => updateCustomization('button_gradient', gradient)}
+                label="Cor dos Botões"
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="cards" className="space-y-4">

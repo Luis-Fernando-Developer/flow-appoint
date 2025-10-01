@@ -206,6 +206,9 @@ export type Database = {
       }
       company_customizations: {
         Row: {
+          button_color: string | null
+          button_color_type: string | null
+          button_gradient: Json | null
           cards_color: string | null
           cards_color_type: string | null
           cards_font_family: string | null
@@ -234,6 +237,7 @@ export type Database = {
           hero_background_type: string | null
           hero_banner_type: string | null
           hero_banner_urls: string[] | null
+          hero_content_position: string | null
           hero_description: string | null
           hero_title: string | null
           id: string
@@ -243,6 +247,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          button_color?: string | null
+          button_color_type?: string | null
+          button_gradient?: Json | null
           cards_color?: string | null
           cards_color_type?: string | null
           cards_font_family?: string | null
@@ -271,6 +278,7 @@ export type Database = {
           hero_background_type?: string | null
           hero_banner_type?: string | null
           hero_banner_urls?: string[] | null
+          hero_content_position?: string | null
           hero_description?: string | null
           hero_title?: string | null
           id?: string
@@ -280,6 +288,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          button_color?: string | null
+          button_color_type?: string | null
+          button_gradient?: Json | null
           cards_color?: string | null
           cards_color_type?: string | null
           cards_font_family?: string | null
@@ -308,6 +319,7 @@ export type Database = {
           hero_background_type?: string | null
           hero_banner_type?: string | null
           hero_banner_urls?: string[] | null
+          hero_content_position?: string | null
           hero_description?: string | null
           hero_title?: string | null
           id?: string

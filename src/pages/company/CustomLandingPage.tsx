@@ -27,6 +27,10 @@ interface CustomizationData {
   hero_background_gradient: any;
   hero_title: string;
   hero_description: string;
+  hero_content_position: string;
+  button_color_type: string;
+  button_color: string;
+  button_gradient: any;
   cards_show_images: boolean;
   cards_layout: string;
   cards_font_family: string;
@@ -439,7 +443,7 @@ export default function CustomLandingPage() {
                   <div className="flex gap-1 justify-end items-center w-full ">
                     <Button 
                       variant="ghost" 
-                      className=" bg-black/20 font-bold custom-font"
+                      className="bg-black/20 font-bold custom-font button-custom-bg"
                       onClick={() => navigate(`/${slug}/entrar`)}
                     >
                       <LogInIcon />
@@ -447,7 +451,7 @@ export default function CustomLandingPage() {
                     </Button>
                     <Button 
                       variant="ghost" 
-                      className="bg-black/20 font-bold custom-font"
+                      className="bg-black/20 font-bold custom-font button-custom-bg"
                       onClick={() => navigate(`/${slug}/cadastro`)}
                     >
                       <UserPlus2 />
@@ -464,37 +468,64 @@ export default function CustomLandingPage() {
       {/* Main Content */}
       <div style={customization?.header_position === 'fixed' ? {paddingTop: headerHeight} : {}}>
         {/* Hero Section with Custom Styling */}
-        <section className={`relative h-[500px] flex items-center justify-center overflow-hidden ${customization?.hero_background_type ? 'hero-custom-bg' : 'bg-gradient-hero'}`}>
+        <section className={`relative ${customization?.hero_content_position === 'absolute' ? 'h-[500px]' : ''} flex ${customization?.hero_content_position === 'below' ? 'flex-col' : customization?.hero_content_position === 'above' ? 'flex-col-reverse' : 'items-center justify-center'} overflow-hidden ${customization?.hero_background_type ? 'hero-custom-bg' : 'bg-gradient-hero'}`}>
           {/* Background Elements */}
-          <div className="absolute inset-0">
-            {customization?.hero_banner_urls && customization.hero_banner_urls.length > 0 && (
-              <div className="absolute inset-0 ">
-                <img
-                  src={customization.hero_banner_urls[bannerIndex]}
-                  alt="Hero banner"
-                  className="w-full h-full object-fit opacity-50"
-                />
-                {customization.hero_banner_urls.length > 1 && (
-                  <>
-                    <button
-                      onClick={prevBanner}
-                      className=" absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition"
-                      style={{ zIndex: 20 }}
-                    >&#8592;</button>
-                    <button
-                      onClick={nextBanner}
-                      className=" absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition"
-                      style={{ zIndex: 20 }}
-                    >&#8594;</button>
-                  </>
-                )}
-              </div>
-            )}
-            <div className="absolute top-20 left-10 w-72 h-72 bg-neon-violet/10 rounded-full blur-3xl animate-pulse-glow"></div>
-            <div className="absolute bottom-20 right-10 w-96 h-96 bg-neon-pink/10 rounded-full blur-3xl animate-float"></div>
-          </div>
+          {customization?.hero_content_position === 'absolute' && (
+            <div className="absolute inset-0">
+              {customization?.hero_banner_urls && customization.hero_banner_urls.length > 0 && (
+                <div className="absolute inset-0 ">
+                  <img
+                    src={customization.hero_banner_urls[bannerIndex]}
+                    alt="Hero banner"
+                    className="w-full h-full object-fit opacity-50"
+                  />
+                  {customization.hero_banner_urls.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevBanner}
+                        className=" absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition"
+                        style={{ zIndex: 20 }}
+                      >&#8592;</button>
+                      <button
+                        onClick={nextBanner}
+                        className=" absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition"
+                        style={{ zIndex: 20 }}
+                      >&#8594;</button>
+                    </>
+                  )}
+                </div>
+              )}
+              <div className="absolute top-20 left-10 w-72 h-72 bg-neon-violet/10 rounded-full blur-3xl animate-pulse-glow"></div>
+              <div className="absolute bottom-20 right-10 w-96 h-96 bg-neon-pink/10 rounded-full blur-3xl animate-float"></div>
+            </div>
+          )}
 
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Banner Section for below/above positions */}
+          {(customization?.hero_content_position === 'below' || customization?.hero_content_position === 'above') && customization?.hero_banner_urls && customization.hero_banner_urls.length > 0 && (
+            <div className="relative w-full h-[400px]">
+              <img
+                src={customization.hero_banner_urls[bannerIndex]}
+                alt="Hero banner"
+                className="w-full h-full object-cover"
+              />
+              {customization.hero_banner_urls.length > 1 && (
+                <>
+                  <button
+                    onClick={prevBanner}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition"
+                    style={{ zIndex: 20 }}
+                  >&#8592;</button>
+                  <button
+                    onClick={nextBanner}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 text-white p-2 rounded-full hover:bg-black/50 transition"
+                    style={{ zIndex: 20 }}
+                  >&#8594;</button>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className={`${customization?.hero_content_position === 'absolute' ? 'relative z-10' : 'py-16'} max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`}>
             <div className="text-center">
               <h1 className={`text-5xl lg:text-7xl font-bold mb-6 ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : ''}`}>
                 {customization?.hero_title || ''}
@@ -591,7 +622,7 @@ export default function CustomLandingPage() {
                 <Button 
                   variant="outline" 
                   onClick={loadMoreServices}
-                  className="px-6 py-2 custom-font"
+                  className="px-6 py-2 custom-font button-custom-bg"
                 >
                   Carregar mais serviços <ChevronRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -601,7 +632,7 @@ export default function CustomLandingPage() {
             <div className="text-center mt-12">
               <button 
                 onClick={() => navigate(`/${slug}/agendar`)}
-                className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+                className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors button-custom-bg"
               >
                 Agendar Agora
               </button>
