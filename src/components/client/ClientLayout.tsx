@@ -49,7 +49,6 @@ export default function ClientLayout() {
     if (company) {
       fetchClientAndBookings();
     }
-    // eslint-disable-next-line
   }, [company]);
 
   const fetchCompany = async () => {

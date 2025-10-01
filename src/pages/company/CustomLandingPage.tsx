@@ -341,6 +341,8 @@ export default function CustomLandingPage() {
             font-family: ${customization.font_family}, system-ui, sans-serif !important;
           }
           ` : ''}
+
+      
           
           ${customization?.cards_font_family && customization.cards_font_family !== 'Inter' ? `
           .cards-custom-font {
@@ -364,8 +366,11 @@ export default function CustomLandingPage() {
                     alt={`Logo ${company.name}`}
                     className="w-8 h-8 object-contain"
                   />
+
                 ) : (
-                  <BookingLogo showText={false} className="pt-0" />
+                  <div className='p-0'>
+                    {company.name}
+                  </div>
                 )}
                 <h1 className={`text-2xl font-bold ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
                   {company.name}
@@ -386,7 +391,7 @@ export default function CustomLandingPage() {
                       onClick={() => navigate(`/${slug}/entrar`)}
                     >
                       <LogInIcon />
-                      ENTRAR
+                      Entrar
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -394,7 +399,7 @@ export default function CustomLandingPage() {
                       onClick={() => navigate(`/${slug}/cadastro`)}
                     >
                       <UserPlus2 />
-                      CADASTRAR
+                      Cadastrar
                     </Button>
                   </div>
                   
@@ -484,24 +489,6 @@ export default function CustomLandingPage() {
                   </>
                 )}
               </div>
-              // customization.hero_banner_type === 'carousel' ? (
-              //   <div className="absolute inset-0">
-              //     {/* Carousel implementation would go here */}
-              //     <img 
-              //       src={customization.hero_banner_urls[0]} 
-              //       alt="Hero banner"
-              //       className="w-full h-full object-cover opacity-20"
-              //     />
-              //   </div>
-              // ) : (
-              //   <div className="absolute inset-0">
-              //     <img 
-              //       src={customization.hero_banner_urls[0]} 
-              //       alt="Hero banner"
-              //       className="w-full h-full object-cover opacity-20"
-              //     />
-              //   </div>
-              // )
             )}
             <div className="absolute top-20 left-10 w-72 h-72 bg-neon-violet/10 rounded-full blur-3xl animate-pulse-glow"></div>
             <div className="absolute bottom-20 right-10 w-96 h-96 bg-neon-pink/10 rounded-full blur-3xl animate-float"></div>
@@ -510,11 +497,11 @@ export default function CustomLandingPage() {
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className={`text-5xl lg:text-7xl font-bold mb-6 ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : ''}`}>
-                {customization?.hero_title || 'Agendamentos Inteligentes'}
+                {customization?.hero_title || ''}
               </h1>
               
               <p className={`text-xl mb-8 max-w-2xl mx-auto ${customization?.font_color ? 'text-custom-color' : 'text-muted-foreground'}`}>
-                {customization?.hero_description || 'Transforme a gestão do seu negócio com nossa plataforma completa de agendamentos online.'}
+                {customization?.hero_description || ''}
               </p>
             </div>
           </div>
@@ -523,22 +510,23 @@ export default function CustomLandingPage() {
         {/* Extra Section */}
         {customization?.extra_section_enabled && customization.extra_section_code && (
           <section className="py-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
               <div dangerouslySetInnerHTML={{ __html: customization.extra_section_code }} />
             </div>
           </section>
         )}
 
         {/* Serviços */}
-        <section className="py-16 bg-card/30">
+        <section className="py-16 bg-card/30  border-2 border-green-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className={`text-3xl font-bold mb-4 ${customization?.cards_font_family ? 'cards-custom-font' : ''} ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
+              <h2 className={`text-3xl font-bold mb-4 ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
                 Nossos Serviços
               </h2>
-              <p className={`max-w-2xl mx-auto ${customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'}`}>
+              <p className={`max-w-2xl mx-auto ${customization.font_family !== 'Roboto' ? 'Roboto' : 'Poppins'} ${customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'}`}>
                 Conheça todos os serviços que oferecemos para você
               </p>
+              
             </div>
             
             <div className={`grid gap-6 ${
