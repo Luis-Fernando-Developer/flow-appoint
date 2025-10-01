@@ -337,7 +337,7 @@ export default function CustomLandingPage() {
           ` : ''}
           
           ${customization?.font_family ? `
-          body, * {
+          .custom-font {
             font-family: ${customization.font_family}, system-ui, sans-serif !important;
           }
           ` : ''}
@@ -387,7 +387,7 @@ export default function CustomLandingPage() {
                   <div className="flex gap-1 justify-end items-center w-full ">
                     <Button 
                       variant="ghost" 
-                      className=" bg-black/20 font-bold"
+                      className=" bg-black/20 font-bold custom-font"
                       onClick={() => navigate(`/${slug}/entrar`)}
                     >
                       <LogInIcon />
@@ -395,7 +395,7 @@ export default function CustomLandingPage() {
                     </Button>
                     <Button 
                       variant="ghost" 
-                      className="bg-black/20 font-bold"
+                      className="bg-black/20 font-bold custom-font"
                       onClick={() => navigate(`/${slug}/cadastro`)}
                     >
                       <UserPlus2 />
@@ -439,7 +439,7 @@ export default function CustomLandingPage() {
                   <div className="flex gap-1 justify-end items-center w-full ">
                     <Button 
                       variant="ghost" 
-                      className=" bg-black/20 font-bold"
+                      className=" bg-black/20 font-bold custom-font"
                       onClick={() => navigate(`/${slug}/entrar`)}
                     >
                       <LogInIcon />
@@ -447,7 +447,7 @@ export default function CustomLandingPage() {
                     </Button>
                     <Button 
                       variant="ghost" 
-                      className="bg-black/20 font-bold"
+                      className="bg-black/20 font-bold custom-font"
                       onClick={() => navigate(`/${slug}/cadastro`)}
                     >
                       <UserPlus2 />
@@ -523,7 +523,7 @@ export default function CustomLandingPage() {
               <h2 className={`text-3xl font-bold mb-4 ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
                 Nossos Serviços
               </h2>
-              <p className={`max-w-2xl mx-auto ${customization.font_family !== 'Roboto' ? 'Roboto' : 'Poppins'} ${customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'}`}>
+              <p className={`max-w-2xl mx-auto custom-font ${customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'}`}>
                 Conheça todos os serviços que oferecemos para você
               </p>
               
@@ -537,7 +537,7 @@ export default function CustomLandingPage() {
               {services.slice(0, visibleServices).map((service) => (
                 <div 
                   key={service.id} 
-                  className={`rounded-lg border border-primary/20 p-6 hover:border-primary/40 transition-colors ${
+                  className={`rounded-lg border border-primary/20 p-6 hover:border-primary/40 transition-colors custom-font ${
                     customization?.cards_layout === 'horizontal' ? 'flex gap-6 items-center' : ''
                   } ${
                     customization?.cards_color_type === 'gradient' ? 'cards-custom-bg' : 'bg-card'
@@ -557,13 +557,13 @@ export default function CustomLandingPage() {
                     />
                   )}
                   <div className="flex-1">
-                    <h3 className={`text-xl font-semibold mb-2 ${
+                    <h3 className={`text-xl font-semibold mb-2 custom-font ${
                       customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : ''
                     }`}>
                       {service.name}
                     </h3>
                     {service.description && (
-                      <p className={`mb-4 ${
+                      <p className={`mb-4 custom-font ${
                         customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'
                       }`}>
                         {service.description}
@@ -572,10 +572,10 @@ export default function CustomLandingPage() {
                     <div className={`flex justify-between items-center ${
                       customization?.cards_layout === 'horizontal' ? 'mt-4' : ''
                     }`}>
-                      <span className="text-2xl font-bold text-primary">
+                      <span className="text-2xl font-bold text-primary custom-font">
                         R$ {Number(service.price).toFixed(2)}
                       </span>
-                      <span className={`text-sm ${
+                      <span className={`text-sm custom-font ${
                         customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'
                       }`}>
                         {service.duration_minutes} min
@@ -591,7 +591,7 @@ export default function CustomLandingPage() {
                 <Button 
                   variant="outline" 
                   onClick={loadMoreServices}
-                  className="px-6 py-2"
+                  className="px-6 py-2 custom-font"
                 >
                   Carregar mais serviços <ChevronRight className="ml-2 w-4 h-4" />
                 </Button>
@@ -664,7 +664,7 @@ export default function CustomLandingPage() {
                               <Badge 
                                 key={index}
                                 variant="secondary"
-                                className="text-xs"
+                                className="text-xs custom-font"
                               >
                                 {serviceName}
                               </Badge>
