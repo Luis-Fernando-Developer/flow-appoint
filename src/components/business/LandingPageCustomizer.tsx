@@ -82,6 +82,19 @@ const fontOptions = [
   { value: "Poppins", label: "Poppins" },
   { value: "Playfair Display", label: "Playfair Display" },
   { value: "Montserrat", label: "Montserrat" },
+  { value: "Berkshire Swash", label: "Berkshire Swash" },
+  { value: "My Soul", label: "My Soul" },
+  { value: "Bebas Neue", label: "Bebas Neue" },
+  { value: "Rubik Puddles", label: "Rubik Puddles" },
+  { value: "Henny Penny", label: "Henny Penny" },
+  { value: "Londrina Shadow", label: "Londrina Shadow" },
+  { value: "Lavishly Yours", label: "Lavishly Yours" },
+  { value: "Fleur De Leah", label: "Fleur De Leah" },
+  { value: "Tangerine", label: "Tangerine" },
+  { value: "Ballet", label: "Ballet" },
+  { value: "Mea Culpa", label: "Mea Culpa" },
+  { value: "Imperial Script", label: "Imperial Script" },
+  { value: "Manufacturing Consent", label: "Manufacturing Consent" },
 ];
 
 export function LandingPageCustomizer({ companyId, companyPlan, canEdit, className }: LandingPageCustomizerProps) {

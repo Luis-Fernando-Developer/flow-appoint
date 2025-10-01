@@ -77,6 +77,7 @@ export default function ClientBooking() {
   const [step, setStep] = useState(1); // 1: Service, 2: Employee, 3: Date, 4: Time, 5: Auth, 6: Confirmation
   const [user, setUser] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
+  const [customization, setCustomization] = useState<any>(null);
 
   useEffect(() => {
     fetchCompanyAndServices();
@@ -127,6 +128,14 @@ export default function ClientBooking() {
     }
   }, [selectedDate, selectedEmployee, selectedService]);
 
+  useEffect(() => {
+    if (customization) {
+      console.log("customization:", customization);
+    }
+  }, [customization]);
+
+  
+
   const fetchCompanyAndServices = async () => {
     try {
       const { data: companyData, error: companyError } = await supabase
@@ -142,6 +151,15 @@ export default function ClientBooking() {
       }
 
       setCompany(companyData);
+
+      // Buscar personalização
+      const { data: customizationData } = await supabase
+        .from('company_customizations')
+        .select('*')
+        .eq('company_id', companyData.id)
+        .maybeSingle();
+
+      setCustomization(customizationData);
 
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
@@ -159,6 +177,60 @@ export default function ClientBooking() {
         variant: "destructive"
       });
     }
+  };
+
+  const generateCustomStyles = () => {
+    if (!customization) return {};
+
+    const styles: any = {};
+
+    // Fonte
+    if (customization.font_family) {
+      styles['--font-family'] = customization.font_family;
+    }
+
+    if (customization.font_color_type === "gradient" && customization.font_gradient && customization.font_gradient.colors) {
+      const direction = customization.font_gradient.direction || "to right";
+      const colors = customization.font_gradient.colors.join(", ");
+      styles['--font-color'] = `linear-gradient(${direction}, ${colors})`;
+      styles['--font-gradient'] = true;
+    } else if (customization.font_color) {
+      styles['--font-color'] = customization.font_color;
+      styles['--font-gradient'] = false;
+    }
+
+    // Cor dos cards (gradient ou cor sólida)
+    if (
+      customization.cards_color_type === "gradient" &&
+      customization.cards_gradient &&
+      customization.cards_gradient.colors &&
+      customization.cards_gradient.colors.length > 1
+    ) {
+      const direction = customization.cards_gradient.direction || "to right";
+      const colors = customization.cards_gradient.colors.join(", ");
+      styles['--cards-background'] = `linear-gradient(${direction}, ${colors})`;
+    } else if (customization.cards_color) {
+      styles['--cards-background'] = customization.cards_color;
+    }
+
+    // Cor dos cards (gradient ou cor sólida)
+    if (
+      customization.cards_color_type === "gradient" &&
+      customization.cards_gradient &&
+      customization.cards_gradient.colors &&
+      customization.cards_gradient.colors.length > 1
+    ) {
+      const direction = customization.cards_gradient.direction || "to right";
+      const colors = customization.cards_gradient.colors.join(", ");
+      styles['--cards-background'] = `linear-gradient(${direction}, ${colors})`;
+    } else if (customization.cards_color) {
+      styles['--cards-background'] = customization.cards_color;
+    }
+
+    // Logo
+    styles.logoUrl = customization.logo_url || null;
+
+    return styles;
   };
 
   const fetchEmployeesForService = async () => {
@@ -343,17 +415,30 @@ export default function ClientBooking() {
     }
   };
 
+  
+
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
-          <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
+          <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20"
+            >
             <CardHeader>
-              <CardTitle className="text-gradient">Escolha o Serviço</CardTitle>
+              <CardTitle
+                style={{
+                  fontFamily: customStyles["--font-family"] || "inherit",
+                  color: !customStyles["--font-gradient"] ? customStyles["--font-color"] : undefined,
+                  background: customStyles["--font-gradient"] ? customStyles["--font-color"] : undefined,
+                  WebkitBackgroundClip: customStyles["--font-gradient"] ? "text" : undefined,
+                  WebkitTextFillColor: customStyles["--font-gradient"] ? "transparent" : undefined,
+                }}
+              >
+                Escolha o Serviço
+              </CardTitle>
               <CardDescription>Selecione o serviço desejado</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4">
+              <div className="grid gap-4" >
                 {services.map((service) => (
                   <div
                     key={service.id}
@@ -361,7 +446,10 @@ export default function ClientBooking() {
                       selectedService?.id === service.id
                         ? "border-primary bg-primary/10"
                         : "border-primary/20 hover:border-primary/50"
-                    }`}
+                    } `}
+                    style={{
+                      background: customStyles["--cards-background"]
+                    }}
                     onClick={() => setSelectedService(service)}
                   >
                     <div className="flex justify-between items-start">
@@ -397,9 +485,14 @@ export default function ClientBooking() {
 
       case 2:
         return (
-          <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
+          <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20"
+          
+          >
             <CardHeader>
-              <CardTitle className="text-gradient">Escolha o Profissional</CardTitle>
+              <CardTitle className="text-gradient"   
+              style={{
+              fontFamily: customStyles["--font-family"],
+            }} >Escolha o Profissional</CardTitle>
               <CardDescription>Selecione quem irá realizar o atendimento</CardDescription>
             </CardHeader>
             <CardContent>
@@ -412,6 +505,10 @@ export default function ClientBooking() {
                   employees.map((employee) => (
                     <div
                       key={employee.id}
+                      style={{
+                        background: customStyles["--cards-background"],
+                        fontFamily: customStyles["--font-family"],
+                      }}
                       className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                         selectedEmployee?.id === employee.id
                           ? "border-primary bg-primary/10"
@@ -456,7 +553,10 @@ export default function ClientBooking() {
         return (
           <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
             <CardHeader>
-              <CardTitle className="text-gradient">Escolha a Data</CardTitle>
+              <CardTitle 
+              style={{
+                fontFamily: customStyles["--font-family"],
+              }} className="text-gradient">Escolha a Data</CardTitle>
               <CardDescription>Selecione uma data disponível</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -496,7 +596,11 @@ export default function ClientBooking() {
         return (
           <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
             <CardHeader>
-              <CardTitle className="text-gradient">Escolha o Horário</CardTitle>
+              <CardTitle 
+                style={{
+                  fontFamily: customStyles["--font-family"],
+                }} 
+                className="text-gradient">Escolha o Horário</CardTitle>
               <CardDescription>Selecione um horário disponível</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -507,9 +611,17 @@ export default function ClientBooking() {
               ) : (
                 <div>
                   <Label className="text-base font-medium">Horários disponíveis</Label>
-                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    <div className="grid grid-cols-4 gap-2 mt-2" 
+                      style={{
+                        
+                        fontFamily: customStyles["--font-family"],
+                    }}>
                     {availableTimes.map((time) => (
                       <Button
+                        style={{
+                          background: customStyles["--cards-background"],
+                          fontFamily: customStyles["--font-family"],
+                        }}
                         key={time}
                         variant={selectedTime === time ? "default" : "outline"}
                         size="sm"
@@ -545,34 +657,46 @@ export default function ClientBooking() {
                 <CardTitle className="text-gradient">Confirmação dos Dados</CardTitle>
                 <CardDescription>Confirme seus dados para o agendamento</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent >
                 <div className="space-y-4">
                   <div className="bg-background/30 p-4 rounded-lg space-y-2">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Serviço:</span>
-                      <span className="font-medium">{selectedService?.name}</span>
+                      <span className="font-medium" style={{
+                        fontFamily: customStyles["--font-family"],
+                      }}>{selectedService?.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Profissional:</span>
-                      <span className="font-medium">{selectedEmployee?.name}</span>
+                      <span className="font-medium" style={{
+                        fontFamily: customStyles["--font-family"],
+                      }}>{selectedEmployee?.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Data:</span>
-                      <span className="font-medium">
+                      <span className="font-medium" style={{
+                        fontFamily: customStyles["--font-family"],
+                      }}>
                         {selectedDate && format(selectedDate, "dd/MM/yyyy", { locale: ptBR })}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Horário:</span>
-                      <span className="font-medium">{selectedTime}</span>
+                      <span className="font-medium" style={{
+                        fontFamily: customStyles["--font-family"],
+                      }}>{selectedTime}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Duração:</span>
-                      <span className="font-medium">{selectedService?.duration_minutes} min</span>
+                      <span className="font-medium" style={{
+                        fontFamily: customStyles["--font-family"],
+                      }}>{selectedService?.duration_minutes} min</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Valor:</span>
-                      <span className="font-medium">R$ {selectedService?.price.toFixed(2)}</span>
+                      <span className="font-medium" style={{
+                        fontFamily: customStyles["--font-family"],
+                      }}>R$ {selectedService?.price.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -723,6 +847,17 @@ export default function ClientBooking() {
     return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
   }
 
+  const customStyles = generateCustomStyles();
+
+  let logoSrc = customStyles.logoUrl;
+  if (!logoSrc && customization?.logo_upload_path) {
+    logoSrc = supabase.storage
+      .from('company-logos')
+      .getPublicUrl(customization.logo_upload_path).data.publicUrl;
+  }
+
+  console.log("logoSrc:", logoSrc);
+
   return (
     <div className="min-h-screen bg-gradient-hero">
       {/* Header */}
@@ -730,7 +865,9 @@ export default function ClientBooking() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <BookingLogo />
+              {logoSrc && (
+                <img src={logoSrc} alt={company.name} className="w-12 h-12 object-contain border-2 border-blue-600" />
+              )}
               <div>
                 <h1 className="text-xl font-bold">{company.name}</h1>
                 <p className="text-sm text-muted-foreground">Agendamento Online</p>
