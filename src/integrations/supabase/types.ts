@@ -94,6 +94,114 @@ export type Database = {
           },
         ]
       }
+      chatbot_flows: {
+        Row: {
+          company_id: string
+          containers: Json
+          created_at: string
+          description: string | null
+          edges: Json
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          company_id: string
+          containers?: Json
+          created_at?: string
+          description?: string | null
+          edges?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          company_id?: string
+          containers?: Json
+          created_at?: string
+          description?: string | null
+          edges?: Json
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_flows_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chatbot_sessions: {
+        Row: {
+          client_id: string | null
+          company_id: string
+          created_at: string
+          current_container_id: string | null
+          flow_id: string
+          id: string
+          messages: Json
+          status: string
+          updated_at: string
+          variables: Json
+        }
+        Insert: {
+          client_id?: string | null
+          company_id: string
+          created_at?: string
+          current_container_id?: string | null
+          flow_id: string
+          id?: string
+          messages?: Json
+          status?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Update: {
+          client_id?: string | null
+          company_id?: string
+          created_at?: string
+          current_container_id?: string | null
+          flow_id?: string
+          id?: string
+          messages?: Json
+          status?: string
+          updated_at?: string
+          variables?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chatbot_sessions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chatbot_sessions_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           avatar_url: string | null
