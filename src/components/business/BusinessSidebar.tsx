@@ -18,7 +18,8 @@ import {
   Briefcase, 
   Settings,
   User,
-  LogOut
+  LogOut,
+  Bot
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { BookingLogo } from "@/components/BookingLogo";
@@ -33,6 +34,7 @@ const menuItems = [
   { title: "Agendamentos", url: "/admin/agendamentos", icon: Calendar },
   { title: "Serviços", url: "/admin/servicos", icon: Briefcase },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: Users },
+  { title: "Chatbot", url: "/admin/chatbot", icon: Bot },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
 
