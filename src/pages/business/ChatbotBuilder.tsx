@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Plus, Bot, Settings, Trash2, MoreVertical, Power, PowerOff } from 'lucide-react';
+import { Plus, Bot, Trash2, MoreVertical, Power, PowerOff, ArrowLeft, Play, Save } from 'lucide-react';
 import { BusinessLayout } from '@/components/business/BusinessLayout';
-import { ChatbotProvider, useChatbot } from '@/contexts/ChatbotContext';
-import { CanvasEditor } from '@/components/chatbot-builder/CanvasEditor';
-import { TestPanel } from '@/components/chatbot-builder/TestPanel';
+import { VariablesProvider } from '@/contexts/VariablesContext';
+import { CanvasEditor } from '@/components/chatbot/CanvasEditor';
+import { TestPanel } from '@/components/chatbot/TestPanel';
+import { NodesSidebar } from '@/components/chatbot/NodesSidebar';
+import { Container, NodeType, Edge } from '@/types/chatbot';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,39 +55,60 @@ function ChatbotBuilderContent({
   userRole: string; 
   currentUser: User | null;
 }) {
-  const navigate = useNavigate();
   const [flows, setFlows] = useState<FlowListItem[]>([]);
   const [selectedFlowId, setSelectedFlowId] = useState<string | null>(null);
-  const [showTestPanel, setShowTestPanel] = useState(false);
+  const [selectedFlowName, setSelectedFlowName] = useState<string>('');
+  const [containers, setContainers] = useState<Container[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
+  const [testContainer, setTestContainer] = useState<Container | null>(null);
+  const [isTestOpen, setIsTestOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newFlowName, setNewFlowName] = useState('');
   const [newFlowDescription, setNewFlowDescription] = useState('');
 
-  const { loadFlow, flow, setFlow } = useChatbot();
-
-  // Load flows
   useEffect(() => {
-    async function loadFlows() {
-      try {
-        const { data: flowsData, error: flowsError } = await supabase
-          .from('chatbot_flows')
-          .select('id, name, description, is_active, created_at, updated_at')
-          .eq('company_id', companyData.id)
-          .order('created_at', { ascending: false });
-
-        if (flowsError) throw flowsError;
-        setFlows(flowsData || []);
-      } catch (error) {
-        console.error('Error loading flows:', error);
-        toast.error('Erro ao carregar fluxos');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     loadFlows();
   }, [companyData.id]);
+
+  const loadFlows = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chatbot_flows')
+        .select('id, name, description, is_active, created_at, updated_at')
+        .eq('company_id', companyData.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setFlows(data || []);
+    } catch (error) {
+      console.error('Error loading flows:', error);
+      toast.error('Erro ao carregar fluxos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadFlow = async (flowId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('chatbot_flows')
+        .select('*')
+        .eq('id', flowId)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setContainers((data.containers as unknown as Container[]) || []);
+        setEdges((data.edges as unknown as Edge[]) || []);
+        setSelectedFlowId(flowId);
+        setSelectedFlowName(data.name);
+      }
+    } catch (error) {
+      console.error('Error loading flow:', error);
+      toast.error('Erro ao carregar fluxo');
+    }
+  };
 
   const handleCreateFlow = async () => {
     if (!newFlowName.trim()) return;
@@ -97,6 +120,8 @@ function ChatbotBuilderContent({
           company_id: companyData.id,
           name: newFlowName.trim(),
           description: newFlowDescription.trim() || null,
+          containers: [],
+          edges: [],
         }])
         .select()
         .single();
@@ -108,13 +133,30 @@ function ChatbotBuilderContent({
       setNewFlowName('');
       setNewFlowDescription('');
       toast.success('Fluxo criado com sucesso!');
-
-      // Open the new flow
-      setSelectedFlowId(data.id);
       loadFlow(data.id);
     } catch (error) {
       console.error('Error creating flow:', error);
       toast.error('Erro ao criar fluxo');
+    }
+  };
+
+  const handleSave = async () => {
+    if (!selectedFlowId) return;
+    try {
+      const { error } = await supabase
+        .from('chatbot_flows')
+        .update({ 
+          containers: containers as any, 
+          edges: edges as any,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedFlowId);
+
+      if (error) throw error;
+      toast.success('Fluxo salvo!');
+    } catch (error) {
+      console.error('Error saving flow:', error);
+      toast.error('Erro ao salvar fluxo');
     }
   };
 
@@ -126,12 +168,7 @@ function ChatbotBuilderContent({
         .eq('id', flowId);
 
       if (error) throw error;
-
       setFlows(prev => prev.filter(f => f.id !== flowId));
-      if (selectedFlowId === flowId) {
-        setSelectedFlowId(null);
-        setFlow(null);
-      }
       toast.success('Fluxo excluído!');
     } catch (error) {
       console.error('Error deleting flow:', error);
@@ -141,7 +178,6 @@ function ChatbotBuilderContent({
 
   const handleToggleActive = async (flowId: string, currentState: boolean) => {
     try {
-      // If activating, deactivate others first
       if (!currentState) {
         await supabase
           .from('chatbot_flows')
@@ -168,46 +204,85 @@ function ChatbotBuilderContent({
     }
   };
 
-  const handleSelectFlow = (flowId: string) => {
-    setSelectedFlowId(flowId);
-    loadFlow(flowId);
+  const handleAddNode = (type: NodeType) => {
+    if (containers.length === 0) {
+      const newContainer: Container = {
+        id: `container-${Date.now()}`,
+        nodes: [{ id: `node-${Date.now()}`, type, config: {} }],
+        position: { x: 100, y: 100 }
+      };
+      setContainers([newContainer]);
+    } else {
+      const updatedContainers = [...containers];
+      updatedContainers[0].nodes.push({ id: `node-${Date.now()}`, type, config: {} });
+      setContainers(updatedContainers);
+    }
+  };
+
+  const handleAddContainer = () => {
+    const newContainer: Container = {
+      id: `container-${Date.now()}`,
+      nodes: [],
+      position: { x: 100 + containers.length * 350, y: 100 }
+    };
+    setContainers([...containers, newContainer]);
   };
 
   const handleBackToList = () => {
     setSelectedFlowId(null);
-    setFlow(null);
-    setShowTestPanel(false);
+    setSelectedFlowName('');
+    setContainers([]);
+    setEdges([]);
+    setIsTestOpen(false);
   };
 
   // Show editor if flow is selected
-  if (selectedFlowId && flow) {
+  if (selectedFlowId) {
     return (
       <div className="h-screen flex flex-col bg-background">
-        {/* Header */}
         <div className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={handleBackToList}>
-              ← Voltar
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
             </Button>
             <div className="w-px h-6 bg-border" />
-            <div>
-              <h1 className="font-semibold">{flow.name}</h1>
-              {flow.description && (
-                <p className="text-xs text-muted-foreground">{flow.description}</p>
-              )}
-            </div>
+            <h1 className="font-semibold">{selectedFlowName}</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={flow.is_active ? 'default' : 'secondary'}>
-              {flow.is_active ? 'Ativo' : 'Inativo'}
-            </Badge>
+            <Button variant="outline" onClick={handleAddContainer}>
+              <Plus className="h-4 w-4 mr-2" />
+              Bloco
+            </Button>
+            <Button variant="outline" onClick={() => { setTestContainer(containers[0] || null); setIsTestOpen(true); }}>
+              <Play className="h-4 w-4 mr-2" />
+              Testar
+            </Button>
+            <Button onClick={handleSave}>
+              <Save className="h-4 w-4 mr-2" />
+              Salvar
+            </Button>
           </div>
         </div>
 
-        {/* Editor */}
-        <div className="flex-1 flex overflow-hidden">
-          <CanvasEditor onTestChat={() => setShowTestPanel(true)} />
-          {showTestPanel && <TestPanel onClose={() => setShowTestPanel(false)} />}
+        <div className="flex-1 flex overflow-hidden relative">
+          <NodesSidebar onAddNode={handleAddNode} />
+          <div className="flex-1">
+            <CanvasEditor 
+              containers={containers} 
+              onContainersChange={setContainers} 
+              onTest={(c) => { setTestContainer(c); setIsTestOpen(true); }} 
+              onEdgesChange={setEdges}
+              edges={edges}
+            />
+          </div>
+          <TestPanel 
+            isOpen={isTestOpen} 
+            onClose={() => setIsTestOpen(false)} 
+            startContainer={testContainer} 
+            allContainers={containers} 
+            edges={edges} 
+          />
         </div>
       </div>
     );
@@ -263,7 +338,7 @@ function ChatbotBuilderContent({
               <Card 
                 key={flowItem.id}
                 className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => handleSelectFlow(flowItem.id)}
+                onClick={() => loadFlow(flowItem.id)}
               >
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                   <div className="flex-1">
@@ -327,7 +402,6 @@ function ChatbotBuilderContent({
           </div>
         )}
 
-        {/* Create flow dialog */}
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogContent>
             <DialogHeader>
@@ -383,7 +457,6 @@ export default function ChatbotBuilder() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Get current user
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           navigate(`/${slug}/admin/login`);
@@ -391,7 +464,6 @@ export default function ChatbotBuilder() {
         }
         setCurrentUser(user);
 
-        // Get company
         const { data: company, error: companyError } = await supabase
           .from('companies')
           .select('id, name, slug')
@@ -405,13 +477,11 @@ export default function ChatbotBuilder() {
         }
         setCompanyData(company);
 
-        // Get user role
         const { data: employee } = await supabase
           .from('employees')
           .select('role')
           .eq('company_id', company.id)
           .eq('user_id', user.id)
-          .eq('is_active', true)
           .single();
 
         if (employee) {
@@ -438,12 +508,12 @@ export default function ChatbotBuilder() {
   }
 
   return (
-    <ChatbotProvider companyId={companyData.id}>
+    <VariablesProvider>
       <ChatbotBuilderContent 
         companyData={companyData} 
         userRole={userRole} 
         currentUser={currentUser}
       />
-    </ChatbotProvider>
+    </VariablesProvider>
   );
 }
