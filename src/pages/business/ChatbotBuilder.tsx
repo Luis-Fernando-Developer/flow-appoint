@@ -205,18 +205,32 @@ function ChatbotBuilderContent({
   };
 
   const handleAddNode = (type: NodeType) => {
-    if (containers.length === 0) {
-      const newContainer: Container = {
-        id: `container-${Date.now()}`,
-        nodes: [{ id: `node-${Date.now()}`, type, config: {} }],
-        position: { x: 100, y: 100 }
-      };
-      setContainers([newContainer]);
-    } else {
-      const updatedContainers = [...containers];
-      updatedContainers[0].nodes.push({ id: `node-${Date.now()}`, type, config: {} });
-      setContainers(updatedContainers);
+    const defaultConfig: Record<string, any> = {};
+    
+    if (type.startsWith('bubble-')) {
+      defaultConfig.message = '';
     }
+    if (type.startsWith('input-')) {
+      defaultConfig.responseUserTextInput = '';
+      defaultConfig.buttonLabel = 'Enviar';
+    }
+
+    const newNode = {
+      id: `node-${Date.now()}`,
+      type,
+      config: defaultConfig
+    };
+
+    const newContainer: Container = {
+      id: `container-${Date.now()}`,
+      nodes: [newNode],
+      position: {
+        x: 100 + (containers.length % 4) * 320,
+        y: 100 + Math.floor(containers.length / 4) * 280
+      }
+    };
+
+    setContainers([...containers, newContainer]);
   };
 
   const handleAddContainer = () => {
@@ -239,52 +253,54 @@ function ChatbotBuilderContent({
   // Show editor if flow is selected
   if (selectedFlowId) {
     return (
-      <div className="h-screen flex flex-col bg-background">
-        <div className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={handleBackToList}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
-            </Button>
-            <div className="w-px h-6 bg-border" />
-            <h1 className="font-semibold">{selectedFlowName}</h1>
+      <VariablesProvider>
+        <div className="h-screen flex flex-col bg-background">
+          <div className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" onClick={handleBackToList}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar
+              </Button>
+              <div className="w-px h-6 bg-border" />
+              <h1 className="font-semibold">{selectedFlowName}</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={handleAddContainer}>
+                <Plus className="h-4 w-4 mr-2" />
+                Bloco
+              </Button>
+              <Button variant="outline" onClick={() => { setTestContainer(containers[0] || null); setIsTestOpen(true); }}>
+                <Play className="h-4 w-4 mr-2" />
+                Testar
+              </Button>
+              <Button onClick={handleSave}>
+                <Save className="h-4 w-4 mr-2" />
+                Salvar
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleAddContainer}>
-              <Plus className="h-4 w-4 mr-2" />
-              Bloco
-            </Button>
-            <Button variant="outline" onClick={() => { setTestContainer(containers[0] || null); setIsTestOpen(true); }}>
-              <Play className="h-4 w-4 mr-2" />
-              Testar
-            </Button>
-            <Button onClick={handleSave}>
-              <Save className="h-4 w-4 mr-2" />
-              Salvar
-            </Button>
-          </div>
-        </div>
 
-        <div className="flex-1 flex overflow-hidden relative">
-          <NodesSidebar onAddNode={handleAddNode} />
-          <div className="flex-1">
-            <CanvasEditor 
-              containers={containers} 
-              onContainersChange={setContainers} 
-              onTest={(c) => { setTestContainer(c); setIsTestOpen(true); }} 
-              onEdgesChange={setEdges}
-              edges={edges}
-            />
-          </div>
-          <TestPanel 
-            isOpen={isTestOpen} 
-            onClose={() => setIsTestOpen(false)} 
+          <div className="flex-1 flex overflow-hidden relative">
+            <NodesSidebar onAddNode={handleAddNode} />
+            <div className="flex-1">
+              <CanvasEditor 
+                containers={containers} 
+                onContainersChange={setContainers} 
+                onTest={(c) => { setTestContainer(c); setIsTestOpen(true); }} 
+                onEdgesChange={setEdges}
+                edges={edges}
+              />
+            </div>
+            <TestPanel 
+              isOpen={isTestOpen} 
+              onClose={() => setIsTestOpen(false)}
             startContainer={testContainer} 
             allContainers={containers} 
             edges={edges} 
           />
         </div>
       </div>
+      </VariablesProvider>
     );
   }
 
