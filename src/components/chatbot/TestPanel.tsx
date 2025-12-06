@@ -1,11 +1,109 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Send, File, Headphones } from "lucide-react";
+import { X, Send, File, Headphones, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Container, Node, ButtonConfig, Edge } from "@/types/chatbot";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useVariables } from "@/contexts/VariablesContext";
 import { renderTextSegments } from "@/lib/textParser";
+
+interface AudioPlayerProps {
+  src: string;
+  autoPlay?: boolean;
+}
+
+const AudioPlayer = ({ src, autoPlay }: AudioPlayerProps) => {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleLoadedMetadata = () => setDuration(audio.duration);
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+      setProgress((audio.currentTime / audio.duration) * 100);
+    };
+    const handleEnded = () => setIsPlaying(false);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+    };
+  }, []);
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play();
+    }
+  };
+
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const newTime = (clickX / rect.width) * duration;
+    audio.currentTime = newTime;
+  };
+
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return "0:00";
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  return (
+    <div className="flex items-center gap-2 min-w-[180px]">
+      <audio ref={audioRef} src={src} autoPlay={autoPlay} />
+      <button
+        onClick={togglePlay}
+        className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors flex-shrink-0"
+      >
+        {isPlaying ? (
+          <Pause className="h-4 w-4 text-white" />
+        ) : (
+          <Play className="h-4 w-4 text-white ml-0.5" />
+        )}
+      </button>
+      <div className="flex-1 flex flex-col gap-1">
+        <div
+          onClick={handleProgressClick}
+          className="h-1.5 bg-white/30 rounded-full cursor-pointer overflow-hidden"
+        >
+          <div
+            className="h-full bg-white rounded-full transition-all duration-100"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="flex justify-between text-[10px] text-white/70">
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface TestPanelProps {
   isOpen: boolean;
@@ -180,13 +278,7 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
                   ) : message.isAudio ? (
                     <div className="flex items-center gap-2">
                       <Headphones className="h-4 w-4 flex-shrink-0" />
-                      <audio
-                        src={message.content}
-                        controls
-                        autoPlay={message.autoplay}
-                        className="max-w-full"
-                        style={{ height: '32px' }}
-                      />
+                      <AudioPlayer src={message.content} autoPlay={message.autoplay} />
                     </div>
                   ) : (
                     renderTextSegments(message.content)
