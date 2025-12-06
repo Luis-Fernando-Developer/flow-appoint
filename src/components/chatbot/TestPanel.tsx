@@ -24,6 +24,7 @@ interface Message {
   isFile?: boolean;
   isAudio?: boolean;
   alt?: string;
+  autoplay?: boolean;
 }
 
 export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edges = [] }: TestPanelProps) => {
@@ -91,6 +92,23 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
           setMessages((prev) => [...prev, { id: `${node.id}-${Date.now()}`, type: "bot", content: node.config.VideoURL, isVideo: true }]);
           setTimeout(() => processNextNode(container, nodeIndex + 1, extraVars), 500);
         }, 500);
+      } else if (node.type === "bubble-audio") {
+        const audioURL = node.config.AudioURL;
+        if (audioURL && typeof audioURL === "string" && audioURL.trim() !== "") {
+          setTimeout(() => {
+            setMessages((prev) => [...prev, {
+              id: `${node.id}-${Date.now()}`,
+              type: "bot",
+              content: audioURL,
+              isAudio: true,
+              alt: node.config.AudioAlt || "Áudio",
+              autoplay: node.config.AudioAutoplay || false,
+            }]);
+            setTimeout(() => processNextNode(container, nodeIndex + 1, extraVars), 500);
+          }, 500);
+        } else {
+          processNextNode(container, nodeIndex + 1, extraVars);
+        }
       } else {
         const message = node.config.message || node.config.number || "";
         if (message) {
@@ -155,7 +173,24 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.type === "bot" ? "justify-start" : "justify-end"}`}>
                 <div className={`max-w-[85%] px-3 py-2 rounded-lg text-sm ${message.type === "bot" ? "bg-blue-500 text-white" : "bg-orange-500 text-white"}`}>
-                  {message.isImage ? <img src={message.content} alt={message.alt} className="max-w-full rounded" /> : message.isVideo ? <video src={message.content} controls className="max-w-full rounded" /> : renderTextSegments(message.content)}
+                  {message.isImage ? (
+                    <img src={message.content} alt={message.alt} className="max-w-full rounded" />
+                  ) : message.isVideo ? (
+                    <video src={message.content} controls className="max-w-full rounded" />
+                  ) : message.isAudio ? (
+                    <div className="flex items-center gap-2">
+                      <Headphones className="h-4 w-4 flex-shrink-0" />
+                      <audio
+                        src={message.content}
+                        controls
+                        autoPlay={message.autoplay}
+                        className="max-w-full"
+                        style={{ height: '32px' }}
+                      />
+                    </div>
+                  ) : (
+                    renderTextSegments(message.content)
+                  )}
                 </div>
               </div>
             ))}
