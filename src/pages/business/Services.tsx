@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { BusinessLayout } from "@/components/business/BusinessLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Clock, DollarSign, Briefcase } from "lucide-react";
+import { Clock, DollarSign, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddServiceDialog } from "@/components/business/AddServiceDialog";
+import { EditServiceDialog } from "@/components/business/EditServiceDialog";
+import { DeleteServiceDialog } from "@/components/business/DeleteServiceDialog";
 
 interface Service {
   id: string;
@@ -189,12 +190,14 @@ export default function BusinessServices() {
                       )}
                     </CardTitle>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <EditServiceDialog 
+                        service={service} 
+                        onServiceUpdated={fetchData} 
+                      />
+                      <DeleteServiceDialog 
+                        service={service} 
+                        onServiceDeleted={fetchData} 
+                      />
                     </div>
                   </div>
                   {service.description && (
