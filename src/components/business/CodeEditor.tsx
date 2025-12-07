@@ -13,40 +13,33 @@ interface CodeEditorProps {
 export function CodeEditor({ code, onChange, onSave }: CodeEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
 
-  const defaultCode = `
-// Exemplo de componente personalizado
-function CustomSection() {
-  return (
-    <section className="py-16 bg-gradient-to-r from-primary/10 to-secondary/10">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gradient mb-4">
-            Seção Personalizada
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Adicione aqui seu conteúdo personalizado usando React e Tailwind CSS.
-          </p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="card-glow p-6 rounded-lg">
-              <h3 className="text-xl font-semibold mb-3">
-                Item {item}
-              </h3>
-              <p className="text-muted-foreground">
-                Descrição do item personalizado.
-              </p>
-            </div>
-          ))}
-        </div>
+  const defaultCode = `<section class="py-16 bg-gradient-to-r from-primary/10 to-secondary/10">
+  <div class="container mx-auto px-4">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-bold text-gradient mb-4">
+        Seção Personalizada
+      </h2>
+      <p class="text-muted-foreground max-w-2xl mx-auto">
+        Adicione aqui seu conteúdo personalizado usando HTML e Tailwind CSS.
+      </p>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="card-glow p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-3">Item 1</h3>
+        <p class="text-muted-foreground">Descrição do item personalizado.</p>
       </div>
-    </section>
-  );
-}
-
-export default CustomSection;
-  `.trim();
+      <div class="card-glow p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-3">Item 2</h3>
+        <p class="text-muted-foreground">Descrição do item personalizado.</p>
+      </div>
+      <div class="card-glow p-6 rounded-lg">
+        <h3 class="text-xl font-semibold mb-3">Item 3</h3>
+        <p class="text-muted-foreground">Descrição do item personalizado.</p>
+      </div>
+    </div>
+  </div>
+</section>`.trim();
 
   return (
     <Card>
@@ -82,10 +75,10 @@ export default CustomSection;
               className="font-mono text-sm min-h-[400px] resize-none"
             />
             <div className="text-xs text-muted-foreground space-y-1">
-              <p>• Use React functional components</p>
+              <p>• Use HTML válido (não JSX/React)</p>
               <p>• Utilize classes do Tailwind CSS para estilização</p>
+              <p>• Use "class" ao invés de "className"</p>
               <p>• Classes disponíveis: text-gradient, card-glow, btn-neon, animate-float</p>
-              <p>• Não esqueça de exportar o componente como default</p>
             </div>
           </div>
         ) : (
