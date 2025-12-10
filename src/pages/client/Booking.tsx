@@ -294,8 +294,10 @@ export default function ClientBooking() {
           
           if (response.ok) {
             const data = await response.json();
-            // Se houver pelo menos um slot disponível, adicionar a data
-            if (data.availability && data.availability.length > 0) {
+            // Check both slots (flat array) and availability (grouped by employee)
+            if (data.slots && data.slots.length > 0) {
+              dates.push(date);
+            } else if (data.availability && data.availability.length > 0) {
               const employeeAvailability = data.availability.find(
                 (a: any) => a.employee_id === selectedEmployee.id
               );
@@ -345,13 +347,21 @@ export default function ClientBooking() {
       
       const data = await response.json();
       
-      // Encontrar disponibilidade do funcionário selecionado
-      const employeeAvailability = data.availability?.find(
-        (a: any) => a.employee_id === selectedEmployee.id
-      );
-      
-      if (employeeAvailability && employeeAvailability.slots) {
-        setAvailableTimes(employeeAvailability.slots);
+      // Use slots array directly (each slot has time, employee_id, employee_name)
+      if (data.slots && data.slots.length > 0) {
+        // Extract just the time strings from the slots
+        const times = data.slots.map((slot: { time: string }) => slot.time);
+        setAvailableTimes(times);
+      } else if (data.availability && data.availability.length > 0) {
+        // Fallback to availability format
+        const employeeAvailability = data.availability.find(
+          (a: any) => a.employee_id === selectedEmployee.id
+        );
+        if (employeeAvailability && employeeAvailability.slots) {
+          setAvailableTimes(employeeAvailability.slots);
+        } else {
+          setAvailableTimes([]);
+        }
       } else {
         setAvailableTimes([]);
       }
