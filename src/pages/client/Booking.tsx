@@ -67,6 +67,7 @@ export default function ClientBooking() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [availableDates, setAvailableDates] = useState<Date[]>([]);
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [formData, setFormData] = useState<BookingForm>({
     client_name: "",
     client_email: "",
@@ -117,16 +118,16 @@ export default function ClientBooking() {
   }, [selectedService]);
 
   useEffect(() => {
-    if (selectedEmployee) {
-      generateAvailableDates();
+    if (selectedEmployee && company && selectedService) {
+      fetchAvailableDates();
     }
-  }, [selectedEmployee]);
+  }, [selectedEmployee, company, selectedService]);
 
   useEffect(() => {
-    if (selectedDate && selectedEmployee && selectedService) {
-      generateAvailableTimes();
+    if (selectedDate && selectedEmployee && selectedService && company) {
+      fetchAvailableTimes();
     }
-  }, [selectedDate, selectedEmployee, selectedService]);
+  }, [selectedDate, selectedEmployee, selectedService, company]);
 
   useEffect(() => {
     if (customization) {
@@ -265,66 +266,95 @@ export default function ClientBooking() {
     }
   };
 
-  const generateAvailableDates = () => {
-    // Gerar próximos 30 dias (excluindo domingos para exemplo)
-    const dates: Date[] = [];
-    const today = new Date();
-    
-    for (let i = 1; i <= 30; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
+  const fetchAvailableDates = async () => {
+    if (!selectedEmployee || !company || !selectedService) return;
+
+    setIsLoadingAvailability(true);
+    try {
+      // Buscar próximos 30 dias que têm disponibilidade
+      const dates: Date[] = [];
+      const today = new Date();
       
-      // Excluir domingos (dia 0)
-      if (date.getDay() !== 0) {
-        dates.push(date);
+      // Verificar cada dia nos próximos 30 dias
+      for (let i = 1; i <= 30; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const dateStr = format(date, 'yyyy-MM-dd');
+        
+        try {
+          const response = await fetch(
+            `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${selectedService.id}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            // Se houver pelo menos um slot disponível, adicionar a data
+            if (data.availability && data.availability.length > 0) {
+              const employeeAvailability = data.availability.find(
+                (a: any) => a.employee_id === selectedEmployee.id
+              );
+              if (employeeAvailability && employeeAvailability.slots.length > 0) {
+                dates.push(date);
+              }
+            }
+          }
+        } catch (err) {
+          console.log(`Erro ao verificar disponibilidade para ${dateStr}:`, err);
+        }
       }
+      
+      setAvailableDates(dates);
+    } catch (error) {
+      console.error("Erro ao carregar datas disponíveis:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as datas disponíveis.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingAvailability(false);
     }
-    
-    setAvailableDates(dates);
   };
 
-  const generateAvailableTimes = async () => {
+  const fetchAvailableTimes = async () => {
     if (!selectedDate || !selectedEmployee || !selectedService || !company) return;
 
+    setIsLoadingAvailability(true);
     try {
-      // Buscar agendamentos existentes para a data e funcionário
-      const { data: existingBookings, error } = await supabase
-        .from('bookings')
-        .select('booking_time, duration_minutes')
-        .eq('employee_id', selectedEmployee.id)
-        .eq('booking_date', format(selectedDate, 'yyyy-MM-dd'))
-        .eq('booking_status', 'confirmed');
-
-      if (error) throw error;
-
-      // Gerar horários disponíveis (9h às 17h, de 30 em 30 minutos)
-      const allTimes: string[] = [];
-      for (let hour = 9; hour < 17; hour++) {
-        allTimes.push(`${hour.toString().padStart(2, '0')}:00`);
-        allTimes.push(`${hour.toString().padStart(2, '0')}:30`);
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      
+      const response = await fetch(
+        `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${selectedService.id}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Erro ao buscar disponibilidade');
       }
-
-      // Filtrar horários já ocupados
-      const availableTimes = allTimes.filter(time => {
-        const [hours, minutes] = time.split(':').map(Number);
-        const timeInMinutes = hours * 60 + minutes;
-        
-        return !existingBookings?.some(booking => {
-          const [bookingHours, bookingMinutes] = booking.booking_time.split(':').map(Number);
-          const bookingTimeInMinutes = bookingHours * 60 + bookingMinutes;
-          const bookingEndTime = bookingTimeInMinutes + booking.duration_minutes;
-          const serviceEndTime = timeInMinutes + selectedService.duration_minutes;
-          
-          // Verificar se há conflito de horários
-          return (
-            (timeInMinutes >= bookingTimeInMinutes && timeInMinutes < bookingEndTime) ||
-            (serviceEndTime > bookingTimeInMinutes && serviceEndTime <= bookingEndTime) ||
-            (timeInMinutes <= bookingTimeInMinutes && serviceEndTime >= bookingEndTime)
-          );
-        });
-      });
-
-      setAvailableTimes(availableTimes);
+      
+      const data = await response.json();
+      
+      // Encontrar disponibilidade do funcionário selecionado
+      const employeeAvailability = data.availability?.find(
+        (a: any) => a.employee_id === selectedEmployee.id
+      );
+      
+      if (employeeAvailability && employeeAvailability.slots) {
+        setAvailableTimes(employeeAvailability.slots);
+      } else {
+        setAvailableTimes([]);
+      }
     } catch (error) {
       console.error("Erro ao carregar horários:", error);
       toast({
@@ -332,6 +362,9 @@ export default function ClientBooking() {
         description: "Não foi possível carregar os horários disponíveis.",
         variant: "destructive"
       });
+      setAvailableTimes([]);
+    } finally {
+      setIsLoadingAvailability(false);
     }
   };
 
@@ -562,20 +595,31 @@ export default function ClientBooking() {
             <CardContent className="space-y-6">
               <div>
                 <Label className="text-base font-medium">Datas disponíveis</Label>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  locale={ptBR}
-                  disabled={(date) => {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return date < today || !availableDates.some(availableDate => 
-                      availableDate.toDateString() === date.toDateString()
-                    );
-                  }}
-                  className="rounded-md border border-primary/20 bg-background/50"
-                />
+                {isLoadingAvailability ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <span className="ml-3 text-muted-foreground">Buscando disponibilidade...</span>
+                  </div>
+                ) : availableDates.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhuma data disponível nos próximos 30 dias.
+                  </p>
+                ) : (
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    locale={ptBR}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return date < today || !availableDates.some(availableDate => 
+                        availableDate.toDateString() === date.toDateString()
+                      );
+                    }}
+                    className="rounded-md border border-primary/20 bg-background/50"
+                  />
+                )}
               </div>
 
               <div className="flex gap-2">
@@ -604,22 +648,26 @@ export default function ClientBooking() {
               <CardDescription>Selecione um horário disponível</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {availableTimes.length === 0 ? (
+              {isLoadingAvailability ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span className="ml-3 text-muted-foreground">Buscando horários...</span>
+                </div>
+              ) : availableTimes.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   Nenhum horário disponível para esta data.
                 </p>
               ) : (
                 <div>
                   <Label className="text-base font-medium">Horários disponíveis</Label>
-                    <div className="grid grid-cols-4 gap-2 mt-2" 
-                      style={{
-                        
-                        fontFamily: customStyles["--font-family"],
-                    }}>
+                  <div className="grid grid-cols-4 gap-2 mt-2" 
+                    style={{
+                      fontFamily: customStyles["--font-family"],
+                  }}>
                     {availableTimes.map((time) => (
                       <Button
                         style={{
-                          background: customStyles["--cards-background"],
+                          background: selectedTime !== time ? customStyles["--cards-background"] : undefined,
                           fontFamily: customStyles["--font-family"],
                         }}
                         key={time}
