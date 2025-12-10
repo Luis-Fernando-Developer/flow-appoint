@@ -29,12 +29,39 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { company_id, service_id, employee_id, date } = await req.json() as AvailabilityRequest;
+    // Support both GET and POST methods
+    let company_id: string;
+    let service_id: string;
+    let employee_id: string | undefined;
+    let date: string;
 
-    console.log(`Getting availability for company ${company_id}, service ${service_id}, date ${date}`);
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      company_id = url.searchParams.get('company_id') || '';
+      service_id = url.searchParams.get('service_id') || '';
+      employee_id = url.searchParams.get('employee_id') || undefined;
+      date = url.searchParams.get('date') || '';
+    } else {
+      const body = await req.json() as AvailabilityRequest;
+      company_id = body.company_id;
+      service_id = body.service_id;
+      employee_id = body.employee_id;
+      date = body.date;
+    }
+
+    console.log(`[get-availability] Method: ${req.method}, company_id: ${company_id}, service_id: ${service_id}, employee_id: ${employee_id}, date: ${date}`);
+
+    if (!company_id || !service_id || !date) {
+      return new Response(
+        JSON.stringify({ error: 'Parâmetros obrigatórios: company_id, service_id, date' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const requestDate = new Date(date + 'T00:00:00');
     const dayOfWeek = requestDate.getDay();
+
+    console.log(`[get-availability] Day of week: ${dayOfWeek}`);
 
     // 1. Get company schedule settings
     const { data: settings } = await supabase
@@ -54,11 +81,13 @@ serve(async (req) => {
       .eq('day_of_week', dayOfWeek)
       .maybeSingle();
 
+    console.log(`[get-availability] Business hours for day ${dayOfWeek}:`, businessHours);
+
     // Check if business is open
     if (!businessHours || !businessHours.is_open) {
-      console.log('Business is closed on this day');
+      console.log('[get-availability] Business is closed on this day');
       return new Response(
-        JSON.stringify({ slots: [], message: 'Estabelecimento fechado neste dia' }),
+        JSON.stringify({ slots: [], availability: [], message: 'Estabelecimento fechado neste dia' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -72,9 +101,9 @@ serve(async (req) => {
       .eq('is_company_wide', true);
 
     if (companyBlocks && companyBlocks.some(b => !b.start_time)) {
-      console.log('Company-wide block for entire day');
+      console.log('[get-availability] Company-wide block for entire day');
       return new Response(
-        JSON.stringify({ slots: [], message: 'Data bloqueada' }),
+        JSON.stringify({ slots: [], availability: [], message: 'Data bloqueada' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -114,18 +143,23 @@ serve(async (req) => {
 
     const { data: employees } = await employeeQuery;
 
+    console.log(`[get-availability] Found ${employees?.length || 0} employees for this service`);
+
     if (!employees || employees.length === 0) {
-      console.log('No employees for this service');
+      console.log('[get-availability] No employees for this service');
       return new Response(
-        JSON.stringify({ slots: [], message: 'Nenhum profissional disponível para este serviço' }),
+        JSON.stringify({ slots: [], availability: [], message: 'Nenhum profissional disponível para este serviço' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const allSlots: TimeSlot[] = [];
+    const availabilityByEmployee: { employee_id: string; employee_name: string; slots: string[] }[] = [];
 
     for (const employee of employees) {
-      console.log(`Processing employee: ${employee.name} (${employee.employee_type})`);
+      console.log(`[get-availability] Processing employee: ${employee.name} (${employee.employee_type})`);
+
+      const employeeSlots: string[] = [];
 
       // 6. Check employee absences
       const { data: absences } = await supabase
@@ -136,7 +170,7 @@ serve(async (req) => {
         .gte('end_date', date);
 
       if (absences && absences.length > 0) {
-        console.log(`Employee ${employee.name} is absent`);
+        console.log(`[get-availability] Employee ${employee.name} is absent`);
         continue;
       }
 
@@ -155,8 +189,10 @@ serve(async (req) => {
           .eq('day_of_week', dayOfWeek)
           .maybeSingle();
 
+        console.log(`[get-availability] Employee ${employee.name} schedule for day ${dayOfWeek}:`, schedule);
+
         if (!schedule || !schedule.is_working) {
-          console.log(`Employee ${employee.name} doesn't work on this day`);
+          console.log(`[get-availability] Employee ${employee.name} doesn't work on this day`);
           continue;
         }
 
@@ -174,7 +210,7 @@ serve(async (req) => {
           .maybeSingle();
 
         if (!availability) {
-          console.log(`Autonomous employee ${employee.name} has no availability for this date`);
+          console.log(`[get-availability] Autonomous employee ${employee.name} has no availability for this date`);
           continue;
         }
 
@@ -185,8 +221,11 @@ serve(async (req) => {
       }
 
       if (!employeeStart || !employeeEnd) {
+        console.log(`[get-availability] Employee ${employee.name} has no start/end time configured`);
         continue;
       }
+
+      console.log(`[get-availability] Employee ${employee.name} hours: ${employeeStart} - ${employeeEnd}, break: ${breakStart} - ${breakEnd}`);
 
       // 8. Get employee-specific blocked slots
       const { data: employeeBlocks } = await supabase
@@ -197,7 +236,7 @@ serve(async (req) => {
 
       // Check if entire day is blocked
       if (employeeBlocks && employeeBlocks.some(b => !b.start_time)) {
-        console.log(`Employee ${employee.name} has entire day blocked`);
+        console.log(`[get-availability] Employee ${employee.name} has entire day blocked`);
         continue;
       }
 
@@ -221,6 +260,8 @@ serve(async (req) => {
         ? employeeEnd 
         : businessClose;
 
+      console.log(`[get-availability] Effective hours for ${employee.name}: ${effectiveStart} - ${effectiveEnd}`);
+
       // 11. Generate slots
       const startMinutes = timeToMinutes(effectiveStart);
       const endMinutes = timeToMinutes(effectiveEnd);
@@ -230,7 +271,8 @@ serve(async (req) => {
         const slotEndTime = time + serviceDuration;
 
         // Check minimum advance time for today
-        if (date === new Date().toISOString().split('T')[0]) {
+        const today = new Date().toISOString().split('T')[0];
+        if (date === today) {
           const now = new Date();
           const nowMinutes = now.getHours() * 60 + now.getMinutes();
           if (time < nowMinutes + (minAdvanceHours * 60)) {
@@ -292,10 +334,20 @@ serve(async (req) => {
         if (hasConflict) continue;
 
         // Slot is available!
+        employeeSlots.push(slotTime);
         allSlots.push({
           time: slotTime,
           employee_id: employee.id,
           employee_name: employee.name,
+        });
+      }
+
+      // Add to availability by employee
+      if (employeeSlots.length > 0) {
+        availabilityByEmployee.push({
+          employee_id: employee.id,
+          employee_name: employee.name,
+          slots: employeeSlots,
         });
       }
     }
@@ -303,15 +355,18 @@ serve(async (req) => {
     // Sort slots by time
     allSlots.sort((a, b) => a.time.localeCompare(b.time));
 
-    console.log(`Found ${allSlots.length} available slots`);
+    console.log(`[get-availability] Found ${allSlots.length} total slots, ${availabilityByEmployee.length} employees with availability`);
 
     return new Response(
-      JSON.stringify({ slots: allSlots }),
+      JSON.stringify({ 
+        slots: allSlots,
+        availability: availabilityByEmployee
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('[get-availability] Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
