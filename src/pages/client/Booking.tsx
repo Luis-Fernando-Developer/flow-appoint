@@ -275,8 +275,8 @@ export default function ClientBooking() {
       const dates: Date[] = [];
       const today = new Date();
       
-      // Verificar cada dia nos próximos 30 dias
-      for (let i = 1; i <= 30; i++) {
+      // Verificar cada dia nos próximos 30 dias (incluindo hoje)
+      for (let i = 0; i <= 30; i++) {
         const date = new Date(today);
         date.setDate(today.getDate() + i);
         const dateStr = format(date, 'yyyy-MM-dd');

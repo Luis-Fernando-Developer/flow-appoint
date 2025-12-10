@@ -226,7 +226,11 @@ export default function BusinessBookings() {
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('pt-BR', {
+    // Criar data tratando a string como local, não UTC, para evitar problemas de timezone
+    const [year, month, day] = date.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
+    
+    return localDate.toLocaleDateString('pt-BR', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
