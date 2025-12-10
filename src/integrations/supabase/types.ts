@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_slots: {
+        Row: {
+          blocked_date: string
+          company_id: string
+          created_at: string | null
+          employee_id: string | null
+          end_time: string | null
+          id: string
+          is_company_wide: boolean | null
+          reason: string | null
+          start_time: string | null
+        }
+        Insert: {
+          blocked_date: string
+          company_id: string
+          created_at?: string | null
+          employee_id?: string | null
+          end_time?: string | null
+          id?: string
+          is_company_wide?: boolean | null
+          reason?: string | null
+          start_time?: string | null
+        }
+        Update: {
+          blocked_date?: string
+          company_id?: string
+          created_at?: string | null
+          employee_id?: string | null
+          end_time?: string | null
+          id?: string
+          is_company_wide?: boolean | null
+          reason?: string | null
+          start_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocked_slots_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocked_slots_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_date: string
@@ -90,6 +141,53 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_hours: {
+        Row: {
+          close_time: string | null
+          company_id: string
+          created_at: string | null
+          day_of_week: number
+          id: string
+          is_open: boolean | null
+          open_time: string | null
+          second_close_time: string | null
+          second_open_time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          close_time?: string | null
+          company_id: string
+          created_at?: string | null
+          day_of_week: number
+          id?: string
+          is_open?: boolean | null
+          open_time?: string | null
+          second_close_time?: string | null
+          second_open_time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          close_time?: string | null
+          company_id?: string
+          created_at?: string | null
+          day_of_week?: number
+          id?: string
+          is_open?: boolean | null
+          open_time?: string | null
+          second_close_time?: string | null
+          second_open_time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_hours_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -446,6 +544,191 @@ export type Database = {
           },
         ]
       }
+      company_schedule_settings: {
+        Row: {
+          allows_overtime: boolean | null
+          company_id: string
+          created_at: string | null
+          id: string
+          max_booking_advance_days: number | null
+          max_break_duration: number | null
+          max_overtime_hours: number | null
+          max_simultaneous_breaks: number | null
+          min_booking_advance_hours: number | null
+          min_break_duration: number | null
+          slot_duration: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          allows_overtime?: boolean | null
+          company_id: string
+          created_at?: string | null
+          id?: string
+          max_booking_advance_days?: number | null
+          max_break_duration?: number | null
+          max_overtime_hours?: number | null
+          max_simultaneous_breaks?: number | null
+          min_booking_advance_hours?: number | null
+          min_break_duration?: number | null
+          slot_duration?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          allows_overtime?: boolean | null
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          max_booking_advance_days?: number | null
+          max_break_duration?: number | null
+          max_overtime_hours?: number | null
+          max_simultaneous_breaks?: number | null
+          min_booking_advance_hours?: number | null
+          min_break_duration?: number | null
+          slot_duration?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_schedule_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_absences: {
+        Row: {
+          absence_type: Database["public"]["Enums"]["absence_type"]
+          created_at: string | null
+          employee_id: string
+          end_date: string
+          id: string
+          reason: string | null
+          start_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          absence_type: Database["public"]["Enums"]["absence_type"]
+          created_at?: string | null
+          employee_id: string
+          end_date: string
+          id?: string
+          reason?: string | null
+          start_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          absence_type?: Database["public"]["Enums"]["absence_type"]
+          created_at?: string | null
+          employee_id?: string
+          end_date?: string
+          id?: string
+          reason?: string | null
+          start_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_availability: {
+        Row: {
+          available_date: string
+          break_end: string | null
+          break_start: string | null
+          created_at: string | null
+          employee_id: string
+          end_time: string
+          id: string
+          start_time: string
+        }
+        Insert: {
+          available_date: string
+          break_end?: string | null
+          break_start?: string | null
+          created_at?: string | null
+          employee_id: string
+          end_time: string
+          id?: string
+          start_time: string
+        }
+        Update: {
+          available_date?: string
+          break_end?: string | null
+          break_start?: string | null
+          created_at?: string | null
+          employee_id?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_availability_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_schedules: {
+        Row: {
+          allows_overtime: boolean | null
+          break_end: string | null
+          break_start: string | null
+          created_at: string | null
+          day_of_week: number
+          employee_id: string
+          end_time: string | null
+          id: string
+          is_working: boolean | null
+          start_time: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          allows_overtime?: boolean | null
+          break_end?: string | null
+          break_start?: string | null
+          created_at?: string | null
+          day_of_week: number
+          employee_id: string
+          end_time?: string | null
+          id?: string
+          is_working?: boolean | null
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          allows_overtime?: boolean | null
+          break_end?: string | null
+          break_start?: string | null
+          created_at?: string | null
+          day_of_week?: number
+          employee_id?: string
+          end_time?: string | null
+          id?: string
+          is_working?: boolean | null
+          start_time?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_services: {
         Row: {
           created_at: string
@@ -618,6 +901,12 @@ export type Database = {
       }
     }
     Enums: {
+      absence_type:
+        | "vacation"
+        | "day_off"
+        | "sick_leave"
+        | "suspension"
+        | "other"
       booking_status:
         | "pending"
         | "confirmed"
@@ -758,6 +1047,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      absence_type: [
+        "vacation",
+        "day_off",
+        "sick_leave",
+        "suspension",
+        "other",
+      ],
       booking_status: [
         "pending",
         "confirmed",

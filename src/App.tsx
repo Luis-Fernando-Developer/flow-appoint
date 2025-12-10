@@ -17,6 +17,7 @@ import BusinessEmployees from "./pages/business/Employees";
 import BusinessSettings from "./pages/business/Settings";
 import BusinessProfile from "./pages/business/Profile";
 import ChatbotBuilder from "./pages/business/ChatbotBuilder";
+import BusinessSchedule from "./pages/business/Schedule";
 import ClientBooking from "./pages/client/Booking";
 import ClientLogin from "./pages/client/Login";
 import ClientSignup from "./pages/client/Signup";
@@ -62,6 +63,8 @@ const App = () => (
           <Route path="/:slug/admin/perfil" element={<BusinessProfile />} />
           {/* rota chatbot builder painel admin empresa */}
           <Route path="/:slug/admin/chatbot" element={<ChatbotBuilder />} />
+          {/* rota horários painel admin empresa */}
+          <Route path="/:slug/admin/horarios" element={<BusinessSchedule />} />
 
           {/* rota landingpage empresa por parametro [slug] */}
           <Route path="/:slug" element={<CompanyLandingPage />} />
