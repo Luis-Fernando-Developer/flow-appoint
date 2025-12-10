@@ -19,7 +19,8 @@ import {
   Settings,
   User,
   LogOut,
-  Bot
+  Bot,
+  Clock
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { BookingLogo } from "@/components/BookingLogo";
@@ -32,6 +33,7 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 const menuItems = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Agendamentos", url: "/admin/agendamentos", icon: Calendar },
+  { title: "Horários", url: "/admin/horarios", icon: Clock },
   { title: "Serviços", url: "/admin/servicos", icon: Briefcase },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: Users },
   { title: "Chatbot", url: "/admin/chatbot", icon: Bot },
