@@ -22,6 +22,8 @@ import ClientBooking from "./pages/client/Booking";
 import ClientLogin from "./pages/client/Login";
 import ClientSignup from "./pages/client/Signup";
 import ClientBookings from "./pages/client/Bookings";
+import ClientProfile from "./pages/client/Profile";
+import ClientDashboard from "./pages/client/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +79,12 @@ const App = () => (
           <Route path="/:slug/cadastro" element={<ClientSignup />} />
           {/* rota para cliente ver seus agendamentos na empresa via slug */}
           <Route path="/:slug/agendamentos" element={<ClientBookings />} />
+          {/* rota dashboard do cliente */}
+          <Route path="/:slug/client/dashboard" element={<ClientDashboard />} />
+          {/* rota perfil do cliente */}
+          <Route path="/:slug/client/perfil" element={<ClientProfile />} />
+          {/* rota agendamentos do cliente (alias) */}
+          <Route path="/:slug/client/agendamentos" element={<ClientBookings />} />
 
           {/* rota não existente '404' */}
           <Route path="*" element={<NotFound />} />
