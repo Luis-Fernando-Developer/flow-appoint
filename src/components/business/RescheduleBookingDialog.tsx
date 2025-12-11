@@ -63,7 +63,13 @@ export function RescheduleBookingDialog({
       });
 
       if (response.error) throw response.error;
-      setAvailableTimes(response.data?.slots || []);
+      
+      // Extract time strings from slot objects
+      const slots = response.data?.slots || [];
+      const times = slots.map((slot: any) => 
+        typeof slot === 'string' ? slot : slot.time
+      ).filter(Boolean);
+      setAvailableTimes(times);
     } catch (error) {
       console.error('Error fetching availability:', error);
       toast({
