@@ -270,11 +270,13 @@ serve(async (req) => {
         const slotTime = minutesToTime(time);
         const slotEndTime = time + serviceDuration;
 
-        // Check minimum advance time for today
-        const today = new Date().toISOString().split('T')[0];
-        if (date === today) {
-          const now = new Date();
-          const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        // Check minimum advance time for today (using Brazil timezone)
+        const nowBrazil = new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+        const [todayBrazil, timeBrazil] = nowBrazil.split(' ');
+        if (date === todayBrazil) {
+          const [hours, minutes] = timeBrazil.split(':').map(Number);
+          const nowMinutes = hours * 60 + minutes;
+          console.log(`[get-availability] Today check - Brazil time: ${timeBrazil}, slot: ${minutesToTime(time)}, min advance: ${minAdvanceHours}h`);
           if (time < nowMinutes + (minAdvanceHours * 60)) {
             continue;
           }
@@ -365,10 +367,11 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('[get-availability] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
