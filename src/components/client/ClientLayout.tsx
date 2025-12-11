@@ -6,6 +6,10 @@ import { SidebarProvider, SidebarTrigger } from "../ui/sidebar";
 import { ClientSidebar } from "./ClientSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
+import { Calendar, Clock, DollarSign, RefreshCw, X } from "lucide-react";
+import { ClientRescheduleDialog } from "./ClientRescheduleDialog";
+import { ClientCancelDialog } from "./ClientCancelDialog";
 
 interface Booking {
   id: string;
@@ -15,6 +19,8 @@ interface Booking {
   price: number;
   booking_status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
   notes?: string;
+  service_id: string;
+  employee_id?: string;
   service: {
     name: string;
     description?: string;
@@ -31,6 +37,14 @@ interface Company {
   slug: string;
 }
 
+const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "Pendente", variant: "outline" },
+  confirmed: { label: "Confirmado", variant: "default" },
+  completed: { label: "Concluído", variant: "secondary" },
+  cancelled: { label: "Cancelado", variant: "destructive" },
+  no_show: { label: "Não compareceu", variant: "destructive" },
+};
+
 export default function ClientLayout() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -40,6 +54,9 @@ export default function ClientLayout() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [client, setClient] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null);
+  const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     fetchCompany();
@@ -75,7 +92,6 @@ export default function ClientLayout() {
   const fetchClientAndBookings = async () => {
     setIsLoading(true);
     try {
-      // Pega usuário logado do Supabase Auth
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) {
         navigate(`/${slug}/entrar`);
@@ -83,7 +99,6 @@ export default function ClientLayout() {
         return;
       }
 
-      // Busca cliente pelo user_id e company_id
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
         .select('*')
@@ -105,7 +120,6 @@ export default function ClientLayout() {
 
       setClient(clientData);
 
-      // Busca agendamentos do cliente
       const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
         .select(`
@@ -148,6 +162,8 @@ export default function ClientLayout() {
         )
       );
 
+      setCancelBooking(null);
+
       toast({
         title: "Agendamento cancelado",
         description: "Seu agendamento foi cancelado com sucesso."
@@ -162,6 +178,19 @@ export default function ClientLayout() {
     }
   };
 
+  const handleRescheduleSuccess = () => {
+    setRescheduleBooking(null);
+    fetchClientAndBookings();
+    toast({
+      title: "Agendamento reagendado",
+      description: "Seu agendamento foi reagendado com sucesso."
+    });
+  };
+
+  const canModifyBooking = (status: string) => {
+    return status === 'pending' || status === 'confirmed';
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-hero">
@@ -174,7 +203,6 @@ export default function ClientLayout() {
         />
 
         <main className="flex-1 flex flex-col">
-          {/* Header */}
           <header className="h-fit flex items-center border-b border-primary/20 bg-card/30 backdrop-blur-sm px-4">
             <SidebarTrigger className="text-foreground hover:bg-primary/10" />
             <div className="ml-4 flex flex-col py-3">
@@ -184,16 +212,13 @@ export default function ClientLayout() {
             </div>
           </header>
 
-          {/* Conteúdo principal */}
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="space-y-6">
-              {/* Informações do cliente */}
               <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center">
-                        {/* Ícone do cliente */}
                       </div>
                       <div>
                         <CardTitle className="text-gradient">Bem-vindo!</CardTitle>
@@ -214,7 +239,6 @@ export default function ClientLayout() {
                 </CardHeader>
               </Card>
 
-              {/* Lista de agendamentos */}
               <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
                 <CardHeader>
                   <div className="flex items-center justify-between">
@@ -257,19 +281,21 @@ export default function ClientLayout() {
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-2">
                                 <h3 className="font-semibold text-lg">{booking.service.name}</h3>
-                                {/* Badge de status */}
+                                <Badge variant={statusLabels[booking.booking_status]?.variant || "outline"}>
+                                  {statusLabels[booking.booking_status]?.label || booking.booking_status}
+                                </Badge>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground mb-3">
                                 <div className="flex items-center gap-1">
-                                  {/* Data e hora */}
-                                  {booking.booking_date} {booking.booking_time}
+                                  <Calendar className="h-4 w-4" />
+                                  {booking.booking_date} às {booking.booking_time}
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  {/* Duração */}
+                                  <Clock className="h-4 w-4" />
                                   {booking.duration_minutes} minutos
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  {/* Preço */}
+                                  <DollarSign className="h-4 w-4" />
                                   R$ {booking.price.toFixed(2)}
                                 </div>
                               </div>
@@ -279,17 +305,30 @@ export default function ClientLayout() {
                                 </p>
                               )}
                             </div>
-                            {booking.booking_status === 'pending' && (
+                          </div>
+                          
+                          {canModifyBooking(booking.booking_status) && (
+                            <div className="flex gap-2 mt-4 pt-3 border-t border-primary/10">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setRescheduleBooking(booking)}
+                                className="flex items-center gap-1"
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                                Reagendar
+                              </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => handleCancelBooking(booking.id)}
-                                className="ml-4"
+                                onClick={() => setCancelBooking(booking)}
+                                className="flex items-center gap-1"
                               >
+                                <X className="h-4 w-4" />
                                 Cancelar
                               </Button>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -300,6 +339,28 @@ export default function ClientLayout() {
           </div>
         </main>
       </div>
+
+      {rescheduleBooking && company && (
+        <ClientRescheduleDialog
+          booking={rescheduleBooking}
+          companyId={company.id}
+          open={!!rescheduleBooking}
+          onOpenChange={(open) => !open && setRescheduleBooking(null)}
+          onSuccess={handleRescheduleSuccess}
+        />
+      )}
+
+      {cancelBooking && (
+        <ClientCancelDialog
+          booking={cancelBooking}
+          open={!!cancelBooking}
+          onOpenChange={(open) => !open && setCancelBooking(null)}
+          onSuccess={() => {
+            setCancelBooking(null);
+            fetchClientAndBookings();
+          }}
+        />
+      )}
     </SidebarProvider>
   );
 }
