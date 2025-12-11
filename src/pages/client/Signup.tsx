@@ -5,16 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanyLogo } from "@/components/CompanyLogo";
-import { User, Mail, Lock, Phone, ArrowLeft } from "lucide-react";
+import { User, Mail, Lock, Phone, ArrowLeft, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { formatCPF, cleanCPF, validateCPF } from "@/lib/cpfValidation";
 
 const signupSchema = z.object({
   firstName: z.string().trim().min(1, "Nome é obrigatório").max(50, "Nome deve ter no máximo 50 caracteres"),
   lastName: z.string().trim().min(1, "Sobrenome é obrigatório").max(50, "Sobrenome deve ter no máximo 50 caracteres"),
   email: z.string().trim().email("Email inválido").max(255, "Email deve ter no máximo 255 caracteres"),
   phone: z.string().trim().min(10, "Telefone deve ter no mínimo 10 dígitos").max(15, "Telefone deve ter no máximo 15 dígitos"),
+  cpf: z.string().optional().refine((val) => !val || validateCPF(val), "CPF inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres").max(100, "Senha deve ter no máximo 100 caracteres"),
   confirmPassword: z.string()
 }).refine((data) => data.password === data.confirmPassword, {
@@ -32,6 +34,7 @@ export default function ClientSignup() {
     lastName: "",
     email: "",
     phone: "",
+    cpf: "",
     password: "",
     confirmPassword: ""
   });
@@ -40,16 +43,15 @@ export default function ClientSignup() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
+    
+    if (name === 'cpf') {
+      setFormData(prev => ({ ...prev, cpf: formatCPF(value) }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    
     if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ""
-      }));
+      setErrors(prev => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -59,8 +61,9 @@ export default function ClientSignup() {
     setErrors({});
 
     try {
-      // Validate form data
-      const validatedData = signupSchema.parse(formData);
+      // Validate form data - clean CPF before validation
+      const dataToValidate = { ...formData, cpf: cleanCPF(formData.cpf) };
+      const validatedData = signupSchema.parse(dataToValidate);
 
       // First, get the company ID from the slug
       const { data: companyData, error: companyError } = await supabase
@@ -115,6 +118,7 @@ export default function ClientSignup() {
 
       if (authData.user) {
         // Create client profile
+        const cleanedCpf = cleanCPF(formData.cpf);
         const { error: clientError } = await supabase
           .from('clients')
           .insert({
@@ -122,7 +126,8 @@ export default function ClientSignup() {
             company_id: companyData.id,
             name: `${validatedData.firstName} ${validatedData.lastName}`,
             email: validatedData.email,
-            phone: validatedData.phone
+            phone: validatedData.phone,
+            cpf: cleanedCpf || null
           });
 
         if (clientError) {
@@ -253,6 +258,24 @@ export default function ClientSignup() {
                 />
               </div>
               {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF (opcional)</Label>
+              <div className="relative">
+                <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  id="cpf"
+                  name="cpf"
+                  type="text"
+                  placeholder="000.000.000-00"
+                  value={formData.cpf}
+                  onChange={handleInputChange}
+                  maxLength={14}
+                  className="pl-10 bg-background/50 border-primary/30 focus:border-primary"
+                />
+              </div>
+              {errors.cpf && <p className="text-sm text-red-500">{errors.cpf}</p>}
             </div>
 
             <div className="space-y-2">

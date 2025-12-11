@@ -302,43 +302,64 @@ export type Database = {
       }
       clients: {
         Row: {
+          accepts_marketing: boolean | null
+          address: string | null
           avatar_url: string | null
           birth_date: string | null
+          city: string | null
           company_id: string
+          cpf: string | null
           created_at: string
+          data_deleted_at: string | null
           email: string
           id: string
           name: string
           notes: string | null
           phone: string | null
+          state: string | null
           updated_at: string
           user_id: string | null
+          zip_code: string | null
         }
         Insert: {
+          accepts_marketing?: boolean | null
+          address?: string | null
           avatar_url?: string | null
           birth_date?: string | null
+          city?: string | null
           company_id: string
+          cpf?: string | null
           created_at?: string
+          data_deleted_at?: string | null
           email: string
           id?: string
           name: string
           notes?: string | null
           phone?: string | null
+          state?: string | null
           updated_at?: string
           user_id?: string | null
+          zip_code?: string | null
         }
         Update: {
+          accepts_marketing?: boolean | null
+          address?: string | null
           avatar_url?: string | null
           birth_date?: string | null
+          city?: string | null
           company_id?: string
+          cpf?: string | null
           created_at?: string
+          data_deleted_at?: string | null
           email?: string
           id?: string
           name?: string
           notes?: string | null
           phone?: string | null
+          state?: string | null
           updated_at?: string
           user_id?: string | null
+          zip_code?: string | null
         }
         Relationships: [
           {
