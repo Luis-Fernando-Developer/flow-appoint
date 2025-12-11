@@ -579,7 +579,15 @@ export default function ClientBooking() {
               </div>
               
               <div className="flex gap-2 mt-6">
-                <Button variant="outline" onClick={() => setStep(1)} className="flex-1">
+                <Button variant="outline" onClick={() => {
+                  setSelectedEmployee(null);
+                  setEmployees([]);
+                  setAvailableDates([]);
+                  setSelectedDate(undefined);
+                  setAvailableTimes([]);
+                  setSelectedTime("");
+                  setStep(1);
+                }} className="flex-1">
                   Voltar
                 </Button>
                 {selectedEmployee && (
@@ -633,7 +641,14 @@ export default function ClientBooking() {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
+                <Button variant="outline" onClick={() => {
+                  setSelectedEmployee(null);
+                  setAvailableDates([]);
+                  setSelectedDate(undefined);
+                  setAvailableTimes([]);
+                  setSelectedTime("");
+                  setStep(2);
+                }} className="flex-1">
                   Voltar
                 </Button>
                 {selectedDate && (
@@ -693,7 +708,11 @@ export default function ClientBooking() {
               )}
 
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep(3)} className="flex-1">
+                <Button variant="outline" onClick={() => {
+                  setSelectedTime("");
+                  setAvailableTimes([]);
+                  setStep(3);
+                }} className="flex-1">
                   Voltar
                 </Button>
                 {selectedTime && (
@@ -772,7 +791,10 @@ export default function ClientBooking() {
                 </div>
 
                 <div className="flex gap-2 mt-6">
-                  <Button variant="outline" onClick={() => setStep(4)} className="flex-1">
+                  <Button variant="outline" onClick={() => {
+                    setSelectedTime("");
+                    setStep(4);
+                  }} className="flex-1">
                     Voltar
                   </Button>
                   <Button
@@ -829,7 +851,10 @@ export default function ClientBooking() {
                 </div>
 
                 <div className="flex gap-2 mt-6">
-                  <Button variant="ghost" onClick={() => setStep(4)} className="flex-1">
+                  <Button variant="ghost" onClick={() => {
+                    setSelectedTime("");
+                    setStep(4);
+                  }} className="flex-1">
                     Voltar
                   </Button>
                 </div>
