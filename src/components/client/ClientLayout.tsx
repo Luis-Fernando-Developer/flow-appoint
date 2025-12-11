@@ -187,8 +187,23 @@ export default function ClientLayout() {
     });
   };
 
-  const canModifyBooking = (status: string) => {
-    return status === 'pending' || status === 'confirmed';
+  const canModifyBooking = (booking: Booking) => {
+    // Only pending or confirmed can be modified
+    if (booking.booking_status !== 'pending' && booking.booking_status !== 'confirmed') {
+      return false;
+    }
+    
+    // Check if booking time has passed or is within 30 minutes
+    const now = new Date();
+    const [year, month, day] = booking.booking_date.split('-').map(Number);
+    const [hours, minutes] = booking.booking_time.split(':').map(Number);
+    const bookingDateTime = new Date(year, month - 1, day, hours, minutes);
+    
+    // Must be at least 30 minutes before the appointment
+    const minAdvanceMs = 30 * 60 * 1000; // 30 minutes in milliseconds
+    const timeUntilBooking = bookingDateTime.getTime() - now.getTime();
+    
+    return timeUntilBooking >= minAdvanceMs;
   };
 
   return (
@@ -307,7 +322,7 @@ export default function ClientLayout() {
                             </div>
                           </div>
                           
-                          {canModifyBooking(booking.booking_status) && (
+                          {canModifyBooking(booking) && (
                             <div className="flex gap-2 mt-4 pt-3 border-t border-primary/10">
                               <Button
                                 variant="outline"

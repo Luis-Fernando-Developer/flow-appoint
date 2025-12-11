@@ -63,7 +63,13 @@ export function ClientRescheduleDialog({
       });
 
       if (response.error) throw response.error;
-      setAvailableTimes(response.data?.slots || []);
+      
+      // Slots come as objects {time, employee_id, employee_name}, extract just the time strings
+      const slotsData = response.data?.slots || [];
+      const timeSlots = slotsData.map((slot: string | { time: string }) => 
+        typeof slot === 'string' ? slot : slot.time
+      );
+      setAvailableTimes(timeSlots);
     } catch (error) {
       console.error('Error fetching availability:', error);
       toast({
