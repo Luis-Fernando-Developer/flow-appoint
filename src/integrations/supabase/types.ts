@@ -894,6 +894,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_confirm_pending_bookings: { Args: never; Returns: undefined }
       company_has_owner: { Args: { _company_id: string }; Returns: boolean }
       create_client_profile: {
         Args: {
