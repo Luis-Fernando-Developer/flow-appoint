@@ -86,39 +86,39 @@ export default function BusinessSchedule() {
       companyId={company.id}
       userRole={currentEmployee?.role || 'employee'}
     >
-      <div className="space-y-6">
-        <div>
+      <div className="space-y-6 px-10 w-full py-8"> 
+        <div className="">
           <h1 className="text-3xl font-bold text-gradient">Horários e Disponibilidade</h1>
           <p className="text-muted-foreground mt-2">
             Configure horários de funcionamento, jornadas e ausências
           </p>
         </div>
 
-        <Tabs defaultValue="business-hours" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="business-hours" className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span className="hidden sm:inline">Estabelecimento</span>
+        <Tabs defaultValue="business-hours" className="w-full ">
+          <TabsList className="grid grid-cols-6  lg:w-full items-center justify-center h-full ">
+            <TabsTrigger value="business-hours" className=" flex items-end justify-center h-full px-2 py-0 gap-2">
+              <Clock className="w-4 h-full" />
+              <span className="hidden sm:flex pt-0.5 sm:items-center sm:justify-center h-full">Estabelecimento</span>
             </TabsTrigger>
             <TabsTrigger value="fixed-schedules" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Fixos</span>
+              <Users className="w-4 h-full" />
+              <span className="hidden sm:flex pt-0.5 sm:items-center sm:justify-center h-full">Fixos</span>
             </TabsTrigger>
             <TabsTrigger value="autonomous" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              <span className="hidden sm:inline">Autônomos</span>
+              <Calendar className="w-4 h-full" />
+              <span className="hidden sm:flex pt-0.5 sm:items-center sm:justify-center h-full">Autônomos</span>
             </TabsTrigger>
             <TabsTrigger value="absences" className="flex items-center gap-2">
-              <UserX className="w-4 h-4" />
-              <span className="hidden sm:inline">Ausências</span>
+              <UserX className="w-4 h-full" />
+              <span className="hidden sm:flex pt-0.5 sm:items-center sm:justify-center h-full">Ausências</span>
             </TabsTrigger>
             <TabsTrigger value="blocked" className="flex items-center gap-2">
-              <Ban className="w-4 h-4" />
-              <span className="hidden sm:inline">Bloqueios</span>
+              <Ban className="w-4 h-full" />
+              <span className="hidden sm:flex pt-0.5 sm:items-center sm:justify-center h-full">Bloqueios</span>
             </TabsTrigger>
             <TabsTrigger value="rules" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Regras</span>
+              <Settings className="w-4 h-full" />
+              <span className="hidden sm:flex pt-0.5 sm:items-center sm:justify-center h-full">Regras</span>
             </TabsTrigger>
           </TabsList>
 

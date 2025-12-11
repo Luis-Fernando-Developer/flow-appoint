@@ -6,6 +6,7 @@ import { BookingLogo } from "@/components/BookingLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Divide as Hamburger } from 'hamburger-react';
+import { custom } from "zod";
 
 interface CustomizationData {
   header_position: string;
@@ -65,9 +66,9 @@ export default function CustomLandingPage() {
     if ( slug) {
       fetchData();
     }
-    if (customization?.header_position === 'fixed' && headerRef.current) {
-      setHeaderHeight(headerRef.current.offsetHeight);
-    }
+    // if (customization?.header_position === 'fixed' && headerRef.current) {
+    //   setHeaderHeight(headerRef.current.offsetHeight);
+    // }
   }, [slug]);
 
   useLayoutEffect(() => {
@@ -214,6 +215,20 @@ export default function CustomLandingPage() {
     return styles;
   };
 
+  const generateButtonStyles = () => {
+    if (!customization) return {};
+
+    const styles: any = {};
+
+    if (customization.button_color_type === 'gradient' && customization.button_gradient) {
+      styles['--button-background'] = generateGradient(customization.button_gradient);
+    } else if (customization.button_color) {
+      styles['--button-background'] = customization.button_color;
+    }
+
+    return styles;
+  };
+
 
   const applyCustomStyles = () => {
     if (!customization) return {};
@@ -255,6 +270,8 @@ export default function CustomLandingPage() {
     } else if (customization.footer_background_color) {
       styles['--footer-background'] = customization.footer_background_color;
     }
+
+    
 
     return styles;
   };
@@ -339,6 +356,13 @@ export default function CustomLandingPage() {
             color: ${generateCardsStyles()['--cards-color']} !important;
           }
           ` : ''}
+
+          ${generateButtonStyles()['--button-background'] ? `
+          .button-custom-bg {
+            background: ${generateButtonStyles()['--button-background']} !important;
+            border-color: ${generateButtonStyles()['--button-background']} !important;
+          }
+          ` : ''}
           
           ${customization?.font_family ? `
           .custom-font {
@@ -365,41 +389,46 @@ export default function CustomLandingPage() {
             <div className="flex items-center  justify-between">
               <div className="w-full justify-between flex items-center gap-4 ">
                 {getLogoUrl() ? (
-                  <img 
-                    src={getLogoUrl()!} 
-                    alt={`Logo ${company.name}`}
-                    className="w-8 h-8 object-contain"
-                  />
-
+                  
+                    <img
+                      src={getLogoUrl()!}
+                      alt={`Logo ${company.name}`}
+                      className="w-8 h-8 object-contain"
+                    />
+                    
+                  
                 ) : (
-                  <div className='p-0'>
-                    {company.name}
-                  </div>
+                  <BookingLogo showText={false} className="pt-0" />
                 )}
                 <h1 className={`text-2xl font-bold ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
-                  {company.name}
+                  {company.name} 
                 </h1>
-              <div className="flex items-center">
-                  <Button variant={optionHeader ? "none2" : "none"} onClick={() => setOptionHeader(!optionHeader)} className="transparent p-0 ">
-                  <Hamburger size={20} duration={1} toggled={optionHeader} toggle={setOptionHeader} color="white" />
-                </Button>
-              </div>
+                <div className="flex items-center">
+                    {/* <Button variant={optionHeader ? "none2" : "none"} onClick={() => setOptionHeader(!optionHeader)} className={`p-0 font-bold  ${customization?.button_color ? 'bg-black/20' : 'button-custom-bg'} ${optionHeader  ? 'bg-black/20' : 'bg-black/20'}`}> */}
+                  <Button variant={optionHeader ? "none2" : "none"} onClick={() => setOptionHeader(!optionHeader)} 
+                    className={`p-0 font-bold  
+                      `}>
+                    {/* style={optionHeader ? { background: 'button-custom-bg', opacity: .89, color: 'black' } : { background: customization?.button_color, color: 'black' }}> */}
+                    <Hamburger size={20} duration={1} toggled={optionHeader} toggle={setOptionHeader} color="white" />
+                  </Button>
+                </div>
               </div>
             </div>
               {optionHeader && (
                 <div className={`flex ${customization?.header_background_type ? 'p-0 mt-2 border-t border-primary/40 pt-2' : ''}`}>
-                  <div className="flex gap-1 justify-end items-center w-full ">
+                  <div className="flex gap-2 justify-end items-center w-full ">
                     <Button 
-                      variant="ghost" 
-                      className=" bg-black/20 font-bold custom-font"
+                      variant="neon" 
+                      className={`item-center flex font-bold h-[30px] p-2 gap-1  ${customization?.button_color ? 'button-custom-bg' : 'bg-black/20'}`}
                       onClick={() => navigate(`/${slug}/entrar`)}
                     >
                       <LogInIcon />
                       Entrar
                     </Button>
+
                     <Button 
-                      variant="ghost" 
-                      className="bg-black/20 font-bold custom-font"
+                      variant="neon" 
+                      className={`item-center flex font-bold h-[30px] p-2 gap-1  ${customization?.button_color ? 'button-custom-bg' : 'bg-black/20'}`}
                       onClick={() => navigate(`/${slug}/cadastro`)}
                     >
                       <UserPlus2 />
@@ -420,22 +449,26 @@ export default function CustomLandingPage() {
             <div className="flex items-center  justify-between">
               <div className="w-full justify-between flex items-center gap-4 ">
                 {getLogoUrl() ? (
-                  <img 
-                    src={getLogoUrl()!} 
-                    alt={`Logo ${company.name}`}
-                    className="w-8 h-8 object-contain"
-                  />
+                  <>
+                    <img 
+                      src={getLogoUrl()!} 
+                      alt={`Logo ${company.name}`}
+                      className="w-8 h-8 object-contain"
+                    />
+                    
+                  </>
                 ) : (
                   <BookingLogo showText={false} className="pt-0" />
                 )}
                 <h1 className={`text-2xl font-bold ${customization?.font_color_type === 'gradient' ? 'text-custom-gradient' : customization?.font_color ? 'text-custom-color' : 'text-gradient'}`}>
                   {company.name}
                 </h1>
-              <div className="flex items-center">
-                <Button variant={optionHeader ? "ghost" : "link"} onClick={() => setOptionHeader(!optionHeader)} className="transparent p-0">
-                  <Hamburger size={20} duration={1} toggled={optionHeader} toggle={setOptionHeader} color="white" />
-                </Button>
-              </div>
+                <div className="flex items-center">
+                    <Button variant={optionHeader ? "none2" : "none"} onClick={() => setOptionHeader(!optionHeader)}
+                      className={`p-0 font-bold `}>
+                      <Hamburger size={20} duration={1} toggled={optionHeader} toggle={setOptionHeader} color="white" />
+                    </Button>
+                </div>
               </div>
             </div>
               {optionHeader && (
@@ -622,7 +655,7 @@ export default function CustomLandingPage() {
                 <Button 
                   variant="outline" 
                   onClick={loadMoreServices}
-                  className="px-6 py-2 custom-font button-custom-bg"
+                  className={`px-6 py-2 custom-font button-custom-bg ${customization?.button_color || 'green-600'}`}
                 >
                   Carregar mais serviços <ChevronRight className="ml-2 w-4 h-4" />
                 </Button>

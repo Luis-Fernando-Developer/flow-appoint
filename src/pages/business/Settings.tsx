@@ -187,14 +187,14 @@ export default function BusinessSettings() {
       companyId={company.id}
       userRole={employee.role}
     >
-      <div className="p-6 space-y-6 w-full ">
+      <div className="p-6 space-y-6 w-full  px-10">
         <div className="w-full">
           <h1 className="text-3xl font-bold text-gradient">Configurações</h1>
           <p className="text-muted-foreground">Gerencie as configurações da sua empresa</p>
         </div>
 
         {/* Informações da Empresa */}
-        <Card className=" flex max-w-[415px] flex-col ">
+        <Card className=" flex w-full lg:w-full flex-col ">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="w-5 h-5" />
@@ -276,7 +276,7 @@ export default function BusinessSettings() {
         </Card>
 
         {/* Configurações de Agendamento */}
-        <Card className=" flex max-w-[415px] flex-col ">
+        <Card className=" flex w-full flex-col ">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="w-5 h-5" />
@@ -374,12 +374,12 @@ export default function BusinessSettings() {
           companyId={company.id}
           companyPlan={company.plan}
           canEdit={canEditSettings}
-          className=" flex max-w-[415px] flex-col "
+          className=" flex w-full flex-col "
           
         />
 
         {/* Plano Atual */}
-        <Card className=" flex max-w-[415px] flex-col ">
+        <Card className=" flex w-full flex-col ">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="w-5 h-5" />
