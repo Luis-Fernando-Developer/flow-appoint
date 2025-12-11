@@ -284,23 +284,23 @@ export default function BusinessBookings() {
       userRole={employee.role}
       currentUser={currentUser}
     >
-      <div className="p-4 space-y-6  max-w-[430px]">
+      <div className="p-4 space-y-6 justify-center flex flex-col items-center w-full px-10 ">
         {/* Header */}
-        <div className="flex flex-col space-y-2 justify-between">
-          <div className="flex flex-col mb-1">
+        <div className="flex flex-col space-y-2 justify-between lg:flex-row lg:items-center w-full">
+          <div className="flex flex-col mb-1  w-full">
             <h1 className="text-3xl font-bold text-gradient mb-1">Agendamentos</h1>
             <p className="text-muted-foreground">
               Gerencie todos os agendamentos do estabelecimento
             </p>
           </div>
-          <Button variant="neon">
+          <Button variant="neon" className="w-full md:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Novo Agendamento
           </Button>
         </div>
 
         {/* Filters */}
-        <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
+        <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20 w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
@@ -351,7 +351,7 @@ export default function BusinessBookings() {
                 onMouseDown={(e) => (e.currentTarget.type = 'date')}
                 onFocus={(e) => (e.currentTarget.type = 'date')}
                 onBlur={(e) => (e.currentTarget.type = 'text')}
-                className=" flex w-[348px] focus:max-w-[348px] sm:min-w-40 bg-background/50 "
+                className=" flex w-full focus:w-full sm:min-w-40 bg-background/50 "
                 placeholder="Filtrar por data"
               />
 
@@ -366,7 +366,7 @@ export default function BusinessBookings() {
         </Card>
 
         {/* Bookings List */}
-        <div className="space-y-6">
+        <div className="flex flex-col lg:grid lg:grid-cols-3 w-full  justify-center gap-6 ">
           {filteredBookings.length === 0 ? (
             <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
               <CardContent className="text-center py-12">
@@ -379,8 +379,8 @@ export default function BusinessBookings() {
             </Card>
           ) : (
             filteredBookings.map((booking) => (
-              <Card key={booking.id} className="flex flex-col card-glow bg-card/50 backdrop-blur-sm border-primary/20">
-                <CardContent className="relative w-full p-6 flex flex-col">
+              <Card key={booking.id} className="flex flex-col card-glow bg-card/50 backdrop-blur-sm border-primary/20 ">
+                <CardContent className="relative w-full p-6 flex flex-col  h-full">
                   <div className="w-full flex flex-col">
                     <div className="flex flex-col space-y-4">
                       {/* Status Badges */}

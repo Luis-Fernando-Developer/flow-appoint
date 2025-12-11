@@ -203,8 +203,8 @@ export default function BusinessEmployees() {
       userRole={currentEmployee.role}
       currentUser={currentUser}
     >
-      <div className="p-6 ">
-        <div className="flex flex-col space-y-2 mb-6 sm:flex sm:items-start sm:space-y-2 md:flex-row md:items-center md:space-y-0">
+      <div className="p-6 px-10 w-full border border-red-600">
+        <div className="flex flex-col space-y-2 mb-6 sm:flex sm:items-start sm:space-y-2 md:flex-row md:items-center md:space-y-0  justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gradient">Colaboradores</h1>
             <p className="text-muted-foreground">Gerencie a equipe da sua empresa</p>

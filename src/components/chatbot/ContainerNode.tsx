@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, Position, NodeProps, } from 'reactflow';
 import { MoreVertical } from "lucide-react";
 import { Container, Node, ButtonConfig } from "@/types/chatbot";
 import { NodeItem } from "./NodeItem";
