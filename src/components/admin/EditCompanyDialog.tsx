@@ -29,6 +29,7 @@ interface Company {
   state?: string;
   cnpj?: string;
   owner_cpf: string;
+  discount?: string;
 }
 
 interface EditCompanyDialogProps {
@@ -54,6 +55,7 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
     status: company?.status || "active",
     plan: company?.plan || "starter",
     slug: company?.slug || "",
+    discount: company?.discount || "0%",
   });
 
   // Update form data when company changes
@@ -72,6 +74,7 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
         status: company.status || "active",
         plan: company.plan || "starter",
         slug: company.slug || "",
+        discount: company.discount || "0%",
       });
     }
   }, [company]);
@@ -106,23 +109,64 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
     } finally {
       setLoading(false);
     }
+
+    
   };
+
+  const [descontoEspecial, setDescontoEspecial] = useState(false);
+
+  useEffect(() => {
+    // evita foco automático do Radix / wrapper
+    if (open) {
+      const t = setTimeout(() => {
+        (document.activeElement as HTMLElement | null)?.blur();
+      }, 50);
+      return () => clearTimeout(t);
+    }
+  }, [open]);
+
+  // Ajuste da variável --vh para lidar com a barra de endereço móvel (iOS/Android)
+  useEffect(() => {
+    const setVh = () => {
+      const height = (window.visualViewport?.height ?? window.innerHeight);
+      document.documentElement.style.setProperty('--vh', `${height / 100}px`);
+    };
+
+    setVh();
+    // atualiza ao redimensionar / rolar (visualViewport muda quando a barra some/aparece)
+    window.addEventListener('resize', setVh);
+    window.addEventListener('orientationchange', setVh);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', setVh);
+      window.visualViewport.addEventListener('scroll', setVh);
+    }
+
+    return () => {
+      window.removeEventListener('resize', setVh);
+      window.removeEventListener('orientationchange', setVh);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', setVh);
+        window.visualViewport.removeEventListener('scroll', setVh);
+      }
+    };
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] bg-card border-primary/20">
-        <DialogHeader>
+      <DialogContent  onOpenAutoFocus={(e: any) => e.preventDefault()} className="w-full h-fit   overflow-hidden bg-card">
+        <DialogHeader className="py-2">
           <DialogTitle>Editar Empresa</DialogTitle>
           <DialogDescription>
             Edite as informações da empresa abaixo.
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 border border-red-600 p-4 overflow-auto h-full">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Nome da Empresa</Label>
               <Input
+                className="focus:outline-none"
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -237,10 +281,29 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
                   <SelectItem value="enterprise">Enterprise</SelectItem>
                 </SelectContent>
               </Select>
+              
             </div>
-          </div>
 
-          <DialogFooter>
+            <div>
+              <Label> Aplicar Desconto especial no plano selecionado ?</Label>
+              <Input type="checkbox" checked={descontoEspecial} onChange={(e) => setDescontoEspecial(e.target.checked)} />
+            </div>
+            <div>
+              {descontoEspecial && (
+                <div className="space-y-2">
+                  <Label htmlFor="discount">Percentual de Desconto (%)</Label>
+                  <Input
+                    id="discount"
+                    type="number"
+                    value={formData.discount}
+                    onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                  />
+                </div>
+              )}
+              </div>
+            </div>
+
+          <DialogFooter className="flex flex-col gap-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
