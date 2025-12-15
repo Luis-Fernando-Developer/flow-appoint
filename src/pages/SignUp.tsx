@@ -1,14 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookingLogo } from "@/components/BookingLogo";
-import { Building2, User, Mail, FileText, Check, X } from "lucide-react";
+import { Building2, User, Mail, FileText, Check, X, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+interface SelectedPlan {
+  id: string;
+  name: string;
+  price: number;
+  period: string;
+  checkoutUrl: string | null;
+}
+
 export default function SignUp() {
+  const [searchParams] = useSearchParams();
+  const planId = searchParams.get('plan');
+  const period = searchParams.get('period') || 'monthly';
+
+  const [selectedPlan, setSelectedPlan] = useState<SelectedPlan | null>(null);
   const [formData, setFormData] = useState({
     companyName: "",
     customUrl: "",
@@ -24,10 +38,52 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Fetch selected plan details
+  useEffect(() => {
+    if (planId) {
+      fetchPlanDetails();
+    }
+  }, [planId, period]);
+
+  const fetchPlanDetails = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('subscription_plans')
+        .select('*')
+        .eq('id', planId)
+        .single();
+
+      if (error || !data) return;
+
+      let price = data.monthly_price;
+      let checkoutUrl = data.monthly_checkout_url;
+      let periodLabel = 'mensal';
+
+      if (period === 'quarterly') {
+        price = data.quarterly_price;
+        checkoutUrl = data.quarterly_checkout_url;
+        periodLabel = 'trimestral';
+      } else if (period === 'annual') {
+        price = data.annual_price;
+        checkoutUrl = data.annual_checkout_url;
+        periodLabel = 'anual';
+      }
+
+      setSelectedPlan({
+        id: data.id,
+        name: data.name,
+        price,
+        period: periodLabel,
+        checkoutUrl
+      });
+    } catch (error) {
+      console.error('Error fetching plan:', error);
+    }
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Reset URL availability when custom URL changes
     if (field === 'customUrl') {
       setUrlAvailable(null);
     }
@@ -39,7 +95,6 @@ export default function SignUp() {
     setIsCheckingUrl(true);
     
     try {
-      // Verificar se o slug já existe no banco
       const { data, error } = await supabase
         .from('companies')
         .select('id')
@@ -50,10 +105,8 @@ export default function SignUp() {
         console.error('Erro ao verificar URL:', error);
         setUrlAvailable(false);
       } else if (data) {
-        // Slug já existe
         setUrlAvailable(false);
       } else {
-        // Nenhum resultado encontrado - slug disponível
         setUrlAvailable(true);
       }
     } catch (error) {
@@ -83,6 +136,13 @@ export default function SignUp() {
       .replace(/(-\d{2})\d+?$/, '$1');
   };
 
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(price);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -90,9 +150,7 @@ export default function SignUp() {
     try {
       console.log('🔄 Iniciando cadastro da empresa...');
       
-      // Validation
       if (!urlAvailable) {
-        console.log('❌ URL não disponível');
         toast({
           title: "URL indisponível",
           description: "Por favor, escolha uma URL personalizada disponível.",
@@ -103,7 +161,6 @@ export default function SignUp() {
       }
 
       if (formData.ownerPass !== formData.ownerPassRepeat) {
-        console.log('❌ Senhas não conferem');
         toast({
           title: "Senhas não conferem",
           description: "Por favor, verifique se as senhas são iguais.",
@@ -113,9 +170,7 @@ export default function SignUp() {
         return;
       }
 
-      console.log('✅ Validações passaram, criando empresa...');
-
-      // 1. Primeiro criar a empresa diretamente (sem autenticação)
+      // 1. Criar a empresa
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert([{
@@ -126,20 +181,14 @@ export default function SignUp() {
           owner_cpf: formData.ownerCpf.replace(/\D/g, ""),
           cnpj: formData.companyCnpj.replace(/\D/g, ""),
           status: 'active',
-          plan: 'starter'
+          plan: selectedPlan?.name.toLowerCase() || 'starter'
         }])
         .select()
         .single();
 
-      if (companyError) {
-        console.error('❌ Erro ao criar empresa:', companyError);
-        throw companyError;
-      }
+      if (companyError) throw companyError;
 
-      console.log('✅ Empresa criada com sucesso:', companyData);
-
-      // 2. Depois criar o usuário no Supabase Auth
-      console.log('🔄 Criando usuário no Supabase Auth...');
+      // 2. Criar o usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.ownerMail,
         password: formData.ownerPass,
@@ -152,15 +201,9 @@ export default function SignUp() {
         }
       });
 
-      if (authError) {
-        console.error('❌ Erro ao criar usuário:', authError);
-        throw authError;
-      }
+      if (authError) throw authError;
 
-      console.log('✅ Usuário criado com sucesso:', authData);
-
-      // 3. Criar funcionário (proprietário) vinculado à empresa
-      console.log('🔄 Criando funcionário...');
+      // 3. Criar funcionário (proprietário)
       const { error: employeeError } = await supabase
         .from('employees')
         .insert([{
@@ -172,20 +215,33 @@ export default function SignUp() {
           is_active: true
         }]);
 
-      if (employeeError) {
-        console.error('❌ Erro ao criar funcionário:', employeeError);
-        throw employeeError;
-      }
+      if (employeeError) throw employeeError;
 
-      console.log('✅ Funcionário criado com sucesso!');
+      // 4. Criar subscription se tiver plano selecionado
+      if (selectedPlan) {
+        await supabase
+          .from('company_subscriptions')
+          .insert([{
+            company_id: companyData.id,
+            plan_id: selectedPlan.id,
+            billing_period: period,
+            original_price: selectedPlan.price,
+            discounted_price: selectedPlan.price,
+            status: 'pending'
+          }]);
+      }
 
       toast({
         title: "Cadastro realizado com sucesso!",
         description: `Sua empresa ${formData.companyName} foi cadastrada!`,
       });
 
-      // Redirecionar para o login da empresa
-      window.location.href = `/${formData.customUrl}/admin/login`;
+      // 5. Redirecionar para checkout ou login
+      if (selectedPlan?.checkoutUrl) {
+        window.location.href = selectedPlan.checkoutUrl;
+      } else {
+        window.location.href = `/${formData.customUrl}/admin/login`;
+      }
       
     } catch (error) {
       console.error("❌ Erro geral ao cadastrar empresa:", error);
@@ -200,7 +256,6 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen bg-gradient-hero p-4">
-      {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute top-20 left-20 w-72 h-72 bg-neon-violet/10 rounded-full blur-3xl animate-pulse-glow"></div>
         <div className="absolute bottom-20 right-20 w-96 h-96 bg-neon-pink/10 rounded-full blur-3xl animate-float"></div>
@@ -214,6 +269,29 @@ export default function SignUp() {
             Comece sua transformação digital hoje mesmo
           </p>
         </div>
+
+        {/* Plan Summary Banner */}
+        {selectedPlan && (
+          <Card className="mb-6 bg-gradient-to-r from-primary/20 to-primary/5 border-primary/30">
+            <CardContent className="py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">Plano {selectedPlan.name}</p>
+                    <p className="text-sm text-muted-foreground">Cobrança {selectedPlan.period}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-gradient">{formatPrice(selectedPlan.price)}</p>
+                  <p className="text-xs text-muted-foreground">Total a pagar</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/30">
           <CardHeader>
@@ -319,51 +397,54 @@ export default function SignUp() {
                   />
                 </div>
               </div>
-              {/* Email  */}
-              <div>
-                <Label htmlFor="ownerMail">Email da Empresa</Label>
-                <div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="ownerMail">Email da Empresa *</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
-                   id="ownerMail"
-                   placeholder="barbearia@jhonDoe.com"
-                   value={formData.ownerMail}
-                   onChange={(e) => handleInputChange("ownerMail", e.target.value)}
+                    id="ownerMail"
+                    type="email"
+                    placeholder="empresa@exemplo.com"
+                    value={formData.ownerMail}
+                    onChange={(e) => handleInputChange("ownerMail", e.target.value)}
+                    className="pl-10 bg-background/50 border-primary/30 focus:border-primary"
+                    required
                   />
                 </div>
               </div>
-               {/* Senha */}
-               <div className="space-y-2">
-                 <Label htmlFor="ownerPass">Senha *</Label>
-                 <div className="relative">
-                   <Input
-                     id="ownerPass"
-                     type="password"
-                     placeholder="Digite uma senha"
-                     value={formData.ownerPass}
-                     onChange={(e) => handleInputChange('ownerPass', e.target.value)}
-                     className="bg-background/50 border-primary/30 focus:border-primary"
-                     minLength={6}
-                     required
-                   />
-                 </div>
-               </div>
 
-               {/* Repetir Senha */}
-               <div className="space-y-2">
-                 <Label htmlFor="ownerPassRepeat">Confirmar Senha *</Label>
-                 <div className="relative">
-                   <Input
-                     id="ownerPassRepeat"
-                     type="password"
-                     placeholder="Digite a senha novamente"
-                     value={formData.ownerPassRepeat}
-                     onChange={(e) => handleInputChange('ownerPassRepeat', e.target.value)}
-                     className="bg-background/50 border-primary/30 focus:border-primary"
-                     minLength={6}
-                     required
-                   />
-                 </div>
-               </div>
+              {/* Senha */}
+              <div className="space-y-2">
+                <Label htmlFor="ownerPass">Senha *</Label>
+                <Input
+                  id="ownerPass"
+                  type="password"
+                  placeholder="Digite uma senha"
+                  value={formData.ownerPass}
+                  onChange={(e) => handleInputChange('ownerPass', e.target.value)}
+                  className="bg-background/50 border-primary/30 focus:border-primary"
+                  minLength={6}
+                  required
+                />
+              </div>
+
+              {/* Repetir Senha */}
+              <div className="space-y-2">
+                <Label htmlFor="ownerPassRepeat">Confirmar Senha *</Label>
+                <Input
+                  id="ownerPassRepeat"
+                  type="password"
+                  placeholder="Digite a senha novamente"
+                  value={formData.ownerPassRepeat}
+                  onChange={(e) => handleInputChange('ownerPassRepeat', e.target.value)}
+                  className="bg-background/50 border-primary/30 focus:border-primary"
+                  minLength={6}
+                  required
+                />
+              </div>
+
               {/* CNPJ */}
               <div className="space-y-2">
                 <Label htmlFor="companyCnpj">CNPJ da Empresa (opcional)</Label>
@@ -387,7 +468,7 @@ export default function SignUp() {
                 disabled={isLoading || !urlAvailable}
                 size="lg"
               >
-                {isLoading ? "Cadastrando Estabelecimento..." : "Cadastrar Estabelecimento"}
+                {isLoading ? "Cadastrando..." : selectedPlan ? "Cadastrar e Ir para Pagamento" : "Cadastrar Estabelecimento"}
               </Button>
             </form>
 
