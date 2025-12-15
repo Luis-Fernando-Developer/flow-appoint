@@ -17,8 +17,8 @@ interface BusinessLayoutProps {
 
 export function BusinessLayout({ children, companySlug, companyName, companyId, userRole, currentUser }: BusinessLayoutProps) {
   return (
-    <SidebarProvider>
-      <div className="min-h-full flex w-full bg-gradient-hero ">
+    <SidebarProvider className="border min-h-dvh">
+      <div className=" flex w-full bg-gradient-hero ">
         <BusinessSidebar 
           companySlug={companySlug} 
           companyName={companyName}
@@ -27,10 +27,10 @@ export function BusinessLayout({ children, companySlug, companyName, companyId, 
           currentUser={currentUser}
         />
         
-        <main className="flex-1 flex flex-col w-full relative">
+        <main className="flex-1 flex flex-col w-full">
           {/* Header with Trigger */}
-          <div className="w-full  border border-blue-600 ">
-            <header className=" h-fit w-full flex items-center border-b border-primary/20 bg-card/80 backdrop-blur-2xl px-4 fixed top-[env(safe-area-inset-top)]  z-10 ">
+          <div className="w-full  relative overflow-visible">
+            <header className=" h-fit w-full flex items-center border-b border-primary/20 bg-card/80 backdrop-blur-2xl px-4 fixed top-[env(safe-area-inset-top)] will-change-transform  z-10 ">
               <SidebarTrigger className="text-foreground hover:bg-primary/10 " />
               <div className="ml-4 flex flex-col -space-y-2 py-3">
                 <h1 className="text-lg font-semibold text-gradient">{companyName} - Painel Administrativo</h1>

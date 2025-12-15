@@ -194,7 +194,7 @@ export default function SuperAdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Carregando dashboard...</p>
@@ -204,23 +204,25 @@ export default function SuperAdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-hero">
+    <div className="min-h-screen bg-gradient-hero ">
       {/* Header */}
-      <header className="border-b border-primary/20 bg-card/30 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <BookingLogo />
+      <header className="border-b border-primary/20 bg-card/30 backdrop-blur-sm border ">
+          <div className="flex items-center justify-between px-3">
+            <div className="flex flex-col items-center justify-center relative py-2">
+              <BookingLogo className="flex items-center justify-center  "/>
+              <span className="absolute w-full bottom-1 left-[90%] transform -translate-x-[85%] text-center text-sm text-muted-foreground">Super Admin</span>
+            </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">Super Admin</span>
               <Button variant="outline" size="sm">
                 Sair
               </Button>
             </div>
+
           </div>
-        </div>
+        
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className=" w-full px-3 lg:px-8 py-8">
         {/* Page Title */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gradient mb-2">Dashboard Super Admin</h1>
@@ -285,14 +287,14 @@ export default function SuperAdminDashboard() {
         {/* Companies Table */}
         <Card className="card-glow bg-card/50 backdrop-blur-sm border-primary/20">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col lg:flex-row items-start gap-4 justify-between">
               <div>
                 <CardTitle>Empresas Cadastradas</CardTitle>
                 <CardDescription>
                   Gerencie todas as empresas do sistema
                 </CardDescription>
               </div>
-              <Button variant="neon" onClick={() => navigate("/super-admin/add-company")}>
+              <Button className="w-full lg:static" variant="neon" onClick={() => navigate("/super-admin/add-company")}>
                 <Plus className="w-4 h-4 mr-2" />
                 Adicionar Empresa
               </Button>
@@ -301,40 +303,42 @@ export default function SuperAdminDashboard() {
           <CardContent>
             <div className="space-y-4">
               {companies.map((company) => (
-                <div key={company.id} className="flex items-center justify-between p-4 border border-primary/20 rounded-lg bg-background/30">
-                  <div className="flex items-center space-x-4">
+                <div key={company.id} className="flex flex-col relative gap-3 items-start lg:flex-row justify-between p-4 px-4 pt-10 border border-primary/20 rounded-lg bg-background/30 ">
+                  <div className="flex items-center space-x-4 ">
                     <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center">
                       <Building2 className="w-6 h-6 text-white" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{company.name}</h3>
-                      <p className="text-sm text-muted-foreground">{company.owner_name} • {company.owner_email}</p>
+                    <div className="flex flex-col">
+                      <h3 className="font-semibold">{company.name} </h3>
+                      <p className="text-sm text-muted-foreground">{company.owner_name}</p>
+                      <p className="text-sm text-muted-foreground">{company.owner_email}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-6  w-full justify-between">
                     <div className="text-center">
                       <p className="text-sm font-medium">Plano</p>
                       <p className="text-xs text-muted-foreground">{company.plan}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm font-medium">Receita</p>
-                      <p className="text-xs text-muted-foreground">R$ 0</p>
-                    </div>
-                    <div className="text-center">
                       <p className="text-sm font-medium">Status</p>
                       {getStatusBadge(company.status)}
                     </div>
-                    
+                    <div className="text-center">
+                      <p className="text-sm font-medium">Receita</p>
+                      <p className="text-xs text-muted-foreground">R$ 0</p>
+                    </div>
+
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                      <DropdownMenuTrigger asChild className=" absolute top-1 right-3 border border-red-600 w-full">
+                        <Button variant="ghost" className="h-8 w-8 p-0 ">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-card border-primary/20">
+                      <DropdownMenuContent align="center" side="right" className=" border border-red-600 border-primary/20 w-full ">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        
                         <DropdownMenuItem onClick={() => handleEditCompany(company)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
