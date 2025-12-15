@@ -3,12 +3,15 @@ import { useParams } from "react-router-dom";
 import { BusinessLayout } from "@/components/business/BusinessLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, DollarSign, Briefcase } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Clock, DollarSign, Briefcase, Package, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AddServiceDialog } from "@/components/business/AddServiceDialog";
 import { EditServiceDialog } from "@/components/business/EditServiceDialog";
 import { DeleteServiceDialog } from "@/components/business/DeleteServiceDialog";
+import { ServiceComboDialog } from "@/components/business/ServiceComboDialog";
+import { RewardsConfig } from "@/components/business/RewardsConfig";
 
 interface Service {
   id: string;
@@ -157,11 +160,26 @@ export default function BusinessServices() {
             <h1 className="text-3xl font-bold text-gradient">Serviços</h1>
             <p className="text-muted-foreground">Gerencie os serviços oferecidos pela sua empresa</p>
           </div>
-          <AddServiceDialog 
-            companyId={company.id} 
-            onServiceAdded={fetchData}
-          />
+          <div className="flex gap-2">
+            <ServiceComboDialog companyId={company.id} onComboAdded={fetchData} />
+            <AddServiceDialog companyId={company.id} onServiceAdded={fetchData} />
+          </div>
         </div>
+
+        <Tabs defaultValue="services" className="mb-6">
+          <TabsList>
+            <TabsTrigger value="services" className="flex items-center gap-2">
+              <Briefcase className="w-4 h-4" /> Serviços
+            </TabsTrigger>
+            <TabsTrigger value="combos" className="flex items-center gap-2">
+              <Package className="w-4 h-4" /> Combos
+            </TabsTrigger>
+            <TabsTrigger value="rewards" className="flex items-center gap-2">
+              <Gift className="w-4 h-4" /> Brindes
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="services">
 
         {services.length === 0 ? (
           <Card>
@@ -220,6 +238,21 @@ export default function BusinessServices() {
             ))}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="combos">
+            <Card>
+              <CardContent className="py-8 text-center">
+                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Use o botão "Criar Combo" acima para combinar serviços</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="rewards">
+            <RewardsConfig companyId={company.id} />
+          </TabsContent>
+        </Tabs>
       </div>
     </BusinessLayout>
   );

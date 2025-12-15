@@ -77,6 +77,7 @@ export type Database = {
           employee_id: string | null
           id: string
           notes: string | null
+          payment_method: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           price: number
           service_id: string
@@ -93,6 +94,7 @@ export type Database = {
           employee_id?: string | null
           id?: string
           notes?: string | null
+          payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           price?: number
           service_id: string
@@ -109,6 +111,7 @@ export type Database = {
           employee_id?: string | null
           id?: string
           notes?: string | null
+          payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           price?: number
           service_id?: string
@@ -299,6 +302,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      client_payment_methods: {
+        Row: {
+          card_brand: string | null
+          card_last_four: string | null
+          client_id: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          payment_type: string
+          pix_key: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          card_brand?: string | null
+          card_last_four?: string | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          payment_type: string
+          pix_key?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          card_brand?: string | null
+          card_last_four?: string | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          payment_type?: string
+          pix_key?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      client_rewards: {
+        Row: {
+          company_id: string
+          count_specific_service: boolean | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          required_procedures: number
+          requires_completed_booking: boolean | null
+          requires_payment_confirmed: boolean | null
+          reward_service_id: string | null
+          specific_service_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_id: string
+          count_specific_service?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          required_procedures?: number
+          requires_completed_booking?: boolean | null
+          requires_payment_confirmed?: boolean | null
+          reward_service_id?: string | null
+          specific_service_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          count_specific_service?: boolean | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          required_procedures?: number
+          requires_completed_booking?: boolean | null
+          requires_payment_confirmed?: boolean | null
+          reward_service_id?: string | null
+          specific_service_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       clients: {
         Row: {
@@ -618,6 +699,66 @@ export type Database = {
           },
         ]
       }
+      company_subscriptions: {
+        Row: {
+          billing_period: string
+          company_id: string | null
+          created_at: string | null
+          discount_cycles_remaining: number | null
+          discount_percentage: number | null
+          discounted_price: number | null
+          id: string
+          next_billing_date: string | null
+          original_price: number
+          plan_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          billing_period: string
+          company_id?: string | null
+          created_at?: string | null
+          discount_cycles_remaining?: number | null
+          discount_percentage?: number | null
+          discounted_price?: number | null
+          id?: string
+          next_billing_date?: string | null
+          original_price: number
+          plan_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          billing_period?: string
+          company_id?: string | null
+          created_at?: string | null
+          discount_cycles_remaining?: number | null
+          discount_percentage?: number | null
+          discounted_price?: number | null
+          id?: string
+          next_billing_date?: string | null
+          original_price?: number
+          plan_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_absences: {
         Row: {
           absence_type: Database["public"]["Enums"]["absence_type"]
@@ -842,6 +983,77 @@ export type Database = {
           },
         ]
       }
+      service_combo_items: {
+        Row: {
+          combo_id: string | null
+          created_at: string | null
+          id: string
+          service_id: string
+        }
+        Insert: {
+          combo_id?: string | null
+          created_at?: string | null
+          id?: string
+          service_id: string
+        }
+        Update: {
+          combo_id?: string | null
+          created_at?: string | null
+          id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_combo_items_combo_id_fkey"
+            columns: ["combo_id"]
+            isOneToOne: false
+            referencedRelation: "service_combos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_combos: {
+        Row: {
+          combo_price: number
+          company_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          original_total_price: number | null
+          total_duration_minutes: number
+          updated_at: string | null
+        }
+        Insert: {
+          combo_price: number
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          original_total_price?: number | null
+          total_duration_minutes: number
+          updated_at?: string | null
+        }
+        Update: {
+          combo_price?: number
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          original_total_price?: number | null
+          total_duration_minutes?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           company_id: string
@@ -888,6 +1100,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          annual_checkout_url: string | null
+          annual_price: number
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          is_popular: boolean | null
+          monthly_checkout_url: string | null
+          monthly_price: number
+          name: string
+          quarterly_checkout_url: string | null
+          quarterly_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          annual_checkout_url?: string | null
+          annual_price: number
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          monthly_checkout_url?: string | null
+          monthly_price: number
+          name: string
+          quarterly_checkout_url?: string | null
+          quarterly_price: number
+          updated_at?: string | null
+        }
+        Update: {
+          annual_checkout_url?: string | null
+          annual_price?: number
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          monthly_checkout_url?: string | null
+          monthly_price?: number
+          name?: string
+          quarterly_checkout_url?: string | null
+          quarterly_price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
