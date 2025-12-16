@@ -215,6 +215,7 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
                     <Checkbox
                       checked={selectedServices.includes(service.id)}
                       onCheckedChange={() => toggleService(service.id)}
+                      onClick={(e) => e.stopPropagation()}
                     />
                     <div>
                       <p className="font-medium">{service.name}</p>
