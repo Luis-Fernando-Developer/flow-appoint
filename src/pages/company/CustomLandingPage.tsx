@@ -722,7 +722,9 @@ export default function CustomLandingPage() {
                       customization?.cards_layout === 'horizontal' ? 'mt-4' : ''
                     }`}>
                       <span className="text-2xl font-bold text-primary custom-font">
-                        R$ {Number(service.price).toFixed(2)}
+                        R$ {(service.price != null && !isNaN(Number(service.price))) 
+                            ? Number(service.price).toFixed(2) 
+                            : '0.00'}
                       </span>
                       <span className={`text-sm custom-font ${
                         customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'

@@ -64,8 +64,15 @@ export default function ClientLogin() {
           description: `Bem-vindo(a), ${client.name}`,
         });
 
-        // Redireciona para a página de agendamentos do cliente  
-        navigate(`/${slug}/agendamentos`);
+        // Check if there's a returnTo parameter for booking flow
+        const searchParams = new URLSearchParams(window.location.search);
+        const returnTo = searchParams.get('returnTo');
+        
+        if (returnTo === 'agendar') {
+          navigate(`/${slug}/agendar?restore=true`);
+        } else {
+          navigate(`/${slug}/agendamentos`);
+        }
       }
     } catch (error) {
       console.error('Error signing in:', error);

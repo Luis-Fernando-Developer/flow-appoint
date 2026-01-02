@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -135,6 +135,59 @@ export default function ClientBooking() {
       console.log("customization:", customization);
     }
   }, [customization]);
+
+  // Restore booking state after login redirect
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const shouldRestore = searchParams.get('restore') === 'true';
+    
+    if (shouldRestore && user && services.length > 0) {
+      const savedState = sessionStorage.getItem('pendingBooking');
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState);
+          
+          // Find service or combo
+          const service = services.find(s => s.id === state.serviceId);
+          const combo = combos.find(c => c.id === state.serviceId);
+          if (service) setSelectedService(service);
+          else if (combo) {
+            // Handle combo as service
+            const comboAsService: Service = {
+              id: combo.id,
+              name: combo.name,
+              description: combo.description || '',
+              price: combo.combo_price,
+              duration_minutes: combo.total_duration_minutes,
+              image_url: combo.image_url
+            };
+            setSelectedService(comboAsService);
+          }
+          
+          // Restore employee if employees are loaded
+          if (state.employeeId && employees.length > 0) {
+            const employee = employees.find(e => e.id === state.employeeId);
+            if (employee) setSelectedEmployee(employee);
+          }
+          
+          // Restore date and time
+          if (state.date) setSelectedDate(new Date(state.date));
+          if (state.time) setSelectedTime(state.time);
+          
+          // Go directly to step 5 (confirmation)
+          setStep(5);
+          
+          // Clear saved state
+          sessionStorage.removeItem('pendingBooking');
+          
+          // Clear the URL param
+          window.history.replaceState({}, '', `/${slug}/agendar`);
+        } catch (e) {
+          console.error('Error restoring booking state:', e);
+        }
+      }
+    }
+  }, [user, services, combos, employees, slug]);
 
   
 
@@ -1044,7 +1097,16 @@ export default function ClientBooking() {
                   <Button 
                     className="w-full" 
                     variant="neon"
-                    onClick={() => navigate(`/${slug}/entrar`)}
+                    onClick={() => {
+                      const bookingState = {
+                        serviceId: selectedService?.id,
+                        employeeId: selectedEmployee?.id,
+                        date: selectedDate?.toISOString(),
+                        time: selectedTime,
+                      };
+                      sessionStorage.setItem('pendingBooking', JSON.stringify(bookingState));
+                      navigate(`/${slug}/entrar?returnTo=agendar`);
+                    }}
                   >
                     Já tenho conta - Entrar
                   </Button>
@@ -1052,7 +1114,16 @@ export default function ClientBooking() {
                   <Button 
                     className="w-full" 
                     variant="outline"
-                    onClick={() => navigate(`/${slug}/cadastro`)}
+                    onClick={() => {
+                      const bookingState = {
+                        serviceId: selectedService?.id,
+                        employeeId: selectedEmployee?.id,
+                        date: selectedDate?.toISOString(),
+                        time: selectedTime,
+                      };
+                      sessionStorage.setItem('pendingBooking', JSON.stringify(bookingState));
+                      navigate(`/${slug}/cadastro?returnTo=agendar`);
+                    }}
                   >
                     Criar nova conta
                   </Button>
