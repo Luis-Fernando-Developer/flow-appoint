@@ -140,8 +140,16 @@ export default function ClientSignup() {
           description: "Verifique seu email para confirmar a conta e depois faça login.",
         });
 
-        // Redirect to login page
-        navigate(`/${slug}/entrar`);
+        // Check if there's a returnTo parameter for booking flow
+        const searchParams = new URLSearchParams(window.location.search);
+        const returnTo = searchParams.get('returnTo');
+        
+        // Redirect to login page with returnTo preserved
+        if (returnTo) {
+          navigate(`/${slug}/entrar?returnTo=${returnTo}`);
+        } else {
+          navigate(`/${slug}/entrar`);
+        }
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
