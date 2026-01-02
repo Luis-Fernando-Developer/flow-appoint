@@ -658,7 +658,7 @@ export default function ClientBooking() {
                     name: combo.name,
                     description: combo.description || '',
                     price: combo.combo_price ?? 0,
-                    duration_minutes: combo.total_duration_minutes ?? (combo.items?.reduce((s: number, it: any) => s  (it.service?.duration_minutes || 0), 0) || 0),
+                    duration_minutes: combo.total_duration_minutes ?? (combo.items?.reduce((s: number, it: any) => s + (it.service?.duration_minutes || 0), 0) || 0),
                     image_url: combo.items?.[0]?.service?.image_url
                   };
                   return (

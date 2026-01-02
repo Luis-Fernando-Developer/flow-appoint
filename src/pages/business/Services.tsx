@@ -11,6 +11,8 @@ import { AddServiceDialog } from "@/components/business/AddServiceDialog";
 import { EditServiceDialog } from "@/components/business/EditServiceDialog";
 import { DeleteServiceDialog } from "@/components/business/DeleteServiceDialog";
 import { ServiceComboDialog } from "@/components/business/ServiceComboDialog";
+import { EditComboDialog } from "@/components/business/EditComboDialog";
+import { DeleteComboDialog } from "@/components/business/DeleteComboDialog";
 import { RewardsConfig } from "@/components/business/RewardsConfig";
 
 interface Service {
@@ -135,8 +137,8 @@ export default function BusinessServices() {
             service: servicesMap[it.service_id] || null,
           })),
         }));
-      }  
-      setCombos(combosData || []);
+        setCombos(combosWithServices);
+      }
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -308,31 +310,42 @@ export default function BusinessServices() {
                 {combos.map((combo) => (
                   <Card key={combo.id} className="relative">
                     <CardHeader>
-                        <div className="flex justify-between items-start">
-                            <CardTitle className="flex items-center gap-2">
-                                {combo.name}
-                                {!combo.is_active && <Badge variant="secondary">Inativo</Badge>}
-                              </CardTitle>
-                            <div className="text-right">
-                                <div className="font-semibold">{formatPrice(combo.combo_price)}</div>
-                                <div className="text-sm text-muted-foreground">{combo.items?.length ?? 0} serviços</div>
-                              </div>
-                          </div>
-                        {combo.description && <CardDescription>{combo.description}</CardDescription>}
-                      </CardHeader>
-                      <CardContent>
-                          <div className="space-y-2 text-sm text-muted-foreground">
-                            <div>Preço original: {formatPrice(combo.original_total_price || 0)}</div>
-                            <div>Duração: {formatDuration(combo.total_duration_minutes || 0)}</div>
-                            <div className="mt-2">
-                                {combo.items?.map((it) => (
-                                    <div key={it.service_id} className="text-sm">
-                                        • {it.service?.name || 'Serviço'}
-                                      </div>
-                                  ))}
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="flex items-center gap-2">
+                          {combo.name}
+                          {!combo.is_active && <Badge variant="secondary">Inativo</Badge>}
+                        </CardTitle>
+                        <div className="flex gap-1">
+                          <EditComboDialog combo={combo} services={services} onComboUpdated={fetchData} />
+                          <DeleteComboDialog combo={combo} onComboDeleted={fetchData} />
+                        </div>
+                      </div>
+                      {combo.description && <CardDescription>{combo.description}</CardDescription>}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Preço do combo:</span>
+                          <span className="font-semibold">{formatPrice(combo.combo_price)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Preço original:</span>
+                          <span className="line-through text-muted-foreground">{formatPrice(combo.original_total_price || 0)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Duração:</span>
+                          <span>{formatDuration(combo.total_duration_minutes || 0)}</span>
+                        </div>
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-xs text-muted-foreground mb-2">Serviços inclusos:</p>
+                          {combo.items?.map((it) => (
+                            <div key={it.service_id} className="text-sm">
+                              • {it.service?.name || 'Serviço não encontrado'}
                             </div>
-                          </div>
-                          </CardContent>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
                   </Card>
                 ))}
               </div>
