@@ -93,6 +93,73 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
     return `${mins}min`;
   };
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+
+  //   if (selectedServices.length < 2) {
+  //     toast({
+  //       title: "Erro",
+  //       description: "Selecione pelo menos 2 serviços para criar um combo.",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
+
+  //   setLoading(true);
+
+  //   try {
+  //     // Create combo
+  //     const { data: comboData, error: comboError } = await supabase
+  //       .from('service_combos')
+  //       .insert([{
+  //         company_id: companyId,
+  //         name: formData.name,
+  //         description: formData.description,
+  //         combo_price: formData.combo_price,
+  //         original_total_price: totalPrice,
+  //         total_duration_minutes: totalDuration,
+  //         is_active: true
+  //       }])
+  //       .select()
+  //       .single();
+
+  //     if (comboError) throw comboError;
+
+  //     // Create combo items
+  //     const comboItems = selectedServices.map(serviceId => ({
+  //       combo_id: comboData.id,
+  //       service_id: serviceId
+  //     }));
+
+  //     const { error: itemsError } = await supabase
+  //       .from('service_combo_items')
+  //       .insert(comboItems);
+
+  //     if (itemsError) throw itemsError;
+
+  //     toast({
+  //       title: "Combo criado!",
+  //       description: `O combo "${formData.name}" foi criado com sucesso.`,
+  //     });
+
+  //     setOpen(false);
+  //     setFormData({ name: "", description: "", combo_price: 0 });
+  //     setSelectedServices([]);
+  //     onComboAdded();
+  //   } catch (error) {
+  //     console.error('Error creating combo:', error);
+  //     toast({
+  //       title: "Erro",
+  //       description: "Erro ao criar combo.",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+  // ...existing code...
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -108,7 +175,7 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
     setLoading(true);
 
     try {
-      // Create combo
+      // Create combo and return the inserted row
       const { data: comboData, error: comboError } = await supabase
         .from('service_combos')
         .insert([{
@@ -123,7 +190,12 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
         .select()
         .single();
 
-      if (comboError) throw comboError;
+      if (comboError) {
+        console.error('comboError:', comboError);
+        throw comboError;
+      }
+
+      console.log('combo created:', comboData);
 
       // Create combo items
       const comboItems = selectedServices.map(serviceId => ({
@@ -131,11 +203,19 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
         service_id: serviceId
       }));
 
-      const { error: itemsError } = await supabase
+      const { data: itemsData, error: itemsError } = await supabase
         .from('service_combo_items')
-        .insert(comboItems);
+        .insert(comboItems)
+        .select();
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error('itemsError:', itemsError);
+        // opcional: cleanup se falhar inserir items
+        await supabase.from('service_combos').delete().eq('id', comboData.id);
+        throw itemsError;
+      }
+
+      console.log('combo items created:', itemsData);
 
       toast({
         title: "Combo criado!",
@@ -145,12 +225,12 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
       setOpen(false);
       setFormData({ name: "", description: "", combo_price: 0 });
       setSelectedServices([]);
-      onComboAdded();
+      onComboAdded?.();
     } catch (error) {
       console.error('Error creating combo:', error);
       toast({
         title: "Erro",
-        description: "Erro ao criar combo.",
+        description: (error as any) ?.message || "Erro ao criar combo.",
         variant: "destructive",
       });
     } finally {
@@ -215,6 +295,7 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
                     <Checkbox
                       checked={selectedServices.includes(service.id)}
                       onCheckedChange={() => toggleService(service.id)}
+                      onClick={(e) => e.stopPropagation()}
                     />
                     <div>
                       <p className="font-medium">{service.name}</p>
@@ -255,10 +336,10 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
                   <Input
                     id="combo_price"
                     type="number"
-                    step="0.01"
-                    min="0"
+                    step="5"
+                    min='50'
                     value={formData.combo_price}
-                    onChange={(e) => setFormData({ ...formData, combo_price: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => setFormData({ ...formData, combo_price: parseFloat(e.target.value) })}
                     required
                   />
                 </div>

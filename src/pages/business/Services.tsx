@@ -35,11 +35,23 @@ interface Employee {
   company: Company;
 }
 
+interface Combo {
+  id: string;
+  name: string;
+  description?: string;
+  combo_price: number;
+  original_total_price?: number;
+  total_duration_minutes?: number;
+  is_active?: boolean;
+  items?: { service_id: string; service?: { id?: string; name?: string } }[];
+}
+
 export default function BusinessServices() {
   const { slug } = useParams<{ slug: string }>();
   const [company, setCompany] = useState<Company | null>(null);
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [combos, setCombos] = useState<Combo[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -83,6 +95,49 @@ export default function BusinessServices() {
         .order('name');
 
       setServices(servicesData || []);
+
+      // Buscar combos
+      const { data: combosData, error: combosError } = await supabase
+        .from('service_combos')
+        .select('*, items:service_combo_items(*)')
+        .eq('company_id', companyData.id)
+        .order('name');
+
+      if (combosError) {
+        console.error('Error fetching combos:', combosError);
+      } else {
+        // coletar ids de serviços e buscar nomes
+        const serviceIds = Array.from(
+          new Set(
+            (combosData || [])
+              .flatMap((c: any) => (c.items || []).map((it: any) => it.service_id))
+              .filter(Boolean)
+          )
+        );
+
+        let servicesMap: Record<string, any> = {};
+        if (serviceIds.length > 0) {
+          const { data: servicesList } = await supabase
+            .from('services')
+            .select('id, name')
+            .in('id', serviceIds);
+          servicesMap = (servicesList || []).reduce((acc: any, s: any) => {
+            acc[s.id] = s;
+            return acc;
+          }, {});
+        }
+
+        // anexar service info aos items
+        const combosWithServices = (combosData || []).map((c: any) => ({
+          ...c,
+          items: (c.items || []).map((it: any) => ({
+            ...it,
+            service: servicesMap[it.service_id] || null,
+          })),
+        }));
+      }  
+      setCombos(combosData || []);
+
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -241,12 +296,47 @@ export default function BusinessServices() {
           </TabsContent>
 
           <TabsContent value="combos">
-            <Card>
-              <CardContent className="py-8 text-center">
-                <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Use o botão "Criar Combo" acima para combinar serviços</p>
-              </CardContent>
-            </Card>
+            {combos.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center">
+                    <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Use o botão "Criar Combo" acima para combinar serviços</p>
+                  </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {combos.map((combo) => (
+                  <Card key={combo.id} className="relative">
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <CardTitle className="flex items-center gap-2">
+                                {combo.name}
+                                {!combo.is_active && <Badge variant="secondary">Inativo</Badge>}
+                              </CardTitle>
+                            <div className="text-right">
+                                <div className="font-semibold">{formatPrice(combo.combo_price)}</div>
+                                <div className="text-sm text-muted-foreground">{combo.items?.length ?? 0} serviços</div>
+                              </div>
+                          </div>
+                        {combo.description && <CardDescription>{combo.description}</CardDescription>}
+                      </CardHeader>
+                      <CardContent>
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <div>Preço original: {formatPrice(combo.original_total_price || 0)}</div>
+                            <div>Duração: {formatDuration(combo.total_duration_minutes || 0)}</div>
+                            <div className="mt-2">
+                                {combo.items?.map((it) => (
+                                    <div key={it.service_id} className="text-sm">
+                                        • {it.service?.name || 'Serviço'}
+                                      </div>
+                                  ))}
+                            </div>
+                          </div>
+                          </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="rewards">
