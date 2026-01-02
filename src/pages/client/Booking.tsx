@@ -60,6 +60,7 @@ export default function ClientBooking() {
   
   const [company, setCompany] = useState<Company | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [combos, setCombos] = useState<any[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -170,6 +171,50 @@ export default function ClientBooking() {
 
       if (servicesError) throw servicesError;
       setServices(servicesData || []);
+
+      const { data: combosData, error: combosError } = await supabase
+       .from('service_combos')
+       .select('*, items:service_combo_items(*)')
+       .eq('company_id', companyData.id)
+       .eq('is_active', true)
+       .order('name');
+
+     if (combosError) {
+       console.error('Error fetching combos:', combosError);
+       setCombos([]);
+     } else {
+       // coletar ids de serviços usados nos combos
+       const serviceIds = Array.from(
+         new Set(
+           (combosData || [])
+             .flatMap((c: any) => (c.items || []).map((it: any) => it.service_id))
+             .filter(Boolean)
+         )
+       );
+
+       let servicesMap: Record<string, any> = {};
+       if (serviceIds.length > 0) {
+         const { data: servicesList } = await supabase
+           .from('services')
+           .select('id, name, price, image_url, duration_minutes')
+           .in('id', serviceIds);
+         servicesMap = (servicesList || []).reduce((acc: any, s: any) => {
+           acc[s.id] = s;
+           return acc;
+         }, {});
+       }
+
+       const combosWithServices = (combosData || []).map((c: any) => ({
+         ...c,
+         items: (c.items || []).map((it: any) => ({
+           ...it,
+           service: servicesMap[it.service_id] || null,
+         })),
+       }));
+
+       setCombos(combosWithServices);
+     }
+
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast({
@@ -234,10 +279,71 @@ export default function ClientBooking() {
     return styles;
   };
 
+  // Ao selecionar um combo no UI, criamos um "service-like" para manter o fluxo
+  const handleSelectCombo = (combo: any) => {
+    const synthetic: Service = {
+      id: `combo:${combo.id}`,
+      name: combo.name,
+      description: combo.description || "",
+      price: combo.combo_price ?? 0,
+      duration_minutes: combo.total_duration_minutes ?? (combo.items?.reduce((s: number, it: any) => s + (it.service?.duration_minutes || 0), 0) || 0),
+      image_url: combo.items?.[0]?.service?.image_url
+    };
+    setSelectedService(synthetic);
+  };
+
   const fetchEmployeesForService = async () => {
     if (!selectedService || !company) return;
 
     try {
+
+      if (selectedService.id?.startsWith?.('combo:')) {
+        const comboId = selectedService.id.replace('combo:', '');
+        const combo = combos.find(c => c.id === comboId);
+        if (!combo) {
+          setEmployees([]);
+          return;
+        }
+
+        const serviceIds = (combo.items || []).map((it: any) => it.service_id).filter(Boolean);
+        if (serviceIds.length === 0) {
+          setEmployees([]);
+          return;
+        }
+
+        // buscar employee_services para esses serviceIds
+        const { data: esData, error: esError } = await supabase
+          .from('employee_services')
+          .select('employee_id, service_id')
+          .in('service_id', serviceIds);
+
+        if (esError) throw esError;
+
+        // contar quantos services cada employee possui
+        const counts: Record<string, number> = {};
+        (esData || []).forEach((row: any) => {
+          counts[row.employee_id] = (counts[row.employee_id] || 0) + 1;
+        });
+
+        // employees que possuem count === serviceIds.length
+        const eligibleEmployeeIds = Object.keys(counts).filter(empId => counts[empId] === serviceIds.length);
+        if (eligibleEmployeeIds.length === 0) {
+          setEmployees([]);
+          return;
+        }
+
+         // buscar dados dos employees elegíveis (apenas do mesmo company)
+        const { data: employeesData } = await supabase
+          .from('employees')
+          .select('id, name, email, avatar_url')
+          .in('id', eligibleEmployeeIds)
+          .eq('company_id', company.id)
+          .eq('is_active', true);
+
+        setEmployees(employeesData || []);
+        return;
+      }
+
       // Buscar funcionários que oferecem o serviço selecionado
       const { data: employeesData, error } = await supabase
         .from('employees')
@@ -282,6 +388,28 @@ export default function ClientBooking() {
         const dateStr = format(date, 'yyyy-MM-dd');
         
         try {
+
+          // Se for combo, verifica disponibilidade para cada service do combo (básico: requer pelo menos um slot por service neste dia)
+          if (selectedService.id?.startsWith?.('combo:')) {
+            const comboId = selectedService.id.replace('combo:', '');
+            const combo = combos.find(c => c.id === comboId);
+            if (!combo) continue;
+            const serviceIds = (combo.items || []).map((it: any) => it.service_id).filter(Boolean);
+            let allHaveSlot = true;
+            for (const sId of serviceIds) {
+              const response = await fetch(
+                `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${sId}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
+                { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+              );
+              if (!response.ok) { allHaveSlot = false; break; }
+              const data = await response.json();
+              if (!((data.slots && data.slots.length > 0) || (data.availability && data.availability.length > 0))) {
+                allHaveSlot = false; break;
+              }
+            }
+            if (allHaveSlot) dates.push(date);
+            continue;
+          }
           const response = await fetch(
             `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${selectedService.id}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
             {
@@ -330,6 +458,34 @@ export default function ClientBooking() {
     setIsLoadingAvailability(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
+      // Para combos, por agora exibimos os horários do primeiro serviço do combo (backend idealmente deve suportar combo availability)
+      if (selectedService.id?.startsWith?.('combo:')) {
+          const comboId = selectedService.id.replace('combo:', '');
+          const combo = combos.find(c => c.id === comboId);
+          const firstServiceId = combo?.items?.[0]?.service_id;
+          if (!firstServiceId) {
+              setAvailableTimes([]);
+              return;
+            }
+          const response = await fetch(
+              `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${firstServiceId}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
+              { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+            );
+          if (!response.ok) throw new Error('Erro ao buscar disponibilidade');
+          const data = await response.json();
+          if (data.slots && data.slots.length > 0) {
+              setAvailableTimes(data.slots.map((s: any) => s.time));
+              return;
+            } else if (data.availability && data.availability.length > 0) {
+                const empAvail = data.availability.find((a: any) => a.employee_id === selectedEmployee.id);
+                setAvailableTimes(empAvail?.slots || []);
+                return;
+              } else {
+              setAvailableTimes([]);
+              return;
+            }
+        }
       
       const response = await fetch(
         `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${selectedService.id}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
@@ -417,6 +573,28 @@ export default function ClientBooking() {
 
       // Criar agendamento via edge function para contornar RLS
       const { data: session } = await supabase.auth.getSession();
+
+      const isCombo = selectedService.id?.startsWith?.('combo:');
+      const payloadBase: any = {
+        company_id: company.id,
+        employee_id: selectedEmployee.id,
+        booking_date: format(selectedDate, 'yyyy-MM-dd'),
+        booking_time: selectedTime,
+        duration_minutes: selectedService.duration_minutes,
+        price: selectedService.price,
+        notes: formData.notes,
+        client_id: clientId
+      };
+
+      if (isCombo) {
+        const comboId = selectedService.id.replace('combo:', '');
+        const combo = combos.find(c => c.id === comboId);
+        payloadBase.combo_id = comboId;
+        payloadBase.combo_items = (combo?.items || []).map((it: any) => it.service_id);
+      } else {
+        payloadBase.service_id = selectedService.id;
+      }
+
       
       const response = await fetch(`https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/create-booking`, {
         method: 'POST',
@@ -424,16 +602,7 @@ export default function ClientBooking() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.session?.access_token}`,
         },
-        body: JSON.stringify({
-          company_id: company.id,
-          service_id: selectedService.id,
-          employee_id: selectedEmployee.id,
-          booking_date: format(selectedDate, 'yyyy-MM-dd'),
-          booking_time: selectedTime,
-          duration_minutes: selectedService.duration_minutes,
-          price: selectedService.price,
-          notes: formData.notes
-        }),
+        body: JSON.stringify(payloadBase),
       });
 
       if (!response.ok) {
@@ -482,6 +651,45 @@ export default function ClientBooking() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4" >
+                {/* Render combos primeiro, como cards iguais aos serviços */}
+                {combos.map((combo) => {
+                  const synthetic: Service = {
+                    id: `combo:${combo.id}`,
+                    name: combo.name,
+                    description: combo.description || '',
+                    price: combo.combo_price ?? 0,
+                    duration_minutes: combo.total_duration_minutes ?? (combo.items?.reduce((s: number, it: any) => s  (it.service?.duration_minutes || 0), 0) || 0),
+                    image_url: combo.items?.[0]?.service?.image_url
+                  };
+                  return (
+                    <div
+                      key={`combo-${combo.id}`}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedService?.id === synthetic.id ? "border-primary bg-primary/10" : "border-primary/20 hover:border-primary/50"}`}
+                      style={{ background: customStyles["--cards-background"] }}
+                      onClick={() => handleSelectCombo(combo)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-lg">{combo.name}</h3>
+                          <p className="text-muted-foreground text-sm mb-2">{combo.description}</p>
+                          <div className="flex gap-4 text-sm">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {synthetic.duration_minutes} min
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-4 h-4" />
+                              R$ {synthetic.price.toFixed(2)}
+                            </div>
+                          </div>
+                        </div>
+                        {selectedService?.id === synthetic.id && (
+                          <Check className="w-6 h-6 text-primary" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
                 {services.map((service) => (
                   <div
                     key={service.id}

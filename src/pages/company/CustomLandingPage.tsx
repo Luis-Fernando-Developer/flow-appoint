@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MapPin, Phone, Mail, Menu, LogInIcon, UserPlus2, ChevronDown, DoorClosedIcon, X, ChevronRight } from "lucide-react";
+import { MapPin, Phone, Mail, Menu, LogInIcon, UserPlus2, ChevronDown, DoorClosedIcon, X, ChevronRight, TimerIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BookingLogo } from "@/components/BookingLogo";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,17 @@ interface CustomizationData {
   footer_font_family: string;
 }
 
+interface Combo {
+  id: string;
+  name: string;
+  description?: string;
+  combo_price?: number;
+  original_total_price?: number;
+  total_duration_minutes?: number;
+  is_active?: boolean;
+  items?: { service_id: string; service?: { id?: string; name?: string; price?: number; image_url?: string } }[];
+}
+
 export default function CustomLandingPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -54,6 +65,7 @@ export default function CustomLandingPage() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [employeeServices, setEmployeeServices] = useState<any[]>([]);
   const [customization, setCustomization] = useState<CustomizationData | null>(null);
+  const [combos, setCombos] = useState<Combo[]>([]);
   const [loading, setLoading] = useState(true);
   const [bannerIndex, setBannerIndex] = useState(0);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -102,6 +114,50 @@ export default function CustomLandingPage() {
         .eq('is_active', true);
 
       setServices(servicesData || []);
+
+      // Buscar combos e mapear services para cada item (caso não haja FKs)
+      const { data: combosData, error: combosError } = await supabase
+        .from('service_combos')
+        .select('*, items:service_combo_items(*)')
+        .eq('company_id', companyData.id)
+        .eq('is_active', true)
+        .order('name');
+
+      if (combosError) {
+        console.error('Error fetching combos:', combosError);
+        setCombos([]);
+      } else {
+        // coletar ids de serviços usados nos combos
+        const serviceIds = Array.from(
+          new Set(
+            (combosData || [])
+              .flatMap((c: any) => (c.items || []).map((it: any) => it.service_id))
+              .filter(Boolean)
+          )
+        );
+
+        let servicesMap: Record<string, any> = {};
+        if (serviceIds.length > 0) {
+          const { data: servicesList } = await supabase
+            .from('services')
+            .select('id, name, price, image_url')
+            .in('id', serviceIds);
+          servicesMap = (servicesList || []).reduce((acc: any, s: any) => {
+            acc[s.id] = s;
+            return acc;
+          }, {});
+        }
+
+        const combosWithServices = (combosData || []).map((c: any) => ({
+          ...c,
+          items: (c.items || []).map((it: any) => ({
+            ...it,
+            service: servicesMap[it.service_id] || null,
+          })),
+        }));
+
+      setCombos(combosWithServices);
+      }
 
       // Fetch employees data - apenas funcionários ativos
       const { data: employeesData } = await supabase
@@ -598,6 +654,35 @@ export default function CustomLandingPage() {
                 ? 'grid-cols-1' 
                 : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
             }`}>
+              {combos.length > 0 && combos.map((combo) => (
+                <div key={combo.id} className={`rounded-lg border border-primary/20 p-6 transition-colors custom-font ${customization?.cards_color_type === 'gradient' ? 'cards-custom-bg' : 'bg-card'}`}>
+                  <div className="flex-1 ">
+                    <div className='flex justify-between items-center mb-2'>
+                      <h3 className="text-xl font-semibold">{combo.name}</h3>
+                      <div className="text-2xl font-bold text-primary">{combo.combo_price ? `R$ ${Number(combo.combo_price).toFixed(2)}` : ''}</div>
+                    </div>
+                    {combo.description && <p className="mb-4 text-muted-foreground">{combo.description}</p>}
+                    <div className="flex justify-between items-center">
+                      {/* <div>
+                        <div className="text-sm text-muted-foreground">{combo.items?.length ?? 0} serviços</div>
+                      </div> */}
+                      <div className="text-sm flex w-full py-2 ">
+                        {combo.items?.map((it, index) => (
+                          <div className={index > 0 ? 'pl-1' : 'pl-0'} key={it.service_id}> {index > 0 && ' + '} {`${it.service?.name || 'Serviço'}`}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className={`text-sm w-full text-right text-muted-foreground custom-font ${customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'
+                      }`}>
+                        <div className='flex items-center justify-end gap-0.5'>
+                          <TimerIcon /> 
+                          <p className='pt-1'>{combo.total_duration_minutes} min</p>
+                        </div>
+                    </div>
+                    
+                  </div>
+                </div>
+              ))}
               {services.slice(0, visibleServices).map((service) => (
                 <div 
                   key={service.id} 
@@ -642,13 +727,19 @@ export default function CustomLandingPage() {
                       <span className={`text-sm custom-font ${
                         customization?.cards_color_type === 'gradient' ? 'cards-custom-color' : customization?.cards_color ? 'cards-custom-color' : 'text-muted-foreground'
                       }`}>
-                        {service.duration_minutes} min
+                        <div className='flex items-center justify-end gap-0.5'>
+                          <TimerIcon />
+                          <p className='pt-1'>{service.duration_minutes} min</p>
+                        </div>
+                      
                       </span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
+
             
             {visibleServices < services.length && (
               <div className="text-center mt-8">
@@ -807,7 +898,7 @@ export default function CustomLandingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <p className="text-muted-foreground">
-                © 2024 {company.name}. Todos os direitos reservados.
+                © {new Date().getFullYear()} {company.name}. Todos os direitos reservados.
               </p>
             </div>
           </div>
