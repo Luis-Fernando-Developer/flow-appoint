@@ -80,6 +80,7 @@ export default function ClientBooking() {
   const [user, setUser] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
   const [customization, setCustomization] = useState<any>(null);
+  const [pendingEmployeeRestore, setPendingEmployeeRestore] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCompanyAndServices();
@@ -136,7 +137,7 @@ export default function ClientBooking() {
     }
   }, [customization]);
 
-  // Restore booking state after login redirect
+  // Restore booking state after login redirect - Phase 1: service, date, time
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const shouldRestore = searchParams.get('restore') === 'true';
@@ -150,9 +151,9 @@ export default function ClientBooking() {
           // Find service or combo
           const service = services.find(s => s.id === state.serviceId);
           const combo = combos.find(c => c.id === state.serviceId);
-          if (service) setSelectedService(service);
-          else if (combo) {
-            // Handle combo as service
+          if (service) {
+            setSelectedService(service);
+          } else if (combo) {
             const comboAsService: Service = {
               id: combo.id,
               name: combo.name,
@@ -164,10 +165,9 @@ export default function ClientBooking() {
             setSelectedService(comboAsService);
           }
           
-          // Restore employee if employees are loaded
-          if (state.employeeId && employees.length > 0) {
-            const employee = employees.find(e => e.id === state.employeeId);
-            if (employee) setSelectedEmployee(employee);
+          // Save employee ID for restoration in Phase 2
+          if (state.employeeId) {
+            setPendingEmployeeRestore(state.employeeId);
           }
           
           // Restore date and time
@@ -177,17 +177,26 @@ export default function ClientBooking() {
           // Go directly to step 5 (confirmation)
           setStep(5);
           
-          // Clear saved state
+          // Clear saved state and URL param
           sessionStorage.removeItem('pendingBooking');
-          
-          // Clear the URL param
           window.history.replaceState({}, '', `/${slug}/agendar`);
         } catch (e) {
           console.error('Error restoring booking state:', e);
         }
       }
     }
-  }, [user, services, combos, employees, slug]);
+  }, [user, services, combos, slug]);
+
+  // Restore booking state - Phase 2: employee (after employees are loaded)
+  useEffect(() => {
+    if (pendingEmployeeRestore && employees.length > 0) {
+      const employee = employees.find(e => e.id === pendingEmployeeRestore);
+      if (employee) {
+        setSelectedEmployee(employee);
+      }
+      setPendingEmployeeRestore(null);
+    }
+  }, [pendingEmployeeRestore, employees]);
 
   
 
