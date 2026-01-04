@@ -71,6 +71,7 @@ export type Database = {
           booking_status: Database["public"]["Enums"]["booking_status"]
           booking_time: string
           client_id: string
+          combo_id: string | null
           company_id: string
           created_at: string
           duration_minutes: number
@@ -80,7 +81,7 @@ export type Database = {
           payment_method: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           price: number
-          service_id: string
+          service_id: string | null
           updated_at: string
         }
         Insert: {
@@ -88,6 +89,7 @@ export type Database = {
           booking_status?: Database["public"]["Enums"]["booking_status"]
           booking_time: string
           client_id: string
+          combo_id?: string | null
           company_id: string
           created_at?: string
           duration_minutes?: number
@@ -97,7 +99,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           price?: number
-          service_id: string
+          service_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -105,6 +107,7 @@ export type Database = {
           booking_status?: Database["public"]["Enums"]["booking_status"]
           booking_time?: string
           client_id?: string
+          combo_id?: string | null
           company_id?: string
           created_at?: string
           duration_minutes?: number
@@ -114,7 +117,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           price?: number
-          service_id?: string
+          service_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -123,6 +126,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_combo_id_fkey"
+            columns: ["combo_id"]
+            isOneToOne: false
+            referencedRelation: "service_combos"
             referencedColumns: ["id"]
           },
           {
