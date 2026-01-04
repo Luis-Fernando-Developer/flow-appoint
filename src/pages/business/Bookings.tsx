@@ -165,6 +165,7 @@ export default function BusinessBookings() {
         *,
         client:clients(*),
         service:services(*),
+        combo:service_combos(*),
         employee:employees(*)
       `)
       .eq('company_id', companyId)
@@ -193,9 +194,10 @@ export default function BusinessBookings() {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(booking => 
-        booking.client?.name.toLowerCase().includes(searchLower) ||
-        booking.service?.name.toLowerCase().includes(searchLower) ||
-        booking.employee?.name.toLowerCase().includes(searchLower)
+        booking.client?.name?.toLowerCase().includes(searchLower) ||
+        booking.service?.name?.toLowerCase().includes(searchLower) ||
+        booking.combo?.name?.toLowerCase().includes(searchLower) ||
+        booking.employee?.name?.toLowerCase().includes(searchLower)
       );
     }
     console.log('filteredBookings:', filtered);
@@ -400,9 +402,13 @@ export default function BusinessBookings() {
 
                       {/* Service & Price */}
                       <div className=" w-full flex flex-col ">
-                        <h3 className=" text-muted-foreground">Serviço</h3>
+                        <h3 className=" text-muted-foreground">
+                          {booking.combo_id ? "Combo" : "Serviço"}
+                        </h3>
                         <div className="flex gap-3 items-center">
-                          <p className="font-medium ">{booking.service?.name}</p>
+                          <p className="font-medium ">
+                            {booking.combo_id ? booking.combo?.name : booking.service?.name}
+                          </p>
                           <p className=" font-medium text-primary">R$ {booking.price}</p>
                         </div>
                       </div>
