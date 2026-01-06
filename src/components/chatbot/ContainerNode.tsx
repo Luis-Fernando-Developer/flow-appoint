@@ -1,5 +1,5 @@
-import { memo } from "react";
-import { Handle, Position, NodeProps, } from 'reactflow';
+import { memo, useState } from "react";
+import { Handle, Position, NodeProps } from 'reactflow';
 import { MoreVertical } from "lucide-react";
 import { Container, Node, ButtonConfig } from "@/types/chatbot";
 import { NodeItem } from "./NodeItem";
@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface ContainerNodeData {
   container: Container;
@@ -22,19 +23,24 @@ interface ContainerNodeData {
 
 export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   const { container, onNodeClick, onTest, onDuplicate, onDelete, onNodeDrop } = data;
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.currentTarget.classList.add('ring-2', 'ring-primary');
+    setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    e.currentTarget.classList.remove('ring-2', 'ring-primary');
+    // Só remove o estado se realmente saiu do container
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!e.currentTarget.contains(relatedTarget)) {
+      setIsDragOver(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    e.currentTarget.classList.remove('ring-2', 'ring-primary');
+    setIsDragOver(false);
     const nodeId = e.dataTransfer.getData('nodeId');
     if (nodeId) {
       onNodeDrop(nodeId, container.id);
@@ -42,7 +48,12 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   };
 
   return (
-    <div className='relative bg-card py-1 px-2 rounded-xl shadow-lg border border-border min-w-[280px] transition-all duration-200'>
+    <div 
+      className={cn(
+        'relative bg-card py-1 px-2 rounded-xl shadow-lg border border-border min-w-[280px] transition-all duration-200',
+        isDragOver && 'ring-2 ring-green-500 border-green-500 bg-green-50/10'
+      )}
+    >
       <div
         className="bg-card p-4"
         onDragOver={handleDragOver}

@@ -1,3 +1,4 @@
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   MessageSquare,
   Hash,
@@ -13,9 +14,11 @@ import {
   Phone,
   Variable,
   Code,
+  GripVertical,
 } from "lucide-react";
 import { Node, NodeType } from "@/types/chatbot";
 import { renderTextSegments } from "@/lib/textParser";
+import { cn } from "@/lib/utils";
 
 interface NodeItemProps {
   node: Node;
@@ -86,27 +89,81 @@ const nodeLabels: Record<NodeType, string> = {
   "script": "Executar Script",
 };
 
+const HOLD_DURATION = 3000; // 3 segundos
+const PROGRESS_INTERVAL = 30; // Atualiza a cada 30ms para animação suave
+
 export const NodeItem = ({ node, onClick, onDragStart }: NodeItemProps) => {
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const target = e.currentTarget;
-    let pressTimer: NodeJS.Timeout | null = null;
+  const [isDraggable, setIsDraggable] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleMouseUp = () => {
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
+  const startHold = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    // Previne que cliques rápidos ativem o arrasto
+    e.stopPropagation();
+    
+    setHoldProgress(0);
+    
+    // Intervalo para atualizar progresso visual
+    progressIntervalRef.current = setInterval(() => {
+      setHoldProgress(prev => {
+        const next = prev + (100 / (HOLD_DURATION / PROGRESS_INTERVAL));
+        return Math.min(next, 100);
+      });
+    }, PROGRESS_INTERVAL);
+    
+    // Timer para ativar draggable após 3s
+    holdTimerRef.current = setTimeout(() => {
+      setIsDraggable(true);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
       }
-      document.removeEventListener("mouseup", handleMouseUp);
+      setHoldProgress(100);
+    }, HOLD_DURATION);
+  }, []);
+
+  const cancelHold = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+    // Só reseta o progresso se não estiver em modo draggable
+    if (!isDraggable) {
+      setHoldProgress(0);
+    }
+  }, [isDraggable]);
+
+  const handleDragEnd = useCallback(() => {
+    setIsDraggable(false);
+    setHoldProgress(0);
+  }, []);
+
+  const handleClick = useCallback(() => {
+    // Só executa onClick se não estiver em modo draggable
+    if (!isDraggable) {
+      onClick();
+    }
+  }, [isDraggable, onClick]);
+
+  const handleDragStart = useCallback((e: React.DragEvent) => {
+    if (isDraggable && onDragStart) {
+      onDragStart(e);
+    } else {
+      e.preventDefault();
+    }
+  }, [isDraggable, onDragStart]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
     };
-
-    pressTimer = setTimeout(() => {
-      target.setAttribute("draggable", "true");
-    }, 1500);
-
-    document.addEventListener("mouseup", handleMouseUp);
-  };
-
-  const handleDragEnd = () => {};
+  }, []);
 
   const configValue = Object.values(node.config || {});
   const messageValue = configValue.find(
@@ -128,12 +185,37 @@ export const NodeItem = ({ node, onClick, onDragStart }: NodeItemProps) => {
 
   return (
     <div
-      onClick={onClick}
-      onMouseDown={handleMouseDown}
-      onDragStart={onDragStart}
+      draggable={isDraggable}
+      onClick={handleClick}
+      onMouseDown={startHold}
+      onMouseUp={cancelHold}
+      onMouseLeave={cancelHold}
+      onTouchStart={startHold}
+      onTouchEnd={cancelHold}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      className={`${nodeColors[node.type]} rounded-lg p-3 cursor-pointer hover:shadow-md transition-all duration-200 select-none border`}
+      className={cn(
+        nodeColors[node.type],
+        "rounded-lg p-3 cursor-pointer transition-all duration-200 select-none border relative overflow-hidden",
+        isDraggable && "ring-2 ring-blue-500 cursor-move shadow-lg scale-[1.02]",
+        holdProgress > 0 && holdProgress < 100 && "ring-2 ring-yellow-400/70"
+      )}
     >
+      {/* Barra de progresso durante hold */}
+      {holdProgress > 0 && holdProgress < 100 && (
+        <div 
+          className="absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-75 rounded-b"
+          style={{ width: `${holdProgress}%` }} 
+        />
+      )}
+      
+      {/* Indicador de modo arrastar ativo */}
+      {isDraggable && (
+        <div className="absolute -top-1 -right-1 bg-blue-500 text-white p-1 rounded-full shadow-md animate-pulse">
+          <GripVertical className="h-3 w-3" />
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
         {nodeIcons[node.type]}
         <div className="flex-1 min-w-0 flex flex-col gap-1">
