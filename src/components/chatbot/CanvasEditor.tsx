@@ -10,12 +10,15 @@ import ReactFlow, {
   Edge as FlowEdge,
   Node as FlowNode,
   NodeTypes,
+  EdgeTypes,
   NodeDragHandler,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Container, Node, NodeConfig, Edge } from "@/types/chatbot";
 import { ContainerNode } from "./ContainerNode";
 import { NodeConfigDialog } from "./NodeConfigDialog";
+import { ButtonEdge } from "./ButtonEdge";
 import { toast } from "sonner";
 
 interface CanvasEditorProps {
@@ -28,6 +31,10 @@ interface CanvasEditorProps {
 
 const nodeTypes: NodeTypes = {
   container: ContainerNode,
+};
+
+const edgeTypes: EdgeTypes = {
+  buttonedge: ButtonEdge,
 };
 
 export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesChange: onEdgesChangeProp, edges: propEdges = [] }: CanvasEditorProps) => {
@@ -186,29 +193,52 @@ export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesCh
       source: e.source,
       target: e.target,
       sourceHandle: e.sourceHandle,
+      type: 'buttonedge',
     }));
     setEdges(flowEdges);
   }, [propEdges, setEdges]);
 
+  // Sync edge deletions from ReactFlow back to parent
+  const handleEdgesChangeWrapper = useCallback((changes: any) => {
+    onEdgesChange(changes);
+    // After applying changes, sync with parent state
+    setTimeout(() => {
+      setEdges((currentEdges) => {
+        if (onEdgesChangeProp) {
+          onEdgesChangeProp(currentEdges.map(e => ({
+            source: e.source,
+            target: e.target,
+            sourceHandle: e.sourceHandle || undefined
+          })));
+        }
+        return currentEdges;
+      });
+    }, 0);
+  }, [onEdgesChange, onEdgesChangeProp, setEdges]);
+
   return (
     <>
       <main className="flex flex-1 w-full h-full bg-gray-950">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={handleNodesChangeWrapper}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeDragStop={onNodeDragStop}
-          nodeTypes={nodeTypes}
-          proOptions={{ hideAttribution: true }}
-          fitView
-          className="flex flex-grow h-full"
-        >
-          <Background className="bg-cyan-950/80 flex-1 w-full" />
-          <Controls position="bottom-left" className="z-10" />
-          <MiniMap className="bg-card" />
-        </ReactFlow>
+        <ReactFlowProvider>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={handleNodesChangeWrapper}
+            onEdgesChange={handleEdgesChangeWrapper}
+            onConnect={onConnect}
+            onNodeDragStop={onNodeDragStop}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultEdgeOptions={{ type: 'buttonedge' }}
+            proOptions={{ hideAttribution: true }}
+            fitView
+            className="flex flex-grow h-full"
+          >
+            <Background className="bg-cyan-950/80 flex-1 w-full" />
+            <Controls position="bottom-left" className="z-10" />
+            <MiniMap className="bg-card" />
+          </ReactFlow>
+        </ReactFlowProvider>
       </main>
 
       <NodeConfigDialog
