@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -10,6 +10,7 @@ import ReactFlow, {
   Edge as FlowEdge,
   Node as FlowNode,
   NodeTypes,
+  NodeDragHandler,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Container, Node, NodeConfig, Edge } from "@/types/chatbot";
@@ -33,6 +34,23 @@ export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesCh
   const [selectedNode, setSelectedNode] = useState<{ containerId: string; node: Node } | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const containersRef = useRef(containers);
+
+  // Keep ref in sync
+  useEffect(() => {
+    containersRef.current = containers;
+  }, [containers]);
+
+  // Persist position when node drag ends
+  const onNodeDragStop: NodeDragHandler = useCallback((event, node) => {
+    const updatedContainers = containersRef.current.map(container => {
+      if (container.id === node.id) {
+        return { ...container, position: node.position };
+      }
+      return container;
+    });
+    onContainersChange(updatedContainers);
+  }, [onContainersChange]);
 
   const findNodeInContainers = useCallback((nodeId: string) => {
     for (const container of containers) {
@@ -161,17 +179,15 @@ export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesCh
     setNodes(flowNodes);
   }, [containers, handleNodeClick, onTest, handleDuplicate, handleDelete, handleNodeDrop, setNodes]);
 
-  // Update edges from props
+  // Update edges from props (including empty array)
   useEffect(() => {
-    if (propEdges.length > 0) {
-      const flowEdges = propEdges.map((e, idx) => ({
-        id: `edge-${idx}`,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle,
-      }));
-      setEdges(flowEdges);
-    }
+    const flowEdges = propEdges.map((e, idx) => ({
+      id: `edge-${idx}`,
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle,
+    }));
+    setEdges(flowEdges);
   }, [propEdges, setEdges]);
 
   return (
@@ -183,6 +199,7 @@ export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesCh
           onNodesChange={handleNodesChangeWrapper}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          onNodeDragStop={onNodeDragStop}
           nodeTypes={nodeTypes}
           proOptions={{ hideAttribution: true }}
           fitView

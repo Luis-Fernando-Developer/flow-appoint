@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Bot, Trash2, MoreVertical, Power, PowerOff, ArrowLeft, Play, Save } from 'lucide-react';
 import { BusinessLayout } from '@/components/business/BusinessLayout';
@@ -250,6 +250,11 @@ function ChatbotBuilderContent({
     setIsTestOpen(false);
   };
 
+  const handleTest = useCallback((c: Container | null) => {
+    setTestContainer(c);
+    setIsTestOpen(true);
+  }, []);
+
   // Show editor if flow is selected
   if (selectedFlowId) {
     return (
@@ -269,7 +274,7 @@ function ChatbotBuilderContent({
                 <Plus className="h-4 w-4 mr-2" />
                 Bloco
               </Button>
-              <Button variant="outline" onClick={() => { setTestContainer(containers[0] || null); setIsTestOpen(true); }}>
+              <Button variant="outline" onClick={() => handleTest(containers[0] || null)}>
                 <Play className="h-4 w-4 mr-2" />
                 Testar
               </Button>
@@ -286,7 +291,7 @@ function ChatbotBuilderContent({
               <CanvasEditor 
                 containers={containers} 
                 onContainersChange={setContainers} 
-                onTest={(c) => { setTestContainer(c); setIsTestOpen(true); }} 
+                onTest={handleTest} 
                 onEdgesChange={setEdges}
                 edges={edges}
               />
