@@ -137,7 +137,8 @@ export const NodeItem = ({ node, onClick, onDragStart }: NodeItemProps) => {
     }
   }, [isDraggable]);
 
-  const handleDragEnd = useCallback(() => {
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    e.stopPropagation();
     setIsDraggable(false);
     setHoldProgress(0);
   }, []);
@@ -150,12 +151,15 @@ export const NodeItem = ({ node, onClick, onDragStart }: NodeItemProps) => {
   }, [isDraggable, onClick]);
 
   const handleDragStart = useCallback((e: React.DragEvent) => {
-    if (isDraggable && onDragStart) {
-      onDragStart(e);
+    e.stopPropagation();
+    if (isDraggable) {
+      e.dataTransfer.setData('nodeId', node.id);
+      e.dataTransfer.effectAllowed = 'move';
+      if (onDragStart) onDragStart(e);
     } else {
       e.preventDefault();
     }
-  }, [isDraggable, onDragStart]);
+  }, [isDraggable, onDragStart, node.id]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -186,15 +190,31 @@ export const NodeItem = ({ node, onClick, onDragStart }: NodeItemProps) => {
   return (
     <div
       draggable={isDraggable}
-      onClick={handleClick}
-      onMouseDown={startHold}
-      onMouseUp={cancelHold}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleClick();
+      }}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+        startHold(e);
+      }}
+      onMouseUp={(e) => {
+        e.stopPropagation();
+        cancelHold();
+      }}
       onMouseLeave={cancelHold}
-      onTouchStart={startHold}
-      onTouchEnd={cancelHold}
+      onTouchStart={(e) => {
+        e.stopPropagation();
+        startHold(e);
+      }}
+      onTouchEnd={(e) => {
+        e.stopPropagation();
+        cancelHold();
+      }}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       className={cn(
+        "nodrag nopan",
         nodeColors[node.type],
         "rounded-lg p-3 cursor-pointer transition-all duration-200 select-none border relative overflow-hidden",
         isDraggable && "ring-2 ring-blue-500 cursor-move shadow-lg scale-[1.02]",
