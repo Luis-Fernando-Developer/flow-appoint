@@ -84,7 +84,7 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
           </DropdownMenu>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 nodrag nopan">
           {container.nodes.length === 0 ? (
             <div className="text-xs text-muted-foreground text-center py-8 border-2 border-dashed rounded-lg">
               Arraste nodes para cá
@@ -95,9 +95,6 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
                 key={node.id}
                 node={node}
                 onClick={() => onNodeClick(node.id)}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('nodeId', node.id);
-                }}
               />
             ))
           )}
