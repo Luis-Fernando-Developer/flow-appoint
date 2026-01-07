@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useCallback } from "react";
 import {
   MessageSquare,
   Hash,
@@ -23,7 +23,6 @@ import { cn } from "@/lib/utils";
 interface NodeItemProps {
   node: Node;
   onClick: () => void;
-  onDragStart?: (e: React.DragEvent) => void;
 }
 
 const nodeIcons: Record<NodeType, React.ReactNode> = {
@@ -89,87 +88,16 @@ const nodeLabels: Record<NodeType, string> = {
   "script": "Executar Script",
 };
 
-const HOLD_DURATION = 3000; // 3 segundos
-const PROGRESS_INTERVAL = 30; // Atualiza a cada 30ms para animação suave
-
-export const NodeItem = ({ node, onClick, onDragStart }: NodeItemProps) => {
-  const [isDraggable, setIsDraggable] = useState(false);
-  const [holdProgress, setHoldProgress] = useState(0);
-  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const startHold = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    // Apenas botão esquerdo do mouse (button 0)
-    if ('button' in e && e.button !== 0) return;
-    
-    e.stopPropagation();
-    e.preventDefault();
-    
-    setHoldProgress(0);
-    
-    // Intervalo para atualizar progresso visual
-    progressIntervalRef.current = setInterval(() => {
-      setHoldProgress(prev => {
-        const next = prev + (100 / (HOLD_DURATION / PROGRESS_INTERVAL));
-        return Math.min(next, 100);
-      });
-    }, PROGRESS_INTERVAL);
-    
-    // Timer para ativar draggable após 3s
-    holdTimerRef.current = setTimeout(() => {
-      setIsDraggable(true);
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-      setHoldProgress(100);
-    }, HOLD_DURATION);
-  }, []);
-
-  const cancelHold = useCallback(() => {
-    if (holdTimerRef.current) {
-      clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
-    }
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-    // Só reseta o progresso se não estiver em modo draggable
-    if (!isDraggable) {
-      setHoldProgress(0);
-    }
-  }, [isDraggable]);
-
-  const handleDragEnd = useCallback((e: React.DragEvent) => {
-    e.stopPropagation();
-    setIsDraggable(false);
-    setHoldProgress(0);
-  }, []);
-
-  const handleClick = useCallback(() => {
-    // Só executa onClick se não estiver em modo draggable
-    if (!isDraggable) {
-      onClick();
-    }
-  }, [isDraggable, onClick]);
-
+export const NodeItem = ({ node, onClick }: NodeItemProps) => {
   const handleDragStart = useCallback((e: React.DragEvent) => {
     e.stopPropagation();
-    if (isDraggable) {
-      e.dataTransfer.setData('nodeId', node.id);
-      e.dataTransfer.effectAllowed = 'move';
-      if (onDragStart) onDragStart(e);
-    } else {
-      e.preventDefault();
-    }
-  }, [isDraggable, onDragStart, node.id]);
+    e.dataTransfer.setData('nodeId', node.id);
+    e.dataTransfer.setData('text/plain', node.id);
+    e.dataTransfer.effectAllowed = 'move';
+  }, [node.id]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    };
+  const handleDragHandleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
   }, []);
 
   const configValue = Object.values(node.config || {});
@@ -192,54 +120,29 @@ export const NodeItem = ({ node, onClick, onDragStart }: NodeItemProps) => {
 
   return (
     <div
-      draggable={isDraggable}
       onClick={(e) => {
         e.stopPropagation();
-        handleClick();
+        onClick();
       }}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-        startHold(e);
-      }}
-      onMouseUp={(e) => {
-        e.stopPropagation();
-        cancelHold();
-      }}
-      onMouseLeave={cancelHold}
-      onTouchStart={(e) => {
-        e.stopPropagation();
-        startHold(e);
-      }}
-      onTouchEnd={(e) => {
-        e.stopPropagation();
-        cancelHold();
-      }}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
       className={cn(
         "nodrag nopan",
         nodeColors[node.type],
-        "rounded-lg p-3 cursor-pointer transition-all duration-200 select-none border relative overflow-hidden",
-        isDraggable && "ring-2 ring-blue-500 cursor-move shadow-lg scale-[1.02]",
-        holdProgress > 0 && holdProgress < 100 && "ring-2 ring-yellow-400/70"
+        "rounded-lg p-3 cursor-pointer transition-all duration-200 select-none border relative overflow-hidden group"
       )}
     >
-      {/* Barra de progresso durante hold */}
-      {holdProgress > 0 && holdProgress < 100 && (
-        <div 
-          className="absolute bottom-0 left-0 h-1 bg-blue-500 transition-all duration-75 rounded-b"
-          style={{ width: `${holdProgress}%` }} 
-        />
-      )}
-      
-      {/* Indicador de modo arrastar ativo */}
-      {isDraggable && (
-        <div className="absolute -top-1 -right-1 bg-blue-500 text-white p-1 rounded-full shadow-md animate-pulse">
-          <GripVertical className="h-3 w-3" />
-        </div>
-      )}
+      {/* Drag Handle - sempre visível */}
+      <div
+        draggable
+        onDragStart={handleDragStart}
+        onMouseDown={handleDragHandleMouseDown}
+        onClick={(e) => e.stopPropagation()}
+        className="nodrag nopan absolute top-1 right-1 p-1.5 rounded-md bg-muted/80 hover:bg-muted border border-border/50 cursor-grab active:cursor-grabbing transition-all opacity-60 hover:opacity-100 z-10"
+        title="Arraste para mover para outro bloco"
+      >
+        <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+      </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 pr-8">
         {nodeIcons[node.type]}
         <div className="flex-1 min-w-0 flex flex-col gap-1">
           <p className="text-xs font-semibold text-left max-w-[180px]">{nodeLabels[node.type]}</p>

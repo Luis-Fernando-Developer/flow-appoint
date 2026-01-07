@@ -40,8 +40,15 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(false);
-    const nodeId = e.dataTransfer.getData('nodeId');
+    
+    // Tenta obter nodeId de diferentes formas (compatibilidade entre browsers)
+    let nodeId = e.dataTransfer.getData('nodeId');
+    if (!nodeId) {
+      nodeId = e.dataTransfer.getData('text/plain');
+    }
+    
     if (nodeId) {
       onNodeDrop(nodeId, container.id);
     }
