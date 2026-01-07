@@ -99,8 +99,11 @@ export const NodeItem = ({ node, onClick, onDragStart }: NodeItemProps) => {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const startHold = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    // Previne que cliques rápidos ativem o arrasto
+    // Apenas botão esquerdo do mouse (button 0)
+    if ('button' in e && e.button !== 0) return;
+    
     e.stopPropagation();
+    e.preventDefault();
     
     setHoldProgress(0);
     
