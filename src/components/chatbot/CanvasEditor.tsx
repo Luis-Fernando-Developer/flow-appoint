@@ -102,7 +102,7 @@ export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesCh
     toast.success("Bloco excluído!");
   }, [containers, onContainersChange]);
 
-  const handleNodeDrop = useCallback((nodeId: string, targetContainerId: string) => {
+  const handleNodeDrop = useCallback((nodeId: string, targetContainerId: string, insertIndex?: number) => {
     const sourceData = findNodeInContainers(nodeId);
     if (!sourceData || sourceData.containerId === targetContainerId) return;
 
@@ -114,10 +114,10 @@ export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesCh
         };
       }
       if (container.id === targetContainerId) {
-        return {
-          ...container,
-          nodes: [...container.nodes, sourceData.node]
-        };
+        const newNodes = [...container.nodes];
+        const idx = insertIndex ?? newNodes.length;
+        newNodes.splice(idx, 0, sourceData.node);
+        return { ...container, nodes: newNodes };
       }
       return container;
     });
