@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useRef } from "react";
 import { Handle, Position, NodeProps } from 'reactflow';
 import { MoreVertical } from "lucide-react";
 import { Container, Node, ButtonConfig } from "@/types/chatbot";
@@ -18,40 +18,72 @@ interface ContainerNodeData {
   onTest: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
-  onNodeDrop: (nodeId: string, targetContainerId: string) => void;
+  onNodeDrop: (nodeId: string, targetContainerId: string, insertIndex?: number) => void;
 }
+
+const InsertPreview = () => (
+  <div className="rounded-lg p-3 border-2 border-dashed border-green-500 bg-green-500/10 flex items-center justify-center gap-2 transition-all duration-200">
+    <span className="text-sm text-green-500 font-medium">
+      Solte aqui
+    </span>
+  </div>
+);
 
 export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   const { container, onNodeClick, onTest, onDuplicate, onDelete, onNodeDrop } = data;
   const [isDragOver, setIsDragOver] = useState(false);
+  const [insertIndex, setInsertIndex] = useState<number | null>(null);
+  const nodesListRef = useRef<HTMLDivElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
+    
+    // Calculate insert index based on mouse Y position
+    if (nodesListRef.current && container.nodes.length > 0) {
+      const containerRect = nodesListRef.current.getBoundingClientRect();
+      const mouseY = e.clientY - containerRect.top;
+      
+      const nodeElements = nodesListRef.current.querySelectorAll('[data-node-index]');
+      let newIndex = container.nodes.length;
+      
+      nodeElements.forEach((el, idx) => {
+        const rect = el.getBoundingClientRect();
+        const nodeMiddle = rect.top - containerRect.top + rect.height / 2;
+        if (mouseY < nodeMiddle && newIndex === container.nodes.length) {
+          newIndex = idx;
+        }
+      });
+      
+      setInsertIndex(newIndex);
+    } else {
+      setInsertIndex(0);
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    // Só remove o estado se realmente saiu do container
     const relatedTarget = e.relatedTarget as HTMLElement;
     if (!e.currentTarget.contains(relatedTarget)) {
       setIsDragOver(false);
+      setInsertIndex(null);
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(false);
     
-    // Tenta obter nodeId de diferentes formas (compatibilidade entre browsers)
     let nodeId = e.dataTransfer.getData('nodeId');
     if (!nodeId) {
       nodeId = e.dataTransfer.getData('text/plain');
     }
     
     if (nodeId) {
-      onNodeDrop(nodeId, container.id);
+      onNodeDrop(nodeId, container.id, insertIndex ?? container.nodes.length);
     }
+    
+    setIsDragOver(false);
+    setInsertIndex(null);
   };
 
   return (
@@ -91,19 +123,28 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
           </DropdownMenu>
         </div>
 
-        <div className="space-y-2 nodrag nopan">
+        <div ref={nodesListRef} className="space-y-2 nodrag nopan">
           {container.nodes.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-8 border-2 border-dashed rounded-lg">
-              Arraste nodes para cá
-            </div>
+            isDragOver ? <InsertPreview /> : (
+              <div className="text-xs text-muted-foreground text-center py-8 border-2 border-dashed rounded-lg">
+                Arraste nodes para cá
+              </div>
+            )
           ) : (
-            container.nodes.map((node) => (
-              <NodeItem
-                key={node.id}
-                node={node}
-                onClick={() => onNodeClick(node.id)}
-              />
-            ))
+            <>
+              {container.nodes.map((node, idx) => (
+                <div key={node.id}>
+                  {isDragOver && insertIndex === idx && <InsertPreview />}
+                  <div data-node-index={idx}>
+                    <NodeItem
+                      node={node}
+                      onClick={() => onNodeClick(node.id)}
+                    />
+                  </div>
+                </div>
+              ))}
+              {isDragOver && insertIndex === container.nodes.length && <InsertPreview />}
+            </>
           )}
         </div>
 
