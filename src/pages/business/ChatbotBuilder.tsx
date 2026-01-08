@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Bot, Trash2, MoreVertical, Power, PowerOff, ArrowLeft, Play, Save } from 'lucide-react';
 import { BusinessLayout } from '@/components/business/BusinessLayout';
@@ -66,6 +66,7 @@ function ChatbotBuilderContent({
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newFlowName, setNewFlowName] = useState('');
   const [newFlowDescription, setNewFlowDescription] = useState('');
+  const getCenterPositionRef = useRef<(() => { x: number; y: number }) | null>(null);
 
   useEffect(() => {
     loadFlows();
@@ -221,12 +222,19 @@ function ChatbotBuilderContent({
       config: defaultConfig
     };
 
+    // Get viewport center position
+    const centerPosition = getCenterPositionRef.current?.() || { x: 300, y: 200 };
+    const offset = {
+      x: (Math.random() - 0.5) * 50,
+      y: (Math.random() - 0.5) * 50
+    };
+
     const newContainer: Container = {
       id: `container-${Date.now()}`,
       nodes: [newNode],
       position: {
-        x: 100 + (containers.length % 4) * 320,
-        y: 100 + Math.floor(containers.length / 4) * 280
+        x: centerPosition.x + offset.x,
+        y: centerPosition.y + offset.y
       }
     };
 
@@ -234,10 +242,19 @@ function ChatbotBuilderContent({
   };
 
   const handleAddContainer = () => {
+    const centerPosition = getCenterPositionRef.current?.() || { x: 300, y: 200 };
+    const offset = {
+      x: (Math.random() - 0.5) * 50,
+      y: (Math.random() - 0.5) * 50
+    };
+
     const newContainer: Container = {
       id: `container-${Date.now()}`,
       nodes: [],
-      position: { x: 100 + containers.length * 350, y: 100 }
+      position: {
+        x: centerPosition.x + offset.x,
+        y: centerPosition.y + offset.y
+      }
     };
     setContainers([...containers, newContainer]);
   };
@@ -294,6 +311,7 @@ function ChatbotBuilderContent({
                 onTest={handleTest} 
                 onEdgesChange={setEdges}
                 edges={edges}
+                onGetCenterPosition={(getter) => { getCenterPositionRef.current = getter; }}
               />
             </div>
             <TestPanel 

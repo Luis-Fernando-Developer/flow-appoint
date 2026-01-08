@@ -13,6 +13,7 @@ import ReactFlow, {
   EdgeTypes,
   NodeDragHandler,
   ReactFlowProvider,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Container, Node, NodeConfig, Edge } from "@/types/chatbot";
@@ -27,6 +28,7 @@ interface CanvasEditorProps {
   onTest: (container: Container) => void;
   onEdgesChange?: (edges: Edge[]) => void;
   edges?: Edge[];
+  onGetCenterPosition?: (getter: () => { x: number; y: number }) => void;
 }
 
 const nodeTypes: NodeTypes = {
@@ -37,11 +39,47 @@ const edgeTypes: EdgeTypes = {
   buttonedge: ButtonEdge,
 };
 
-export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesChange: onEdgesChangeProp, edges: propEdges = [] }: CanvasEditorProps) => {
+// Inner component that has access to useReactFlow
+const CanvasContent = ({ 
+  containers, 
+  onContainersChange, 
+  onTest, 
+  onEdgesChangeProp, 
+  propEdges,
+  onGetCenterPosition 
+}: {
+  containers: Container[];
+  onContainersChange: (containers: Container[]) => void;
+  onTest: (container: Container) => void;
+  onEdgesChangeProp?: (edges: Edge[]) => void;
+  propEdges: Edge[];
+  onGetCenterPosition?: (getter: () => { x: number; y: number }) => void;
+}) => {
   const [selectedNode, setSelectedNode] = useState<{ containerId: string; node: Node } | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const containersRef = useRef(containers);
+  const reactFlowInstance = useReactFlow();
+
+  // Expose viewport center getter
+  useEffect(() => {
+    if (onGetCenterPosition) {
+      onGetCenterPosition(() => {
+        const reactFlowBounds = document.querySelector('.react-flow')?.getBoundingClientRect();
+        if (!reactFlowBounds) return { x: 300, y: 200 };
+
+        const screenCenterX = reactFlowBounds.width / 2;
+        const screenCenterY = reactFlowBounds.height / 2;
+
+        const flowPosition = reactFlowInstance.screenToFlowPosition({
+          x: screenCenterX + reactFlowBounds.left,
+          y: screenCenterY + reactFlowBounds.top
+        });
+
+        return flowPosition;
+      });
+    }
+  }, [reactFlowInstance, onGetCenterPosition]);
 
   // Keep ref in sync
   useEffect(() => {
@@ -218,28 +256,24 @@ export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesCh
 
   return (
     <>
-      <main className="flex flex-1 w-full h-full bg-gray-950">
-        <ReactFlowProvider>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={handleNodesChangeWrapper}
-            onEdgesChange={handleEdgesChangeWrapper}
-            onConnect={onConnect}
-            onNodeDragStop={onNodeDragStop}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            defaultEdgeOptions={{ type: 'buttonedge' }}
-            proOptions={{ hideAttribution: true }}
-            fitView
-            className="flex flex-grow h-full"
-          >
-            <Background className="bg-cyan-950/80 flex-1 w-full" />
-            <Controls position="bottom-left" className="z-10" />
-            <MiniMap className="bg-card" />
-          </ReactFlow>
-        </ReactFlowProvider>
-      </main>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={handleNodesChangeWrapper}
+        onEdgesChange={handleEdgesChangeWrapper}
+        onConnect={onConnect}
+        onNodeDragStop={onNodeDragStop}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        defaultEdgeOptions={{ type: 'buttonedge' }}
+        proOptions={{ hideAttribution: true }}
+        fitView
+        className="flex flex-grow h-full"
+      >
+        <Background className="bg-cyan-950/80 flex-1 w-full" />
+        <Controls position="bottom-left" className="z-10" />
+        <MiniMap className="bg-card" />
+      </ReactFlow>
 
       <NodeConfigDialog
         node={selectedNode?.node || null}
@@ -249,5 +283,22 @@ export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesCh
         containers={containers}
       />
     </>
+  );
+};
+
+export const CanvasEditor = ({ containers, onContainersChange, onTest, onEdgesChange: onEdgesChangeProp, edges: propEdges = [], onGetCenterPosition }: CanvasEditorProps) => {
+  return (
+    <main className="flex flex-1 w-full h-full bg-gray-950">
+      <ReactFlowProvider>
+        <CanvasContent
+          containers={containers}
+          onContainersChange={onContainersChange}
+          onTest={onTest}
+          onEdgesChangeProp={onEdgesChangeProp}
+          propEdges={propEdges}
+          onGetCenterPosition={onGetCenterPosition}
+        />
+      </ReactFlowProvider>
+    </main>
   );
 };
