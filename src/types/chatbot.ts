@@ -40,7 +40,16 @@ export interface Container {
 export interface ButtonConfig {
   id: string;
   label: string;
+  value?: string;
+  description?: string;
+}
+
+export interface ButtonGroupConfig {
+  buttons: ButtonConfig[];
   saveVariable?: string;
+  isMultipleChoice?: boolean;
+  isSearchable?: boolean;
+  submitLabel?: string;
 }
 
 export interface Edge {

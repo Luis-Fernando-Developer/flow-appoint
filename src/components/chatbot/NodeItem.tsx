@@ -114,7 +114,7 @@ export const NodeItem = ({ node, onClick }: NodeItemProps) => {
   const hasVideoPreview = node.type === "bubble-video" && node.config["VideoURL"];
   const hasDocumentPreview = node.type === "bubble-document" && node.config["FileURL"];
   const hasAudioPreview = node.type === "bubble-audio" && node.config["AudioURL"];
-  const hasButtonsPreview = node.type === "input-buttons" && node.config.buttons;
+  const hasButtonsPreview = false; // Handled by ButtonGroupNodeItem now
   const hasSetVariablePreview = node.type === "set-variable" && node.config.variableName;
   const hasScriptPreview = node.type === "script" && node.config.code;
 

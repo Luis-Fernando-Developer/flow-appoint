@@ -185,6 +185,82 @@ const CanvasContent = ({
     toast.success("Configuração salva!");
   }, [selectedNode, containers, onContainersChange]);
 
+  // Button group handlers
+  const handleButtonClick = useCallback((nodeId: string, buttonId: string) => {
+    const result = findNodeInContainers(nodeId);
+    if (result) {
+      // For now, open the node config - later could open specific button config
+      setSelectedNode(result);
+    }
+  }, [findNodeInContainers]);
+
+  const handleAddButton = useCallback((nodeId: string, label: string) => {
+    const updatedContainers = containers.map(container => ({
+      ...container,
+      nodes: container.nodes.map(node => {
+        if (node.id === nodeId && node.type === 'input-buttons') {
+          const currentButtons = node.config.buttons || [];
+          const newButton = {
+            id: `btn-${Date.now()}`,
+            label,
+          };
+          return {
+            ...node,
+            config: {
+              ...node.config,
+              buttons: [...currentButtons, newButton],
+            },
+          };
+        }
+        return node;
+      }),
+    }));
+    onContainersChange(updatedContainers);
+  }, [containers, onContainersChange]);
+
+  const handleUpdateButton = useCallback((nodeId: string, buttonId: string, updates: Partial<{ label: string; value: string; description: string }>) => {
+    const updatedContainers = containers.map(container => ({
+      ...container,
+      nodes: container.nodes.map(node => {
+        if (node.id === nodeId && node.type === 'input-buttons') {
+          const currentButtons = (node.config.buttons || []) as Array<{ id: string; label: string; value?: string; description?: string }>;
+          return {
+            ...node,
+            config: {
+              ...node.config,
+              buttons: currentButtons.map(btn =>
+                btn.id === buttonId ? { ...btn, ...updates } : btn
+              ),
+            },
+          };
+        }
+        return node;
+      }),
+    }));
+    onContainersChange(updatedContainers);
+  }, [containers, onContainersChange]);
+
+  const handleDeleteButton = useCallback((nodeId: string, buttonId: string) => {
+    const updatedContainers = containers.map(container => ({
+      ...container,
+      nodes: container.nodes.map(node => {
+        if (node.id === nodeId && node.type === 'input-buttons') {
+          const currentButtons = (node.config.buttons || []) as Array<{ id: string }>;
+          return {
+            ...node,
+            config: {
+              ...node.config,
+              buttons: currentButtons.filter(btn => btn.id !== buttonId),
+            },
+          };
+        }
+        return node;
+      }),
+    }));
+    onContainersChange(updatedContainers);
+    toast.success("Botão removido!");
+  }, [containers, onContainersChange]);
+
   const handleNodesChangeWrapper = useCallback((changes: any) => {
     onNodesChange(changes);
   }, [onNodesChange]);
@@ -215,6 +291,10 @@ const CanvasContent = ({
       data: {
         container,
         onNodeClick: handleNodeClick,
+        onButtonClick: handleButtonClick,
+        onAddButton: handleAddButton,
+        onUpdateButton: handleUpdateButton,
+        onDeleteButton: handleDeleteButton,
         onTest: () => onTest(container),
         onDuplicate: () => handleDuplicate(container.id),
         onDelete: () => handleDelete(container.id),
@@ -222,7 +302,7 @@ const CanvasContent = ({
       },
     }));
     setNodes(flowNodes);
-  }, [containers, handleNodeClick, onTest, handleDuplicate, handleDelete, handleNodeDrop, setNodes]);
+  }, [containers, handleNodeClick, handleButtonClick, handleAddButton, handleUpdateButton, handleDeleteButton, onTest, handleDuplicate, handleDelete, handleNodeDrop, setNodes]);
 
   // Update edges from props (including empty array)
   useEffect(() => {
