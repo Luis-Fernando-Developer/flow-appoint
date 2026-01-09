@@ -1,9 +1,7 @@
-import { useState } from "react";
-import { NodeConfig, ButtonConfig } from "@/types/chatbot";
+import { NodeConfig } from "@/types/chatbot";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface InputButtonConfigProps {
   config: NodeConfig;
@@ -11,66 +9,79 @@ interface InputButtonConfigProps {
 }
 
 export const InputButtonConfig = ({ config, setConfig }: InputButtonConfigProps) => {
-  const buttons: ButtonConfig[] = config.buttons || [];
-
-  const addButton = () => {
-    const newButton: ButtonConfig = {
-      id: `btn-${Date.now()}`,
-      label: "Novo Botão",
-      saveVariable: "",
-    };
-    setConfig({ ...config, buttons: [...buttons, newButton] });
-  };
-
-  const updateButton = (index: number, field: keyof ButtonConfig, value: string) => {
-    const updatedButtons = [...buttons];
-    updatedButtons[index] = { ...updatedButtons[index], [field]: value };
-    setConfig({ ...config, buttons: updatedButtons });
-  };
-
-  const removeButton = (index: number) => {
-    const updatedButtons = buttons.filter((_, i) => i !== index);
-    setConfig({ ...config, buttons: updatedButtons });
-  };
+  const isMultipleChoice = config.isMultipleChoice || false;
+  const isSearchable = config.isSearchable || false;
+  const saveVariable = config.saveVariable || "";
+  const submitLabel = config.submitLabel || "Enviar";
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <Label>Botões</Label>
-        <Button size="sm" variant="outline" onClick={addButton}>
-          <Plus className="h-4 w-4 mr-1" />
-          Adicionar
-        </Button>
-      </div>
+    <div className="p-4 space-y-6">
+      <div className="space-y-4">
+        <h3 className="font-semibold text-sm border-b pb-2">Configurações do Grupo</h3>
+        
+        {/* Save Variable */}
+        <div className="space-y-2">
+          <Label htmlFor="save-variable">Salvar resposta em variável</Label>
+          <Input
+            id="save-variable"
+            value={saveVariable}
+            onChange={(e) => setConfig({ ...config, saveVariable: e.target.value })}
+            placeholder="Ex: escolha_usuario"
+          />
+          <p className="text-xs text-muted-foreground">
+            A escolha do usuário será salva nesta variável.
+          </p>
+        </div>
 
-      <div className="space-y-3">
-        {buttons.map((button, index) => (
-          <div key={button.id} className="p-3 border rounded-lg space-y-2 bg-muted/50">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Botão {index + 1}</span>
-              <Button size="icon" variant="ghost" onClick={() => removeButton(index)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+        {/* Multiple Choice Toggle */}
+        <div className="flex items-center justify-between py-2">
+          <div className="space-y-0.5">
+            <Label>Múltipla escolha</Label>
+            <p className="text-xs text-muted-foreground">
+              Permite selecionar mais de uma opção
+            </p>
+          </div>
+          <Switch
+            checked={isMultipleChoice}
+            onCheckedChange={(checked) => setConfig({ ...config, isMultipleChoice: checked })}
+          />
+        </div>
+
+        {/* Submit Label - only visible for multiple choice */}
+        {isMultipleChoice && (
+          <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+            <Label htmlFor="submit-label">Texto do botão enviar</Label>
             <Input
-              placeholder="Texto do botão"
-              value={button.label}
-              onChange={(e) => updateButton(index, "label", e.target.value)}
-            />
-            <Input
-              placeholder="Salvar em variável (opcional)"
-              value={button.saveVariable || ""}
-              onChange={(e) => updateButton(index, "saveVariable", e.target.value)}
+              id="submit-label"
+              value={submitLabel}
+              onChange={(e) => setConfig({ ...config, submitLabel: e.target.value })}
+              placeholder="Enviar"
             />
           </div>
-        ))}
+        )}
+
+        {/* Searchable Toggle */}
+        <div className="flex items-center justify-between py-2">
+          <div className="space-y-0.5">
+            <Label>Pesquisável</Label>
+            <p className="text-xs text-muted-foreground">
+              Exibe campo de busca para filtrar botões
+            </p>
+          </div>
+          <Switch
+            checked={isSearchable}
+            onCheckedChange={(checked) => setConfig({ ...config, isSearchable: checked })}
+          />
+        </div>
       </div>
 
-      {buttons.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          Nenhum botão adicionado. Clique em "Adicionar" para criar um botão.
+      {/* Info about buttons */}
+      <div className="bg-muted/50 p-3 rounded-lg border border-dashed">
+        <p className="text-xs text-muted-foreground">
+          <strong>Dica:</strong> Para adicionar ou editar botões individuais, 
+          use o campo diretamente no bloco do fluxo ou clique em cada botão.
         </p>
-      )}
+      </div>
     </div>
   );
 };

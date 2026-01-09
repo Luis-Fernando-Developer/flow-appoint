@@ -3,6 +3,7 @@ import { Handle, Position, NodeProps } from 'reactflow';
 import { MoreVertical } from "lucide-react";
 import { Container, Node, ButtonConfig } from "@/types/chatbot";
 import { NodeItem } from "./NodeItem";
+import { ButtonGroupNodeItem } from "./ButtonGroupNodeItem";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,6 +16,10 @@ import { cn } from "@/lib/utils";
 interface ContainerNodeData {
   container: Container;
   onNodeClick: (nodeId: string) => void;
+  onButtonClick?: (nodeId: string, buttonId: string) => void;
+  onAddButton?: (nodeId: string, label: string) => void;
+  onUpdateButton?: (nodeId: string, buttonId: string, updates: Partial<ButtonConfig>) => void;
+  onDeleteButton?: (nodeId: string, buttonId: string) => void;
   onTest: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -30,7 +35,18 @@ const InsertPreview = () => (
 );
 
 export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
-  const { container, onNodeClick, onTest, onDuplicate, onDelete, onNodeDrop } = data;
+  const { 
+    container, 
+    onNodeClick, 
+    onButtonClick,
+    onAddButton,
+    onUpdateButton,
+    onDeleteButton,
+    onTest, 
+    onDuplicate, 
+    onDelete, 
+    onNodeDrop 
+  } = data;
   const [isDragOver, setIsDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const nodesListRef = useRef<HTMLDivElement>(null);
@@ -136,10 +152,22 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
                 <div key={node.id}>
                   {isDragOver && insertIndex === idx && <InsertPreview />}
                   <div data-node-index={idx}>
-                    <NodeItem
-                      node={node}
-                      onClick={() => onNodeClick(node.id)}
-                    />
+                    {node.type === 'input-buttons' ? (
+                      <ButtonGroupNodeItem
+                        node={node}
+                        nodeIndex={idx}
+                        onGroupClick={() => onNodeClick(node.id)}
+                        onButtonClick={(buttonId) => onButtonClick?.(node.id, buttonId)}
+                        onAddButton={(label) => onAddButton?.(node.id, label)}
+                        onUpdateButton={(buttonId, updates) => onUpdateButton?.(node.id, buttonId, updates)}
+                        onDeleteButton={(buttonId) => onDeleteButton?.(node.id, buttonId)}
+                      />
+                    ) : (
+                      <NodeItem
+                        node={node}
+                        onClick={() => onNodeClick(node.id)}
+                      />
+                    )}
                   </div>
                 </div>
               ))}
@@ -148,25 +176,9 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
           )}
         </div>
 
-        {/* Handles dinâmicos para botões */}
-        {container.nodes.map((node, nodeIdx) => {
-          if (node.type === 'input-buttons' && node.config.buttons) {
-            const buttons = node.config.buttons as ButtonConfig[];
-            return buttons.map((button, btnIdx) => (
-              <Handle
-                key={`${node.id}-${button.id}`}
-                type="source"
-                position={Position.Right}
-                id={`${node.id}-${button.id}`}
-                style={{
-                  top: `${40 + nodeIdx * 80 + btnIdx * 20}px`,
-                  background: '#10b981',
-                  width: 12,
-                  height: 12,
-                }}
-              />
-            ));
-          } else if (node.type === 'set-variable') {
+        {/* Handles para outros tipos de nodes (exceto input-buttons que tem handles internos) */}
+        {container.nodes.map((node) => {
+          if (node.type === 'set-variable') {
             return (
               <div key={node.id}>
                 <Handle type="target" position={Position.Left} id={`${node.id}-target`} />

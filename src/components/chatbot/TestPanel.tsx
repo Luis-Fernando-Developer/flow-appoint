@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Send, File, Headphones, Play, Pause } from "lucide-react";
+import { X, Send, File, Headphones, Play, Pause, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Container, Node, ButtonConfig, Edge } from "@/types/chatbot";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useVariables } from "@/contexts/VariablesContext";
 import { renderTextSegments } from "@/lib/textParser";
 
@@ -135,6 +136,9 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
   const [currentInputNode, setCurrentInputNode] = useState<Node | null>(null);
   const [activeButtons, setActiveButtons] = useState<ButtonConfig[]>([]);
   const [waitingForButton, setWaitingForButton] = useState(false);
+  const [isMultipleChoice, setIsMultipleChoice] = useState(false);
+  const [selectedButtons, setSelectedButtons] = useState<string[]>([]);
+  const [submitLabel, setSubmitLabel] = useState("Enviar");
   const pendingVarsRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
@@ -145,6 +149,8 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
       setWaitingForInput(false);
       setWaitingForButton(false);
       setActiveButtons([]);
+      setIsMultipleChoice(false);
+      setSelectedButtons([]);
       pendingVarsRef.current = {};
       processNextNode(startContainer, 0, {});
     }
@@ -220,7 +226,13 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
       }
     } else if (node.type === "input-buttons") {
       const buttons = (node.config.buttons as ButtonConfig[]) || [];
+      const multiChoice = node.config.isMultipleChoice || false;
+      const submitLbl = node.config.submitLabel || "Enviar";
+      
       setActiveButtons(buttons);
+      setIsMultipleChoice(multiChoice);
+      setSubmitLabel(submitLbl);
+      setSelectedButtons([]);
       setWaitingForButton(true);
       setCurrentInputNode(node);
       setCurrentNodeIndex(nodeIndex);
@@ -235,12 +247,110 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
 
   const handleButtonClick = (button: ButtonConfig) => {
     if (!waitingForButton || !currentInputNode) return;
-    if (button.saveVariable) setVariable(button.saveVariable, button.label);
+    
+    // Get the value to save - use value if defined, otherwise use label
+    const valueToSave = button.value || button.label;
+    const saveVariable = currentInputNode.config.saveVariable;
+    
+    if (saveVariable) {
+      setVariable(saveVariable, valueToSave);
+      pendingVarsRef.current[saveVariable] = valueToSave;
+    }
+    
     setMessages((prev) => [...prev, { id: Date.now().toString(), type: "user", content: button.label }]);
     setActiveButtons([]);
     setWaitingForButton(false);
+
+    // Check if there's a specific edge for this button
+    const buttonEdge = edges.find(e => e.sourceHandle === `${currentInputNode.id}-btn-${button.id}`);
+    
+    if (buttonEdge) {
+      // Navigate to the button's specific target
+      const targetContainer = allContainers.find(c => c.id === buttonEdge.target);
+      if (targetContainer) {
+        setTimeout(() => {
+          setCurrentContainerId(targetContainer.id);
+          setCurrentNodeIndex(0);
+          processNextNode(targetContainer, 0, pendingVarsRef.current);
+        }, 500);
+        return;
+      }
+    }
+    
+    // Check for default edge
+    const defaultEdge = edges.find(e => e.sourceHandle === `${currentInputNode.id}-default`);
+    if (defaultEdge) {
+      const targetContainer = allContainers.find(c => c.id === defaultEdge.target);
+      if (targetContainer) {
+        setTimeout(() => {
+          setCurrentContainerId(targetContainer.id);
+          setCurrentNodeIndex(0);
+          processNextNode(targetContainer, 0, pendingVarsRef.current);
+        }, 500);
+        return;
+      }
+    }
+    
+    // Fallback: continue to next node in current container
     const currentContainer = allContainers.find(c => c.id === currentContainerId);
-    if (currentContainer) processNextNode(currentContainer, currentNodeIndex + 1, pendingVarsRef.current);
+    if (currentContainer) {
+      processNextNode(currentContainer, currentNodeIndex + 1, pendingVarsRef.current);
+    }
+  };
+
+  // Handle multiple choice toggle
+  const handleToggleButton = (buttonId: string) => {
+    setSelectedButtons(prev => 
+      prev.includes(buttonId) 
+        ? prev.filter(id => id !== buttonId)
+        : [...prev, buttonId]
+    );
+  };
+
+  // Handle multiple choice submit
+  const handleMultipleChoiceSubmit = () => {
+    if (!currentInputNode || selectedButtons.length === 0) return;
+    
+    const selectedBtns = activeButtons.filter(btn => selectedButtons.includes(btn.id));
+    const values = selectedBtns.map(btn => btn.value || btn.label);
+    const labels = selectedBtns.map(btn => btn.label);
+    
+    const saveVariable = currentInputNode.config.saveVariable;
+    if (saveVariable) {
+      const valueToSave = values.join(", ");
+      setVariable(saveVariable, valueToSave);
+      pendingVarsRef.current[saveVariable] = valueToSave;
+    }
+    
+    setMessages((prev) => [...prev, { 
+      id: Date.now().toString(), 
+      type: "user", 
+      content: labels.join(", ") 
+    }]);
+    
+    setActiveButtons([]);
+    setWaitingForButton(false);
+    setIsMultipleChoice(false);
+    setSelectedButtons([]);
+    
+    // For multiple choice, use default edge or continue to next node
+    const defaultEdge = edges.find(e => e.sourceHandle === `${currentInputNode.id}-default`);
+    if (defaultEdge) {
+      const targetContainer = allContainers.find(c => c.id === defaultEdge.target);
+      if (targetContainer) {
+        setTimeout(() => {
+          setCurrentContainerId(targetContainer.id);
+          setCurrentNodeIndex(0);
+          processNextNode(targetContainer, 0, pendingVarsRef.current);
+        }, 500);
+        return;
+      }
+    }
+    
+    const currentContainer = allContainers.find(c => c.id === currentContainerId);
+    if (currentContainer) {
+      processNextNode(currentContainer, currentNodeIndex + 1, pendingVarsRef.current);
+    }
   };
 
   const handleSendMessage = () => {
@@ -290,7 +400,42 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
         </ScrollArea>
         {waitingForButton && activeButtons.length > 0 && (
           <div className="p-2 border-t space-y-2">
-            {activeButtons.map((btn) => (<Button key={btn.id} variant="outline" className="w-full" onClick={() => handleButtonClick(btn)}>{btn.label}</Button>))}
+            {isMultipleChoice ? (
+              <>
+                {activeButtons.map((btn) => (
+                  <label 
+                    key={btn.id} 
+                    className="flex items-center gap-2 p-2 rounded-md border cursor-pointer hover:bg-muted/50 transition-colors"
+                  >
+                    <Checkbox 
+                      checked={selectedButtons.includes(btn.id)}
+                      onCheckedChange={() => handleToggleButton(btn.id)}
+                    />
+                    <span className="text-sm">{btn.label}</span>
+                  </label>
+                ))}
+                <Button 
+                  className="w-full" 
+                  onClick={handleMultipleChoiceSubmit}
+                  disabled={selectedButtons.length === 0}
+                >
+                  {submitLabel}
+                </Button>
+              </>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {activeButtons.map((btn) => (
+                  <Button 
+                    key={btn.id} 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleButtonClick(btn)}
+                  >
+                    {btn.label}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
         )}
         {waitingForInput && !waitingForButton && (
