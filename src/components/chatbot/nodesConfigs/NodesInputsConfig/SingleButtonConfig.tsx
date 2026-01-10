@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Trash2, ExternalLink } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,12 +32,16 @@ export const SingleButtonConfig = ({
   const [label, setLabel] = useState("");
   const [value, setValue] = useState("");
   const [description, setDescription] = useState("");
+  const [hasRedirect, setHasRedirect] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState("");
 
   useEffect(() => {
     if (button) {
       setLabel(button.label || "");
       setValue(button.value || "");
       setDescription(button.description || "");
+      setHasRedirect(!!button.redirectUrl);
+      setRedirectUrl(button.redirectUrl || "");
     }
   }, [button]);
 
@@ -45,6 +50,7 @@ export const SingleButtonConfig = ({
       label: label.trim() || "Botão",
       value: value.trim() || undefined,
       description: description.trim() || undefined,
+      redirectUrl: hasRedirect && redirectUrl.trim() ? redirectUrl.trim() : undefined,
     });
     onClose();
   };
@@ -104,6 +110,27 @@ export const SingleButtonConfig = ({
               placeholder="Descrição adicional..."
               rows={2}
             />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="btn-redirect" className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4" />
+                Link de Redirecionamento
+              </Label>
+              <Switch
+                id="btn-redirect"
+                checked={hasRedirect}
+                onCheckedChange={setHasRedirect}
+              />
+            </div>
+            {hasRedirect && (
+              <Input
+                value={redirectUrl}
+                onChange={(e) => setRedirectUrl(e.target.value)}
+                placeholder="https://..."
+              />
+            )}
           </div>
         </div>
 

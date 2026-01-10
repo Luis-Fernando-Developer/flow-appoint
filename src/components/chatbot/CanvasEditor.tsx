@@ -16,10 +16,11 @@ import ReactFlow, {
   useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Container, Node, NodeConfig, Edge } from "@/types/chatbot";
+import { Container, Node, NodeConfig, Edge, ButtonConfig } from "@/types/chatbot";
 import { ContainerNode } from "./ContainerNode";
 import { NodeConfigDialog } from "./NodeConfigDialog";
 import { ButtonEdge } from "./ButtonEdge";
+import { SingleButtonConfig } from "./nodesConfigs/NodesInputsConfig/SingleButtonConfig";
 import { toast } from "sonner";
 
 interface CanvasEditorProps {
@@ -56,6 +57,11 @@ const CanvasContent = ({
   onGetCenterPosition?: (getter: () => { x: number; y: number }) => void;
 }) => {
   const [selectedNode, setSelectedNode] = useState<{ containerId: string; node: Node } | null>(null);
+  const [selectedButton, setSelectedButton] = useState<{
+    nodeId: string;
+    containerId: string;
+    button: ButtonConfig;
+  } | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const containersRef = useRef(containers);
@@ -185,12 +191,19 @@ const CanvasContent = ({
     toast.success("Configuração salva!");
   }, [selectedNode, containers, onContainersChange]);
 
-  // Button group handlers
+  // Button group handlers - open individual button config
   const handleButtonClick = useCallback((nodeId: string, buttonId: string) => {
     const result = findNodeInContainers(nodeId);
-    if (result) {
-      // For now, open the node config - later could open specific button config
-      setSelectedNode(result);
+    if (result && result.node.type === 'input-buttons') {
+      const buttons = (result.node.config.buttons || []) as ButtonConfig[];
+      const button = buttons.find(b => b.id === buttonId);
+      if (button) {
+        setSelectedButton({
+          nodeId,
+          containerId: result.containerId,
+          button,
+        });
+      }
     }
   }, [findNodeInContainers]);
 
@@ -261,6 +274,20 @@ const CanvasContent = ({
     toast.success("Botão removido!");
   }, [containers, onContainersChange]);
 
+  // Handler to save individual button (must be after handleUpdateButton)
+  const handleSaveButton = useCallback((updates: Partial<ButtonConfig>) => {
+    if (!selectedButton) return;
+    handleUpdateButton(selectedButton.nodeId, selectedButton.button.id, updates);
+    setSelectedButton(null);
+  }, [selectedButton, handleUpdateButton]);
+
+  // Handler to delete button from config modal (must be after handleDeleteButton)
+  const handleDeleteButtonFromConfig = useCallback(() => {
+    if (!selectedButton) return;
+    handleDeleteButton(selectedButton.nodeId, selectedButton.button.id);
+    setSelectedButton(null);
+  }, [selectedButton, handleDeleteButton]);
+
   const handleNodesChangeWrapper = useCallback((changes: any) => {
     onNodesChange(changes);
   }, [onNodesChange]);
@@ -312,6 +339,8 @@ const CanvasContent = ({
       target: e.target,
       sourceHandle: e.sourceHandle,
       type: 'buttonedge',
+      zIndex: 1000,
+      style: { zIndex: 1000 },
     }));
     setEdges(flowEdges);
   }, [propEdges, setEdges]);
@@ -361,6 +390,14 @@ const CanvasContent = ({
         onClose={() => setSelectedNode(null)}
         onSave={handleSaveConfig}
         containers={containers}
+      />
+
+      <SingleButtonConfig
+        button={selectedButton?.button || null}
+        open={selectedButton !== null}
+        onClose={() => setSelectedButton(null)}
+        onSave={handleSaveButton}
+        onDelete={handleDeleteButtonFromConfig}
       />
     </>
   );
