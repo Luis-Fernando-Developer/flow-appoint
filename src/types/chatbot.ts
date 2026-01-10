@@ -42,6 +42,7 @@ export interface ButtonConfig {
   label: string;
   value?: string;
   description?: string;
+  redirectUrl?: string;
 }
 
 export interface ButtonGroupConfig {
