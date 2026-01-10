@@ -76,7 +76,7 @@ export const ButtonGroupNodeItem = ({
   const handleSpacing = 44; // Space between each button handle
 
   return (
-    <div className="relative bg-accent/10 border border-accent/30 rounded-lg overflow-hidden">
+    <div className="relative bg-accent/10 border border-accent/30 rounded-lg overflow-hidden pr-5">
       {/* Header - Click to open group config */}
       <div
         onClick={(e) => {
@@ -86,6 +86,7 @@ export const ButtonGroupNodeItem = ({
         className="flex items-center justify-between px-3 py-2 bg-orange-500/20 border-b border-accent/30 cursor-pointer hover:bg-orange-500/30 transition-colors"
       >
         <div className="flex items-center gap-2">
+          <Settings className="h-4 w-4 text-orange-600" />
           <span className="text-sm font-medium text-orange-600">Botões</span>
           {saveVariable && (
             <span className="text-xs bg-orange-200 text-orange-700 px-1.5 py-0.5 rounded">
@@ -98,12 +99,26 @@ export const ButtonGroupNodeItem = ({
             </span>
           )}
         </div>
-        <Settings className="h-4 w-4 text-orange-600" />
+        {/* Drag Handle */}
+        <div
+          draggable
+          onDragStart={(e) => {
+            e.stopPropagation();
+            e.dataTransfer.setData("nodeId", node.id);
+            e.dataTransfer.setData("text/plain", node.id);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="p-1 rounded-md hover:bg-orange-500/30 cursor-grab active:cursor-grabbing transition-all"
+          title="Arraste para mover para outro bloco"
+        >
+          <GripVertical className="h-3.5 w-3.5 text-orange-600" />
+        </div>
       </div>
 
       {/* Buttons list */}
       <div className="p-2 space-y-1.5">
-        {buttons.map((button, btnIdx) => (
+        {buttons.map((button) => (
           <div
             key={button.id}
             className="group relative flex items-center"
@@ -147,21 +162,31 @@ export const ButtonGroupNodeItem = ({
               </div>
             )}
             
-            {/* Individual button handle - positioned to the right */}
+            {/* Individual button handle - positioned relative to button */}
             <Handle
               type="source"
               position={Position.Right}
               id={`${node.id}-btn-${button.id}`}
-              className="!bg-orange-500 !w-3 !h-3 !-right-[18px]"
-              style={{
-                top: `${baseHandleTop + btnIdx * handleSpacing}px`,
-              }}
+              className="!bg-orange-500 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2 !-right-5"
             />
           </div>
         ))}
 
-        {/* Add new button inline */}
-        <div className="flex items-center gap-1 mt-2">
+        {/* Default/Fallback handle */}
+        <div className="relative flex items-center mt-3 pt-2 border-t border-dashed border-gray-300">
+          <div className="flex-1 px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-xs text-gray-500 font-medium">
+            Padrão
+          </div>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={`${node.id}-default`}
+            className="!bg-gray-400 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2 !-right-5"
+          />
+        </div>
+
+        {/* Add new button inline - at the bottom */}
+        <div className="flex items-center gap-1 mt-3 pt-2 border-t border-gray-200">
           <Input
             value={newButtonLabel}
             onChange={(e) => setNewButtonLabel(e.target.value)}
@@ -187,38 +212,6 @@ export const ButtonGroupNodeItem = ({
             <Plus className="h-4 w-4" />
           </button>
         </div>
-
-        {/* Default/Fallback handle */}
-        <div className="relative flex items-center mt-3 pt-2 border-t border-dashed border-gray-300">
-          <div className="flex-1 px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-xs text-gray-500 font-medium">
-            Padrão
-          </div>
-          <Handle
-            type="source"
-            position={Position.Right}
-            id={`${node.id}-default`}
-            className="!bg-gray-400 !w-3 !h-3 !-right-[18px]"
-            style={{
-              top: `${baseHandleTop + buttons.length * handleSpacing + 32}px`,
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Drag Handle */}
-      <div
-        draggable
-        onDragStart={(e) => {
-          e.stopPropagation();
-          e.dataTransfer.setData("nodeId", node.id);
-          e.dataTransfer.setData("text/plain", node.id);
-          e.dataTransfer.effectAllowed = "move";
-        }}
-        onClick={(e) => e.stopPropagation()}
-        className="absolute top-1 right-1 p-1.5 rounded-md bg-muted/80 hover:bg-muted border border-border/50 cursor-grab active:cursor-grabbing transition-all opacity-60 hover:opacity-100 z-10"
-        title="Arraste para mover para outro bloco"
-      >
-        <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
       </div>
     </div>
   );

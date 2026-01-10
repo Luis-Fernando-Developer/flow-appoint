@@ -51,6 +51,9 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const nodesListRef = useRef<HTMLDivElement>(null);
 
+  // Check if container has a button node - if so, don't show bottom handle
+  const hasButtonNode = container.nodes.some(n => n.type === 'input-buttons');
+
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
@@ -189,7 +192,9 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
           return null;
         })}
 
-        <Handle type="source" position={Position.Bottom} className="!bg-green-600 !w-4 !h-4 -bottom-2" />
+        {!hasButtonNode && (
+          <Handle type="source" position={Position.Bottom} className="!bg-green-600 !w-4 !h-4 -bottom-2" />
+        )}
       </div>
     </div>
   );
