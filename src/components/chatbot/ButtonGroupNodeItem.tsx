@@ -76,7 +76,7 @@ export const ButtonGroupNodeItem = ({
   const handleSpacing = 44; // Space between each button handle
 
   return (
-    <div className="relative bg-accent/10 border border-accent/30 rounded-lg overflow-hidden pr-5">
+    <div className="relative bg-accent/10 border border-accent/30 rounded-lg overflow-visible">
       {/* Header - Click to open group config */}
       <div
         onClick={(e) => {
@@ -162,12 +162,13 @@ export const ButtonGroupNodeItem = ({
               </div>
             )}
             
-            {/* Individual button handle - positioned relative to button */}
+            {/* Individual button handle - positioned at container edge */}
             <Handle
               type="source"
               position={Position.Right}
               id={`${node.id}-btn-${button.id}`}
-              className="!bg-orange-500 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2 !-right-5"
+              style={{ right: '-22px' }}
+              className="!bg-orange-500 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2"
             />
           </div>
         ))}
@@ -181,7 +182,8 @@ export const ButtonGroupNodeItem = ({
             type="source"
             position={Position.Right}
             id={`${node.id}-default`}
-            className="!bg-gray-400 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2 !-right-5"
+            style={{ right: '-22px' }}
+            className="!bg-gray-400 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2"
           />
         </div>
 
