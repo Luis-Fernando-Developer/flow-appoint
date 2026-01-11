@@ -12,6 +12,7 @@ import { InputButtonConfig } from "./NodesInputsConfig/InputButtonConfig";
 import { InputWebSiteConfig } from "./NodesInputsConfig/InputWebSiteConfig";
 import { SetVariableConfig } from "./NodesLogicConfig/SetVariableConfig";
 import { ScriptConfig } from "./NodesLogicConfig/ScriptConfig";
+import { ConditionConfig } from "./NodesLogicConfig/ConditionConfig";
 
 export const nodeConfigComponents: Record<string, React.FC<any>> = {
   "bubble-text": BubbleTextConfig,
@@ -32,4 +33,5 @@ export const nodeConfigComponents: Record<string, React.FC<any>> = {
   "input-buttons": InputButtonConfig,
   "set-variable": SetVariableConfig,
   "script": ScriptConfig,
+  "condition": ConditionConfig,
 };

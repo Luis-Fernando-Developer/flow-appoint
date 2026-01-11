@@ -15,6 +15,7 @@ import {
   Variable,
   Code,
   GripVertical,
+  Filter,
 } from "lucide-react";
 import { Node, NodeType } from "@/types/chatbot";
 import { renderTextSegments } from "@/lib/textParser";
@@ -44,6 +45,7 @@ const nodeIcons: Record<NodeType, React.ReactNode> = {
   "input-buttons": <SquareArrowOutUpRight className="h-4 w-4" />,
   "set-variable": <Variable className="h-4 w-4" />,
   "script": <Code className="h-4 w-4" />,
+  "condition": <Filter className="h-4 w-4" />,
 };
 
 const nodeColors: Record<NodeType, string> = {
@@ -65,6 +67,7 @@ const nodeColors: Record<NodeType, string> = {
   "input-buttons": "bg-accent/10 border-accent/30 text-orange-600",
   "set-variable": "bg-purple-100 border-purple-300 text-purple-700",
   "script": "bg-purple-100 border-purple-300 text-purple-700",
+  "condition": "bg-purple-100 border-purple-300 text-purple-700",
 };
 
 const nodeLabels: Record<NodeType, string> = {
@@ -86,6 +89,7 @@ const nodeLabels: Record<NodeType, string> = {
   "input-buttons": "Usuário Responde seleção de botão",
   "set-variable": "Definir Variável",
   "script": "Executar Script",
+  "condition": "Condição",
 };
 
 export const NodeItem = ({ node, onClick }: NodeItemProps) => {

@@ -1,9 +1,10 @@
 import { memo, useState, useRef } from "react";
 import { Handle, Position, NodeProps } from 'reactflow';
 import { MoreVertical } from "lucide-react";
-import { Container, Node, ButtonConfig } from "@/types/chatbot";
+import { Container, Node, ButtonConfig, ConditionGroup } from "@/types/chatbot";
 import { NodeItem } from "./NodeItem";
 import { ButtonGroupNodeItem } from "./ButtonGroupNodeItem";
+import { ConditionNodeItem } from "./ConditionNodeItem";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ interface ContainerNodeData {
   container: Container;
   onNodeClick: (nodeId: string) => void;
   onButtonClick?: (nodeId: string, buttonId: string) => void;
+  onConditionClick?: (nodeId: string, conditionId: string) => void;
   onAddButton?: (nodeId: string, label: string) => void;
   onUpdateButton?: (nodeId: string, buttonId: string, updates: Partial<ButtonConfig>) => void;
   onDeleteButton?: (nodeId: string, buttonId: string) => void;
@@ -39,6 +41,7 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
     container, 
     onNodeClick, 
     onButtonClick,
+    onConditionClick,
     onAddButton,
     onUpdateButton,
     onDeleteButton,
@@ -51,8 +54,10 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const nodesListRef = useRef<HTMLDivElement>(null);
 
-  // Check if container has a button node - if so, don't show bottom handle
+  // Check if container has a button or condition node - if so, don't show bottom handle
   const hasButtonNode = container.nodes.some(n => n.type === 'input-buttons');
+  const hasConditionNode = container.nodes.some(n => n.type === 'condition');
+  const hideBottomHandle = hasButtonNode || hasConditionNode;
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -165,6 +170,13 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
                         onUpdateButton={(buttonId, updates) => onUpdateButton?.(node.id, buttonId, updates)}
                         onDeleteButton={(buttonId) => onDeleteButton?.(node.id, buttonId)}
                       />
+                    ) : node.type === 'condition' ? (
+                      <ConditionNodeItem
+                        node={node}
+                        nodeIndex={idx}
+                        onGroupClick={() => onNodeClick(node.id)}
+                        onConditionClick={(conditionId) => onConditionClick?.(node.id, conditionId)}
+                      />
                     ) : (
                       <NodeItem
                         node={node}
@@ -179,7 +191,7 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
           )}
         </div>
 
-        {/* Handles para outros tipos de nodes (exceto input-buttons que tem handles internos) */}
+        {/* Handles para outros tipos de nodes (exceto input-buttons e condition que tem handles internos) */}
         {container.nodes.map((node) => {
           if (node.type === 'set-variable') {
             return (
@@ -192,7 +204,7 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
           return null;
         })}
 
-        {!hasButtonNode && (
+        {!hideBottomHandle && (
           <Handle type="source" position={Position.Bottom} className="!bg-green-600 !w-4 !h-4 -bottom-2" />
         )}
       </div>
