@@ -10,61 +10,51 @@ import { renderTextSegments } from "@/lib/textParser";
 
 // Evaluate a single comparison
 const evaluateComparison = (varValue: string, operator: string, compareValue: string): boolean => {
-  const normalizedVar = (varValue || "").toString().trim();
-  const normalizedCompare = (compareValue || "").toString().trim();
-  
+  const normalizedVar = (varValue ?? "").toString().trim();
+  const normalizedCompare = (compareValue ?? "").toString().trim();
+
   switch (operator) {
-    case "Equal to":
+    case "equals":
       return normalizedVar === normalizedCompare;
-    case "Not equal":
+    case "not_equals":
       return normalizedVar !== normalizedCompare;
-    case "Contains":
+    case "contains":
       return normalizedVar.includes(normalizedCompare);
-    case "Does not contain":
+    case "not_contains":
       return !normalizedVar.includes(normalizedCompare);
-    case "Greater than": {
-      const numVar = parseFloat(normalizedVar);
-      const numCompare = parseFloat(normalizedCompare);
-      if (!isNaN(numVar) && !isNaN(numCompare)) {
-        return numVar > numCompare;
-      }
-      return normalizedVar > normalizedCompare;
+    case "greater_than": {
+      const numVar = Number(normalizedVar);
+      const numCompare = Number(normalizedCompare);
+      if (!Number.isNaN(numVar) && !Number.isNaN(numCompare)) return numVar >= numCompare;
+      return normalizedVar >= normalizedCompare;
     }
-    case "Less than": {
-      const numVar = parseFloat(normalizedVar);
-      const numCompare = parseFloat(normalizedCompare);
-      if (!isNaN(numVar) && !isNaN(numCompare)) {
-        return numVar < numCompare;
-      }
-      return normalizedVar < normalizedCompare;
+    case "less_than": {
+      const numVar = Number(normalizedVar);
+      const numCompare = Number(normalizedCompare);
+      if (!Number.isNaN(numVar) && !Number.isNaN(numCompare)) return numVar <= numCompare;
+      return normalizedVar <= normalizedCompare;
     }
-    case "Is set":
-      return normalizedVar !== "" && normalizedVar !== null && normalizedVar !== undefined;
-    case "Is empty":
-      return normalizedVar === "" || normalizedVar === null || normalizedVar === undefined;
-    case "Starts with":
+    case "is_set":
+      return normalizedVar !== "";
+    case "is_empty":
+      return normalizedVar === "";
+    case "starts_with":
       return normalizedVar.startsWith(normalizedCompare);
-    case "Ends with":
+    case "ends_with":
       return normalizedVar.endsWith(normalizedCompare);
-    case "Matches regex":
+    case "matches_regex":
       try {
         const match = normalizedCompare.match(/^\/(.*)\/([gimsuy]*)$/);
-        if (match) {
-          const regex = new RegExp(match[1], match[2]);
-          return regex.test(normalizedVar);
-        }
-        return new RegExp(normalizedCompare).test(normalizedVar);
+        const regex = match ? new RegExp(match[1], match[2]) : new RegExp(normalizedCompare);
+        return regex.test(normalizedVar);
       } catch {
         return false;
       }
-    case "Not matches regex":
+    case "not_matches_regex":
       try {
         const match = normalizedCompare.match(/^\/(.*)\/([gimsuy]*)$/);
-        if (match) {
-          const regex = new RegExp(match[1], match[2]);
-          return !regex.test(normalizedVar);
-        }
-        return !new RegExp(normalizedCompare).test(normalizedVar);
+        const regex = match ? new RegExp(match[1], match[2]) : new RegExp(normalizedCompare);
+        return !regex.test(normalizedVar);
       } catch {
         return true;
       }
@@ -252,55 +242,57 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
 
     // Handle condition node
     if (node.type === "condition") {
-      const conditionGroups = node.config.conditionGroups || [];
-      let matchedGroupIndex = -1;
+      const sanitize = (name: string) => (name || "").trim().replace(/^{{\s*/, "").replace(/\s*}}$/, "");
 
-      // Evaluate each condition group
-      for (let i = 0; i < conditionGroups.length; i++) {
-        const group = conditionGroups[i];
+      const conditionGroups = (node.config.conditions || []) as Array<{
+        id: string;
+        comparisons: Array<{ variableName: string; operator: string; value?: string }>;
+        logicalOperator?: "AND" | "OR";
+      }>;
+
+      let matchedConditionId: string | null = null;
+
+      for (const group of conditionGroups) {
         const comparisons = group.comparisons || [];
-        const logicOperator = group.logicOperator || "AND";
-        
-        let groupResult = logicOperator === "AND";
-        
+        if (comparisons.length === 0) continue;
+
+        const logicOperator = group.logicalOperator || "AND";
+        let groupResult = logicOperator === "AND" ? true : false;
+
         for (const comparison of comparisons) {
-          const varName = comparison.variableName;
-          // Get value from extraVars first (most recent), then from variables context
-          const varValue = extraVars[varName] !== undefined 
-            ? extraVars[varName] 
-            : (variables[varName] || "");
-          const compareValue = comparison.value || "";
-          
+          const rawVarName = comparison.variableName || "";
+          const varName = sanitize(rawVarName);
+
+          const varValue =
+            (extraVars[varName] ??
+              extraVars[rawVarName] ??
+              variables[varName] ??
+              variables[rawVarName] ??
+              "") as string;
+
+          const compareValue = replaceVariablesInText(comparison.value || "", extraVars);
+
           const comparisonResult = evaluateComparison(varValue, comparison.operator, compareValue);
-          
+
           if (logicOperator === "AND") {
             groupResult = groupResult && comparisonResult;
           } else {
             groupResult = groupResult || comparisonResult;
           }
         }
-        
-        if (groupResult && comparisons.length > 0) {
-          matchedGroupIndex = i;
+
+        if (groupResult) {
+          matchedConditionId = group.id;
           break;
         }
       }
 
-      // Find the appropriate edge based on matched group
-      let targetEdge: Edge | undefined;
-      
-      if (matchedGroupIndex >= 0) {
-        // Look for edge with sourceHandle matching the group index
-        targetEdge = edges.find(e => e.sourceHandle === `${node.id}-condition-${matchedGroupIndex}`);
-      }
-      
-      // If no match or no edge found, use default/else edge
-      if (!targetEdge) {
-        targetEdge = edges.find(e => e.sourceHandle === `${node.id}-default`);
-      }
-      
+      const targetEdge = matchedConditionId
+        ? edges.find((e) => e.sourceHandle === `${node.id}-cond-${matchedConditionId}`)
+        : edges.find((e) => e.sourceHandle === `${node.id}-else`);
+
       if (targetEdge) {
-        const targetContainer = allContainers.find(c => c.id === targetEdge!.target);
+        const targetContainer = allContainers.find((c) => c.id === targetEdge.target);
         if (targetContainer) {
           setTimeout(() => {
             setCurrentContainerId(targetContainer.id);
@@ -310,8 +302,8 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
           return;
         }
       }
-      
-      // Fallback: continue to next node in container
+
+      // Fallback: if wiring is missing, continue in same container
       processNextNode(container, nodeIndex + 1, extraVars);
       return;
     }
