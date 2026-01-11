@@ -8,6 +8,71 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useVariables } from "@/contexts/VariablesContext";
 import { renderTextSegments } from "@/lib/textParser";
 
+// Evaluate a single comparison
+const evaluateComparison = (varValue: string, operator: string, compareValue: string): boolean => {
+  const normalizedVar = (varValue || "").toString().trim();
+  const normalizedCompare = (compareValue || "").toString().trim();
+  
+  switch (operator) {
+    case "Equal to":
+      return normalizedVar === normalizedCompare;
+    case "Not equal":
+      return normalizedVar !== normalizedCompare;
+    case "Contains":
+      return normalizedVar.includes(normalizedCompare);
+    case "Does not contain":
+      return !normalizedVar.includes(normalizedCompare);
+    case "Greater than": {
+      const numVar = parseFloat(normalizedVar);
+      const numCompare = parseFloat(normalizedCompare);
+      if (!isNaN(numVar) && !isNaN(numCompare)) {
+        return numVar > numCompare;
+      }
+      return normalizedVar > normalizedCompare;
+    }
+    case "Less than": {
+      const numVar = parseFloat(normalizedVar);
+      const numCompare = parseFloat(normalizedCompare);
+      if (!isNaN(numVar) && !isNaN(numCompare)) {
+        return numVar < numCompare;
+      }
+      return normalizedVar < normalizedCompare;
+    }
+    case "Is set":
+      return normalizedVar !== "" && normalizedVar !== null && normalizedVar !== undefined;
+    case "Is empty":
+      return normalizedVar === "" || normalizedVar === null || normalizedVar === undefined;
+    case "Starts with":
+      return normalizedVar.startsWith(normalizedCompare);
+    case "Ends with":
+      return normalizedVar.endsWith(normalizedCompare);
+    case "Matches regex":
+      try {
+        const match = normalizedCompare.match(/^\/(.*)\/([gimsuy]*)$/);
+        if (match) {
+          const regex = new RegExp(match[1], match[2]);
+          return regex.test(normalizedVar);
+        }
+        return new RegExp(normalizedCompare).test(normalizedVar);
+      } catch {
+        return false;
+      }
+    case "Not matches regex":
+      try {
+        const match = normalizedCompare.match(/^\/(.*)\/([gimsuy]*)$/);
+        if (match) {
+          const regex = new RegExp(match[1], match[2]);
+          return !regex.test(normalizedVar);
+        }
+        return !new RegExp(normalizedCompare).test(normalizedVar);
+      } catch {
+        return true;
+      }
+    default:
+      return false;
+  }
+};
+
 interface AudioPlayerProps {
   src: string;
   autoPlay?: boolean;
@@ -181,6 +246,72 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
         setVariable(variableName, replaceVariablesInText(value, extraVars));
         extraVars[variableName] = replaceVariablesInText(value, extraVars);
       }
+      processNextNode(container, nodeIndex + 1, extraVars);
+      return;
+    }
+
+    // Handle condition node
+    if (node.type === "condition") {
+      const conditionGroups = node.config.conditionGroups || [];
+      let matchedGroupIndex = -1;
+
+      // Evaluate each condition group
+      for (let i = 0; i < conditionGroups.length; i++) {
+        const group = conditionGroups[i];
+        const comparisons = group.comparisons || [];
+        const logicOperator = group.logicOperator || "AND";
+        
+        let groupResult = logicOperator === "AND";
+        
+        for (const comparison of comparisons) {
+          const varName = comparison.variableName;
+          // Get value from extraVars first (most recent), then from variables context
+          const varValue = extraVars[varName] !== undefined 
+            ? extraVars[varName] 
+            : (variables[varName] || "");
+          const compareValue = comparison.value || "";
+          
+          const comparisonResult = evaluateComparison(varValue, comparison.operator, compareValue);
+          
+          if (logicOperator === "AND") {
+            groupResult = groupResult && comparisonResult;
+          } else {
+            groupResult = groupResult || comparisonResult;
+          }
+        }
+        
+        if (groupResult && comparisons.length > 0) {
+          matchedGroupIndex = i;
+          break;
+        }
+      }
+
+      // Find the appropriate edge based on matched group
+      let targetEdge: Edge | undefined;
+      
+      if (matchedGroupIndex >= 0) {
+        // Look for edge with sourceHandle matching the group index
+        targetEdge = edges.find(e => e.sourceHandle === `${node.id}-condition-${matchedGroupIndex}`);
+      }
+      
+      // If no match or no edge found, use default/else edge
+      if (!targetEdge) {
+        targetEdge = edges.find(e => e.sourceHandle === `${node.id}-default`);
+      }
+      
+      if (targetEdge) {
+        const targetContainer = allContainers.find(c => c.id === targetEdge!.target);
+        if (targetContainer) {
+          setTimeout(() => {
+            setCurrentContainerId(targetContainer.id);
+            setCurrentNodeIndex(0);
+            processNextNode(targetContainer, 0, extraVars);
+          }, 500);
+          return;
+        }
+      }
+      
+      // Fallback: continue to next node in container
       processNextNode(container, nodeIndex + 1, extraVars);
       return;
     }
