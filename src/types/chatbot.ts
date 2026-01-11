@@ -19,7 +19,8 @@ export type NodeType =
   | "input-webSite"
   // logic
   | "set-variable"
-  | "script";
+  | "script"
+  | "condition";
 
 export interface NodeConfig {
   [key: string]: any;
@@ -63,4 +64,30 @@ export interface Workspace {
   name: string;
   containers: Container[];
   edges?: Edge[];
+}
+
+// Condition types
+export interface ConditionComparison {
+  id: string;
+  variableName: string;
+  operator: 
+    | "equals"
+    | "not_equals"
+    | "contains"
+    | "not_contains"
+    | "greater_than"
+    | "less_than"
+    | "is_set"
+    | "is_empty"
+    | "starts_with"
+    | "ends_with"
+    | "matches_regex"
+    | "not_matches_regex";
+  value?: string;
+}
+
+export interface ConditionGroup {
+  id: string;
+  comparisons: ConditionComparison[];
+  logicalOperator: "AND" | "OR";
 }

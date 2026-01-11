@@ -15,7 +15,8 @@ import {
   ImageUp, 
   SquareArrowOutUpRight, 
   AtSign, 
-  Variable 
+  Variable,
+  Filter,
 } from "lucide-react";
 import { NodeType } from "@/types/chatbot";
 import { Button } from "@/components/ui/button";
@@ -46,7 +47,8 @@ const nodeTypes: {
   { type: "input-document", label: "Documento", icon: <File className="h-5 w-5" />, category: "inputs" },
   { type: "input-buttons", label: "Botões", icon: <SquareArrowOutUpRight className="h-5 w-5" />, category: "inputs" },
   { type: "input-webSite", label: "Site", icon: <Globe className="h-5 w-5" />, category: "inputs" },
-  { type: "set-variable", label: "Definir Variável", icon: <Variable className="h-5 w-5" />, category: "logic" },
+  { type: "set-variable", label: "Variável", icon: <Variable className="h-5 w-5" />, category: "logic" },
+  { type: "condition", label: "Condição", icon: <Filter className="h-5 w-5" />, category: "logic" },
   { type: "script", label: "Script", icon: <Code className="h-5 w-5" />, category: "logic" },
 ];
 
