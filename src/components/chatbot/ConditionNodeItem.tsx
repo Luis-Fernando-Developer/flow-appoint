@@ -52,7 +52,7 @@ export const ConditionNodeItem = ({
   const conditions: ConditionGroup[] = node.config.conditions || [];
 
   return (
-    <div className="relative bg-purple-100 border border-purple-300 rounded-lg overflow-hidden pr-5">
+    <div className="relative bg-purple-100 border border-purple-300 rounded-lg overflow-visible">
       {/* Header */}
       <div
         onClick={(e) => {
@@ -128,12 +128,13 @@ export const ConditionNodeItem = ({
               </span>
             </div>
             
-            {/* Condition handle */}
+            {/* Condition handle - positioned at container edge */}
             <Handle
               type="source"
               position={Position.Right}
               id={`${node.id}-cond-${condition.id}`}
-              className="!bg-purple-500 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2 !-right-5"
+              style={{ right: '-14px' }}
+              className="!bg-purple-500 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2"
             />
           </div>
         ))}
@@ -166,7 +167,8 @@ export const ConditionNodeItem = ({
             type="source"
             position={Position.Right}
             id={`${node.id}-else`}
-            className="!bg-gray-400 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2 !-right-5"
+            style={{ right: '-14px' }}
+            className="!bg-gray-400 !w-3 !h-3 !absolute !top-1/2 !-translate-y-1/2"
           />
         </div>
       </div>

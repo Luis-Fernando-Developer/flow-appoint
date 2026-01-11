@@ -66,11 +66,10 @@ export function ButtonEdge({
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'all',
-            zIndex: 1001,
             opacity: showDeleteButton ? 1 : 0,
             transition: 'opacity 0.15s ease-in-out',
           }}
-          className="nodrag nopan"
+          className="nodrag nopan z-50"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
