@@ -74,9 +74,11 @@ export const ScriptConfig = ({ config, setConfig }: ScriptConfigProps) => {
           onCheckedChange={(checked) => setConfig({ ...config, executeOnServer: checked })}
         />
       </div>
-      <p className="text-xs text-muted-foreground">
-        Use setVariable('nome', valor) e getVariable('nome') para manipular variáveis.
-      </p>
+      <div className="space-y-1.5 text-xs text-muted-foreground">
+        <p><strong>Variáveis:</strong> Use <code className="bg-muted px-1 rounded">{"{{nome}}"}</code>, <code className="bg-muted px-1 rounded">getVariable('nome')</code> ou <code className="bg-muted px-1 rounded">variables.nome</code></p>
+        <p><strong>Definir:</strong> <code className="bg-muted px-1 rounded">setVariable('nome', valor)</code></p>
+        <p><strong>Redirecionar:</strong> <code className="bg-muted px-1 rounded">window.location.href = "https://..."</code></p>
+      </div>
 
       <VariableModal
         open={variableModalOpen}
