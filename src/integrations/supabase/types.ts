@@ -14,7 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chatbot_flows: {
+        Row: {
+          company_id: string
+          containers: Json | null
+          created_at: string
+          description: string | null
+          edges: Json | null
+          id: string
+          is_active: boolean | null
+          is_published: boolean | null
+          name: string
+          public_id: string | null
+          published_at: string | null
+          published_containers: Json | null
+          published_edges: Json | null
+          settings: Json | null
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          company_id: string
+          containers?: Json | null
+          created_at?: string
+          description?: string | null
+          edges?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_published?: boolean | null
+          name: string
+          public_id?: string | null
+          published_at?: string | null
+          published_containers?: Json | null
+          published_edges?: Json | null
+          settings?: Json | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          company_id?: string
+          containers?: Json | null
+          created_at?: string
+          description?: string | null
+          edges?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_published?: boolean | null
+          name?: string
+          public_id?: string | null
+          published_at?: string | null
+          published_containers?: Json | null
+          published_edges?: Json | null
+          settings?: Json | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: []
+      }
+      chatbot_sessions: {
+        Row: {
+          client_id: string | null
+          company_id: string | null
+          created_at: string
+          flow_id: string
+          id: string
+          state: Json
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          flow_id: string
+          id?: string
+          state?: Json
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          company_id?: string | null
+          created_at?: string
+          flow_id?: string
+          id?: string
+          state?: Json
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_sessions_flow_id_fkey"
+            columns: ["flow_id"]
+            isOneToOne: false
+            referencedRelation: "chatbot_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
