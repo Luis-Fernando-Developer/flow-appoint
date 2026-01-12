@@ -112,7 +112,7 @@ function ChatbotListContent({
       setShowCreateDialog(false);
       setNewFlowName('');
       setNewFlowDescription('');
-      navigate(`/${companyData.slug}/chatbot/${data.id}/edit`);
+      navigate(`/${companyData.slug}/admin/chatbot/${data.id}/edit`);
     } catch (error) {
       console.error('Error creating flow:', error);
       toast.error('Erro ao criar fluxo');
@@ -313,7 +313,7 @@ function ChatbotListContent({
               <Card 
                 key={flowItem.id}
                 className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => navigate(`/${companyData.slug}/chatbot/${flowItem.id}/edit`)}
+                onClick={() => navigate(`/${companyData.slug}/admin/chatbot/${flowItem.id}/edit`)}
               >
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                   <div className="flex-1">

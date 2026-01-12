@@ -163,7 +163,7 @@ function ChatbotEditorContent({
   };
 
   const handleBackToList = () => {
-    navigate(`/${companyData.slug}/chatbot`);
+    navigate(`/${companyData.slug}/admin/chatbot`);
   };
 
   const handleTest = useCallback((c: Container | null) => {

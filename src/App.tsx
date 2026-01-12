@@ -16,7 +16,9 @@ import BusinessServices from "./pages/business/Services";
 import BusinessEmployees from "./pages/business/Employees";
 import BusinessSettings from "./pages/business/Settings";
 import BusinessProfile from "./pages/business/Profile";
-import ChatbotBuilder from "./pages/business/ChatbotBuilder";
+import ChatbotList from "./pages/business/ChatbotList";
+import ChatbotEditor from "./pages/business/ChatbotEditor";
+import ChatbotPublicPage from "./pages/company/ChatbotPublicPage";
 import BusinessSchedule from "./pages/business/Schedule";
 import ClientBooking from "./pages/client/Booking";
 import ClientLogin from "./pages/client/Login";
@@ -63,10 +65,15 @@ const App = () => (
           <Route path="/:slug/admin/configuracoes" element={<BusinessSettings />} />
           {/* rota perfil painel admin empresa com base */}
           <Route path="/:slug/admin/perfil" element={<BusinessProfile />} />
-          {/* rota chatbot builder painel admin empresa */}
-          <Route path="/:slug/admin/chatbot" element={<ChatbotBuilder />} />
+          {/* rota chatbot lista painel admin empresa */}
+          <Route path="/:slug/admin/chatbot" element={<ChatbotList />} />
+          {/* rota chatbot editor com ID do bot na URL */}
+          <Route path="/:slug/admin/chatbot/:botId/edit" element={<ChatbotEditor />} />
           {/* rota horários painel admin empresa */}
           <Route path="/:slug/admin/horarios" element={<BusinessSchedule />} />
+
+          {/* rota página pública do chatbot */}
+          <Route path="/:slug/flow/:publicId" element={<ChatbotPublicPage />} />
 
           {/* rota landingpage empresa por parametro [slug] */}
           <Route path="/:slug" element={<CompanyLandingPage />} />
