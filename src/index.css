@@ -156,4 +156,17 @@
   .animate-pulse-glow {
     animation: pulse-glow 2s ease-in-out infinite;
   }
+
+  /* ReactFlow z-index hierarchy: edges below nodes */
+  .react-flow__edges {
+    z-index: 0 !important;
+  }
+
+  .react-flow__nodes {
+    z-index: 10 !important;
+  }
+
+  .react-flow__edgelabel-renderer {
+    z-index: 15 !important;
+  }
 }
