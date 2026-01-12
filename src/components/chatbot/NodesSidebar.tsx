@@ -17,6 +17,9 @@ import {
   AtSign, 
   Variable,
   Filter,
+  Play,
+  Webhook,
+  Send,
 } from "lucide-react";
 import { NodeType } from "@/types/chatbot";
 import { Button } from "@/components/ui/button";
@@ -31,12 +34,18 @@ const nodeTypes: {
   icon: React.ReactNode;
   category: string;
 }[] = [
+  // Flow
+  { type: "start", label: "Start", icon: <Play className="h-5 w-5" />, category: "flow" },
+  { type: "webhook", label: "Webhook", icon: <Webhook className="h-5 w-5" />, category: "flow" },
+  { type: "http-request", label: "HTTP Request", icon: <Send className="h-5 w-5" />, category: "flow" },
+  // Bubbles
   { type: "bubble-text", label: "Texto", icon: <MessageSquare className="h-5 w-5" />, category: "bubbles" },
   { type: "bubble-number", label: "Número", icon: <Hash className="h-5 w-5" />, category: "bubbles" },
   { type: "bubble-video", label: "Video", icon: <Film className="h-5 w-5" />, category: "bubbles" },
   { type: "bubble-image", label: "Imagem", icon: <Image className="h-5 w-5" />, category: "bubbles" },
   { type: "bubble-document", label: "Documento", icon: <File className="h-5 w-5" />, category: "bubbles" },
   { type: "bubble-audio", label: "Audio", icon: <Headphones className="h-5 w-5" />, category: "bubbles" },
+  // Inputs
   { type: "input-text", label: "Texto", icon: <Type className="h-5 w-5" />, category: "inputs" },
   { type: "input-number", label: "Número", icon: <Hash className="h-5 w-5" />, category: "inputs" },
   { type: "input-mail", label: "Email", icon: <AtSign className="h-5 w-5" />, category: "inputs" },
@@ -47,12 +56,14 @@ const nodeTypes: {
   { type: "input-document", label: "Documento", icon: <File className="h-5 w-5" />, category: "inputs" },
   { type: "input-buttons", label: "Botões", icon: <SquareArrowOutUpRight className="h-5 w-5" />, category: "inputs" },
   { type: "input-webSite", label: "Site", icon: <Globe className="h-5 w-5" />, category: "inputs" },
+  // Logic
   { type: "set-variable", label: "Variável", icon: <Variable className="h-5 w-5" />, category: "logic" },
   { type: "condition", label: "Condição", icon: <Filter className="h-5 w-5" />, category: "logic" },
   { type: "script", label: "Script", icon: <Code className="h-5 w-5" />, category: "logic" },
 ];
 
 const getCategoryColor = (category: string, nodeType: NodeType) => {
+  if (category === "flow") return "bg-green-600/80 border-green-950 text-white";
   if (category === "bubbles") return "bg-indigo-950 border-blue-500 text-blue-500";
   if (category === "inputs") return "bg-orange-600/80 border-indigo-950 text-white";
   if (category === "logic") return "bg-purple-600/80 border-purple-950 text-white";
@@ -60,6 +71,7 @@ const getCategoryColor = (category: string, nodeType: NodeType) => {
 };
 
 const getIconColor = (category: string) => {
+  if (category === "flow") return "text-green-950 group-hover:text-green-600/80";
   if (category === "bubbles") return "text-blue-500";
   if (category === "inputs") return "text-indigo-950 group-hover:text-orange-600/80";
   if (category === "logic") return "text-purple-950 group-hover:text-purple-600/80";

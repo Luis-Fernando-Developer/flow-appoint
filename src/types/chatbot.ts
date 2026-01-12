@@ -1,4 +1,8 @@
 export type NodeType =
+  // flow
+  | "start"
+  | "webhook"
+  | "http-request"
   // bubbles
   | "bubble-text"
   | "bubble-number"
