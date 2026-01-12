@@ -269,7 +269,7 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
     }
   }, [isOpen, startContainer]);
 
-  const processNextNode = (container: Container, nodeIndex: number, extraVars: Record<string, string> = {}) => {
+  const processNextNode = async (container: Container, nodeIndex: number, extraVars: Record<string, string> = {}) => {
     if (!container || nodeIndex >= container.nodes.length) {
       const nextEdge = edges.find((edge) => edge.source === container.id);
       if (nextEdge) {
@@ -286,6 +286,84 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
     }
 
     const node = container.nodes[nodeIndex];
+
+    // Handle start node - initialize variables and continue
+    if (node.type === "start") {
+      const initialVars = node.config.initialVariables || [];
+      initialVars.forEach(({ name, defaultValue }: { name: string; defaultValue: string }) => {
+        if (name) {
+          setVariable(name, defaultValue || "");
+          extraVars[name] = defaultValue || "";
+        }
+      });
+      processNextNode(container, nodeIndex + 1, extraVars);
+      return;
+    }
+
+    // Handle webhook node - simulate received data in test mode
+    if (node.type === "webhook") {
+      const responseVariable = node.config.responseVariable || "webhookData";
+      const simulatedData = { test: true, timestamp: Date.now() };
+      setVariable(responseVariable, JSON.stringify(simulatedData));
+      extraVars[responseVariable] = JSON.stringify(simulatedData);
+      
+      setMessages((prev) => [...prev, { 
+        id: `webhook-${Date.now()}`, 
+        type: "bot", 
+        content: `📥 Webhook recebido (simulado)` 
+      }]);
+      
+      processNextNode(container, nodeIndex + 1, extraVars);
+      return;
+    }
+
+    // Handle http-request node - execute fetch
+    if (node.type === "http-request") {
+      const { method = "GET", url, responseVariable = "httpResponse" } = node.config;
+      const allVars = { ...variables, ...extraVars };
+      const processedUrl = replaceVariablesInText(url || "", allVars);
+      
+      if (!processedUrl) {
+        setMessages((prev) => [...prev, { 
+          id: `error-${Date.now()}`, 
+          type: "bot", 
+          content: `⚠️ HTTP Request: URL não configurada` 
+        }]);
+        processNextNode(container, nodeIndex + 1, extraVars);
+        return;
+      }
+
+      setMessages((prev) => [...prev, { 
+        id: `http-${Date.now()}`, 
+        type: "bot", 
+        content: `🔄 Executando ${method} ${processedUrl}...` 
+      }]);
+
+      try {
+        const response = await fetch(processedUrl, { method });
+        const text = await response.text();
+        let data = text;
+        try { data = JSON.stringify(JSON.parse(text)); } catch {}
+        
+        setVariable(responseVariable, data);
+        extraVars[responseVariable] = data;
+        
+        setMessages((prev) => [...prev, { 
+          id: `http-ok-${Date.now()}`, 
+          type: "bot", 
+          content: `✅ HTTP ${response.status}` 
+        }]);
+      } catch (error: any) {
+        setMessages((prev) => [...prev, { 
+          id: `http-err-${Date.now()}`, 
+          type: "bot", 
+          content: `❌ Erro HTTP: ${error.message}` 
+        }]);
+      }
+      
+      processNextNode(container, nodeIndex + 1, extraVars);
+      return;
+    }
 
     if (node.type === "set-variable") {
       const variableName = node.config.variableName;

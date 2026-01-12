@@ -16,6 +16,9 @@ import {
   Code,
   GripVertical,
   Filter,
+  Play,
+  Webhook,
+  Send,
 } from "lucide-react";
 import { Node, NodeType } from "@/types/chatbot";
 import { renderTextSegments } from "@/lib/textParser";
@@ -27,12 +30,18 @@ interface NodeItemProps {
 }
 
 const nodeIcons: Record<NodeType, React.ReactNode> = {
+  // Flow
+  "start": <Play className="h-4 w-4" />,
+  "webhook": <Webhook className="h-4 w-4" />,
+  "http-request": <Send className="h-4 w-4" />,
+  // Bubbles
   "bubble-text": <MessageSquare className="h-4 w-4" />,
   "bubble-number": <Hash className="h-4 w-4" />,
   "bubble-image": <Image className="h-4 w-4" />,
   "bubble-video": <Film className="h-4 w-4" />,
   "bubble-audio": <Headphones className="h-4 w-4" />,
   "bubble-document": <File className="h-4 w-4" />,
+  // Inputs
   "input-text": <Type className="h-4 w-4" />,
   "input-number": <Hash className="h-4 w-4" />,
   "input-phone": <Phone className="h-4 w-4" />,
@@ -43,18 +52,25 @@ const nodeIcons: Record<NodeType, React.ReactNode> = {
   "input-document": <File className="h-4 w-4" />,
   "input-webSite": <Globe className="h-4 w-4" />,
   "input-buttons": <SquareArrowOutUpRight className="h-4 w-4" />,
+  // Logic
   "set-variable": <Variable className="h-4 w-4" />,
   "script": <Code className="h-4 w-4" />,
   "condition": <Filter className="h-4 w-4" />,
 };
 
 const nodeColors: Record<NodeType, string> = {
+  // Flow
+  "start": "bg-green-100 border-green-300 text-green-700",
+  "webhook": "bg-blue-100 border-blue-300 text-blue-700",
+  "http-request": "bg-orange-100 border-orange-300 text-orange-700",
+  // Bubbles
   "bubble-text": "bg-primary/10 border-primary/30 text-primary",
   "bubble-number": "bg-primary/10 border-primary/30 text-primary",
   "bubble-video": "bg-primary/10 border-primary/30 text-primary",
   "bubble-image": "bg-primary/10 border-primary/30 text-primary",
   "bubble-document": "bg-primary/10 border-primary/30 text-primary",
   "bubble-audio": "bg-primary/10 border-primary/30 text-primary",
+  // Inputs
   "input-text": "bg-accent/10 border-accent/30 text-orange-600",
   "input-number": "bg-accent/10 border-accent/30 text-orange-600",
   "input-audio": "bg-accent/10 border-accent/30 text-orange-600",
@@ -65,18 +81,25 @@ const nodeColors: Record<NodeType, string> = {
   "input-document": "bg-accent/10 border-accent/30 text-orange-600",
   "input-webSite": "bg-accent/10 border-accent/30 text-orange-600",
   "input-buttons": "bg-accent/10 border-accent/30 text-orange-600",
+  // Logic
   "set-variable": "bg-purple-100 border-purple-300 text-purple-700",
   "script": "bg-purple-100 border-purple-300 text-purple-700",
   "condition": "bg-purple-100 border-purple-300 text-purple-700",
 };
 
 const nodeLabels: Record<NodeType, string> = {
+  // Flow
+  "start": "Início do Fluxo",
+  "webhook": "Webhook",
+  "http-request": "HTTP Request",
+  // Bubbles
   "bubble-text": "Bot envia Mensagem de Texto",
   "bubble-number": "Bot envia Mensagem de Número",
   "bubble-video": "Bot envia Mensagem de Video",
   "bubble-image": "Bot envia Mensagem de Imagem",
   "bubble-audio": "Bot envia Mensagem de Audio",
   "bubble-document": "Bot envia Mensagem de Arquivo",
+  // Inputs
   "input-text": "Usuário Responde com Texto",
   "input-number": "Usuário Responde com Número",
   "input-mail": "Usuário Responde com Email",
@@ -87,6 +110,7 @@ const nodeLabels: Record<NodeType, string> = {
   "input-document": "Usuário Responde com Documento",
   "input-webSite": "Usuário Responde com Link",
   "input-buttons": "Usuário Responde seleção de botão",
+  // Logic
   "set-variable": "Definir Variável",
   "script": "Executar Script",
   "condition": "Condição",

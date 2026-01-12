@@ -13,14 +13,21 @@ import { InputWebSiteConfig } from "./NodesInputsConfig/InputWebSiteConfig";
 import { SetVariableConfig } from "./NodesLogicConfig/SetVariableConfig";
 import { ScriptConfig } from "./NodesLogicConfig/ScriptConfig";
 import { ConditionConfig } from "./NodesLogicConfig/ConditionConfig";
+import { StartConfig, WebhookConfig, HttpRequestConfig } from "./NodesFlowConfig";
 
 export const nodeConfigComponents: Record<string, React.FC<any>> = {
+  // Flow
+  "start": StartConfig,
+  "webhook": WebhookConfig,
+  "http-request": HttpRequestConfig,
+  // Bubbles
   "bubble-text": BubbleTextConfig,
   "bubble-number": BubbleNumberConfig,
   "bubble-image": BubbleImageConfig,
   "bubble-audio": BubbleAudioConfig,
   "bubble-document": BubbleFileConfig,
   "bubble-video": BubbleVideoConfig,
+  // Inputs
   "input-text": InputTextConfig,
   "input-number": InputNumberConfig,
   "input-webSite": InputWebSiteConfig,
@@ -31,6 +38,7 @@ export const nodeConfigComponents: Record<string, React.FC<any>> = {
   "input-audio": InputTextConfig,
   "input-document": InputTextConfig,
   "input-buttons": InputButtonConfig,
+  // Logic
   "set-variable": SetVariableConfig,
   "script": ScriptConfig,
   "condition": ConditionConfig,

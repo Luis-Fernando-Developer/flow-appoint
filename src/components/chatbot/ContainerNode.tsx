@@ -58,6 +58,10 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   const hasButtonNode = container.nodes.some(n => n.type === 'input-buttons');
   const hasConditionNode = container.nodes.some(n => n.type === 'condition');
   const hideBottomHandle = hasButtonNode || hasConditionNode;
+  
+  // Check if container is a start/webhook node (no input handle)
+  const isEntryNode = container.nodes.some(n => n.type === 'start' || n.type === 'webhook');
+  const hideTopHandle = isEntryNode;
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -123,7 +127,9 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <Handle type="target" position={Position.Top} className="!bg-green-600 !w-4 !h-4 -top-2" />
+        {!hideTopHandle && (
+          <Handle type="target" position={Position.Top} className="!bg-green-600 !w-4 !h-4 -top-2" />
+        )}
 
         <div className="flex items-center justify-between mb-3 rounded-sm border border-border/40">
           <h3 className="font-semibold text-sm text-foreground px-0.5">Bloco #{container.id.slice(-6)}</h3>
