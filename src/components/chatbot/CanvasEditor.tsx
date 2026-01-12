@@ -339,8 +339,6 @@ const CanvasContent = ({
       target: e.target,
       sourceHandle: e.sourceHandle,
       type: 'buttonedge',
-      zIndex: 1000,
-      style: { zIndex: 1000 },
     }));
     setEdges(flowEdges);
   }, [propEdges, setEdges]);
