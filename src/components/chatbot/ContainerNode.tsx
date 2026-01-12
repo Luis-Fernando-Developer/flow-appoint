@@ -59,8 +59,8 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   const hasConditionNode = container.nodes.some(n => n.type === 'condition');
   const hideBottomHandle = hasButtonNode || hasConditionNode;
   
-  // Check if container is a start/webhook node (no input handle)
-  const isEntryNode = container.nodes.some(n => n.type === 'start' || n.type === 'webhook');
+  // Check if container is a start node (no input handle) - webhook CAN have input
+  const isEntryNode = container.nodes.some(n => n.type === 'start');
   const hideTopHandle = isEntryNode;
 
   const handleDragOver = (e: React.DragEvent) => {

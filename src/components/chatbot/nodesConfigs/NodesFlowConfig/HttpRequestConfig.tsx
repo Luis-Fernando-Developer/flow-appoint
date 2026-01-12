@@ -48,12 +48,12 @@ interface HttpRequestConfigProps {
     responseVariable?: string;
     responseFormat?: string;
   };
-  onChange: (config: HttpRequestConfigProps["config"]) => void;
+  setConfig: (config: HttpRequestConfigProps["config"]) => void;
 }
 
 export const HttpRequestConfig = ({
   config,
-  onChange,
+  setConfig,
 }: HttpRequestConfigProps) => {
   const [method, setMethod] = useState(config.method || "GET");
   const [url, setUrl] = useState(config.url || "");
@@ -89,7 +89,7 @@ export const HttpRequestConfig = ({
   const [testResult, setTestResult] = useState<string | null>(null);
 
   useEffect(() => {
-    onChange({
+    setConfig({
       method,
       url,
       authType,
