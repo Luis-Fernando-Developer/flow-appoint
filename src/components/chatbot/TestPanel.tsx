@@ -8,6 +8,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useVariables } from "@/contexts/VariablesContext";
 import { renderTextSegments } from "@/lib/textParser";
 
+// Replace {{variableName}} with JSON.stringify(value) for safe JS interpolation
+const replaceVariablesInJs = (code: string, vars: Record<string, any>): string => {
+  return code.replace(/{{\s*([^}]+?)\s*}}/g, (_, varName) => {
+    const value = vars[varName.trim()];
+    return value !== undefined ? JSON.stringify(value) : '""';
+  });
+};
+
 // Execute JavaScript code or return literal value
 const executeJavaScript = (
   code: string,
@@ -27,6 +35,9 @@ const executeJavaScript = (
   }
   
   try {
+    // Replace {{var}} patterns with their JSON.stringify values for safe JS
+    const preparedCode = replaceVariablesInJs(trimmedCode, vars);
+    
     // Create a function with available variables and helpers in scope
     const varNames = Object.keys(vars);
     const varValues = Object.values(vars);
@@ -37,7 +48,7 @@ const executeJavaScript = (
       "setVariable",
       "getVariable",
       "variables",
-      trimmedCode
+      preparedCode
     );
     
     // Execute and return result
@@ -311,6 +322,9 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
         const allVars = { ...variables, ...extraVars };
         
         try {
+          // Replace {{var}} patterns with their JSON.stringify values for safe JS
+          const preparedCode = replaceVariablesInJs(code, allVars);
+          
           const varNames = Object.keys(allVars);
           const varValues = Object.values(allVars);
           
@@ -319,7 +333,7 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
             "setVariable",
             "getVariable",
             "variables",
-            code
+            preparedCode
           );
           
           fn(
@@ -333,6 +347,12 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
           );
         } catch (error: any) {
           console.error("Erro ao executar script:", error);
+          // Show error message in chat
+          setMessages((prev) => [...prev, { 
+            id: `error-${Date.now()}`, 
+            type: "bot", 
+            content: `⚠️ Erro no script: ${error.message}` 
+          }]);
         }
       }
       
