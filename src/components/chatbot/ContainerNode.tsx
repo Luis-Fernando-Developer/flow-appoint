@@ -1,4 +1,4 @@
-import { memo, useState, useRef } from "react";
+import { memo, useState, useRef, useLayoutEffect, useCallback } from "react";
 import { Handle, Position, NodeProps } from 'reactflow';
 import { MoreVertical } from "lucide-react";
 import { Container, Node, ButtonConfig, ConditionGroup } from "@/types/chatbot";
@@ -13,6 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+
+interface HandlePosition {
+  id: string;
+  top: number;
+  color: string;
+}
 
 interface ContainerNodeData {
   container: Container;
@@ -52,7 +58,89 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   } = data;
   const [isDragOver, setIsDragOver] = useState(false);
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
+  const [handlePositions, setHandlePositions] = useState<HandlePosition[]>([]);
   const nodesListRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Calculate handle positions for button and condition nodes
+  const calculateHandlePositions = useCallback(() => {
+    if (!containerRef.current) return;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const positions: HandlePosition[] = [];
+
+    container.nodes.forEach((node) => {
+      if (node.type === 'input-buttons') {
+        const buttons = node.config.buttons || [];
+        
+        // Find button rows by data attribute
+        buttons.forEach((btn: ButtonConfig) => {
+          const rowEl = containerRef.current?.querySelector(`[data-button-id="${btn.id}"]`);
+          if (rowEl) {
+            const rowRect = rowEl.getBoundingClientRect();
+            const top = rowRect.top - containerRect.top + rowRect.height / 2;
+            positions.push({
+              id: `${node.id}-btn-${btn.id}`,
+              top,
+              color: 'bg-blue-500',
+            });
+          }
+        });
+
+        // Default/fallback handle
+        const defaultEl = containerRef.current?.querySelector(`[data-default-id="${node.id}"]`);
+        if (defaultEl) {
+          const defaultRect = defaultEl.getBoundingClientRect();
+          const top = defaultRect.top - containerRect.top + defaultRect.height / 2;
+          positions.push({
+            id: `${node.id}-default`,
+            top,
+            color: 'bg-gray-400',
+          });
+        }
+      }
+
+      if (node.type === 'condition') {
+        const conditions: ConditionGroup[] = node.config.conditions || [];
+        
+        // Find condition rows by data attribute
+        conditions.forEach((cond: ConditionGroup) => {
+          const rowEl = containerRef.current?.querySelector(`[data-condition-id="${cond.id}"]`);
+          if (rowEl) {
+            const rowRect = rowEl.getBoundingClientRect();
+            const top = rowRect.top - containerRect.top + rowRect.height / 2;
+            positions.push({
+              id: `${node.id}-cond-${cond.id}`,
+              top,
+              color: 'bg-purple-500',
+            });
+          }
+        });
+
+        // Else handle
+        const elseEl = containerRef.current?.querySelector(`[data-else-id="${node.id}"]`);
+        if (elseEl) {
+          const elseRect = elseEl.getBoundingClientRect();
+          const top = elseRect.top - containerRect.top + elseRect.height / 2;
+          positions.push({
+            id: `${node.id}-else`,
+            top,
+            color: 'bg-gray-400',
+          });
+        }
+      }
+    });
+
+    setHandlePositions(positions);
+  }, [container.nodes]);
+
+  // Recalculate positions on layout changes
+  useLayoutEffect(() => {
+    calculateHandlePositions();
+    // Also recalculate after a short delay to catch any async renders
+    const timeout = setTimeout(calculateHandlePositions, 100);
+    return () => clearTimeout(timeout);
+  }, [calculateHandlePositions, container.nodes]);
 
   // Check if container has a button or condition node - if so, don't show bottom handle
   const hasButtonNode = container.nodes.some(n => n.type === 'input-buttons');
@@ -112,8 +200,9 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
 
   return (
     <div 
+      ref={containerRef}
       className={cn(
-        'relative bg-card py-1 px-2 rounded-xl shadow-lg border border-border min-w-[280px] transition-all duration-200',
+        'relative bg-card py-1 px-2 rounded-xl shadow-lg border border-border min-w-[280px] transition-all duration-200 overflow-visible',
         isDragOver && 'ring-2 ring-green-500 border-green-500 bg-green-50/10'
       )}
     >
@@ -191,7 +280,7 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
           )}
         </div>
 
-        {/* Handles para outros tipos de nodes (exceto input-buttons e condition que tem handles internos) */}
+        {/* Handles para outros tipos de nodes (exceto input-buttons e condition que tem handles externos) */}
         {container.nodes.map((node) => {
           if (node.type === 'set-variable') {
             return (
@@ -208,6 +297,23 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
           <Handle type="source" position={Position.Bottom} className="!bg-green-600 !w-4 !h-4 -bottom-2" />
         )}
       </div>
+
+      {/* External handles for button and condition nodes - positioned on container edge */}
+      {handlePositions.map((pos) => (
+        <Handle
+          key={pos.id}
+          type="source"
+          position={Position.Right}
+          id={pos.id}
+          className={cn("!w-3 !h-3", `!${pos.color}`)}
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: pos.top,
+            transform: 'translate(50%, -50%)',
+          }}
+        />
+      ))}
     </div>
   );
 });
