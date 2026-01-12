@@ -215,8 +215,20 @@ async function processFlow(
             value = Math.random().toString(36).substring(7);
             break;
           case "custom":
-          default:
-            value = replaceVariables(node.config.customValue || node.config.value || "", state.variables);
+          default: {
+            const customValue = node.config.customValue || node.config.value || "";
+            // Check if it's a JS expression (contains 'return')
+            if (customValue.includes("return")) {
+              try {
+                const fn = new Function("variables", customValue);
+                value = String(fn(state.variables) || "");
+              } catch (e) {
+                value = replaceVariables(customValue, state.variables);
+              }
+            } else {
+              value = replaceVariables(customValue, state.variables);
+            }
+          }
         }
 
         if (variableName) {
@@ -468,11 +480,11 @@ serve(async (req) => {
 
     const url = new URL(req.url);
     const pathParts = url.pathname.split("/").filter(Boolean);
-    const action = pathParts[pathParts.length - 1]; // start, message, or session
+    const action = pathParts[pathParts.length - 1]; // start, start-public, start-preview, message, or session
 
     console.log(`Chatbot Runtime: ${req.method} ${action}`);
 
-    // POST /start - Start new session
+    // POST /start - Start new session with flow_id
     if (action === "start" && req.method === "POST") {
       const { flow_id, company_id, client_id, initial_variables } = await req.json();
 
@@ -554,6 +566,174 @@ serve(async (req) => {
       );
     }
 
+    // POST /start-public - Start session with public_id (uses published version)
+    if (action === "start-public" && req.method === "POST") {
+      const { public_id, company_slug, client_id, initial_variables } = await req.json();
+
+      if (!public_id) {
+        return new Response(JSON.stringify({ error: "public_id is required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get company by slug if provided
+      let companyId = null;
+      if (company_slug) {
+        const { data: company } = await supabase
+          .from("companies")
+          .select("id")
+          .eq("slug", company_slug)
+          .single();
+        companyId = company?.id;
+      }
+
+      // Fetch flow by public_id
+      let query = supabase
+        .from("chatbot_flows")
+        .select("*")
+        .eq("public_id", public_id)
+        .eq("is_published", true);
+      
+      if (companyId) {
+        query = query.eq("company_id", companyId);
+      }
+
+      const { data: flow, error: flowError } = await query.single();
+
+      if (flowError || !flow) {
+        console.error("Flow not found:", flowError);
+        return new Response(JSON.stringify({ error: "Flow not found or not published" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Use published version if available, otherwise fall back to draft
+      const containers = flow.published_containers || flow.containers || [];
+      const edges = flow.published_edges || flow.edges || [];
+
+      // Find start container
+      const startContainer = containers.find((c: any) =>
+        c.nodes.some((n: any) => n.type === "start")
+      );
+
+      if (!startContainer) {
+        return new Response(JSON.stringify({ error: "No start node found in flow" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Initialize session state
+      const state: SessionState = {
+        messages: [],
+        variables: initial_variables || {},
+        currentContainerId: startContainer.id,
+        currentNodeIndex: 0,
+        waitingFor: null,
+        waitingNodeId: null,
+      };
+
+      // Process flow until waiting for input
+      const processedState = await processFlow(containers, edges, state, supabase);
+
+      // Create session in database
+      const sessionId = crypto.randomUUID();
+      const { error: insertError } = await supabase.from("chatbot_sessions").insert({
+        id: sessionId,
+        flow_id: flow.id,
+        company_id: flow.company_id,
+        client_id,
+        state: processedState,
+        status: processedState.waitingFor ? "active" : "completed",
+      });
+
+      if (insertError) {
+        console.error("Failed to create session:", insertError);
+      }
+
+      return new Response(
+        JSON.stringify({
+          session_id: sessionId,
+          messages: processedState.messages,
+          waiting_for: processedState.waitingFor,
+          buttons: processedState.buttons,
+          variables: processedState.variables,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // POST /start-preview - Start session with flow_id (uses draft version)
+    if (action === "start-preview" && req.method === "POST") {
+      const { flow_id, initial_variables } = await req.json();
+
+      if (!flow_id) {
+        return new Response(JSON.stringify({ error: "flow_id is required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Fetch flow (no active check for preview)
+      const { data: flow, error: flowError } = await supabase
+        .from("chatbot_flows")
+        .select("*")
+        .eq("id", flow_id)
+        .single();
+
+      if (flowError || !flow) {
+        console.error("Flow not found:", flowError);
+        return new Response(JSON.stringify({ error: "Flow not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Always use draft version for preview
+      const containers = flow.containers || [];
+      const edges = flow.edges || [];
+
+      // Find start container
+      const startContainer = containers.find((c: any) =>
+        c.nodes.some((n: any) => n.type === "start")
+      );
+
+      if (!startContainer) {
+        return new Response(JSON.stringify({ error: "No start node found in flow" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Initialize session state
+      const state: SessionState = {
+        messages: [],
+        variables: initial_variables || {},
+        currentContainerId: startContainer.id,
+        currentNodeIndex: 0,
+        waitingFor: null,
+        waitingNodeId: null,
+      };
+
+      // Process flow until waiting for input
+      const processedState = await processFlow(containers, edges, state, supabase);
+
+      // For preview, we don't persist the session
+      return new Response(
+        JSON.stringify({
+          session_id: `preview-${crypto.randomUUID()}`,
+          messages: processedState.messages,
+          waiting_for: processedState.waitingFor,
+          buttons: processedState.buttons,
+          variables: processedState.variables,
+          is_preview: true,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // POST /message - Send user message
     if (action === "message" && req.method === "POST") {
       const { session_id, message, button_id } = await req.json();
@@ -581,8 +761,9 @@ serve(async (req) => {
       }
 
       const flow = session.chatbot_flows;
-      const containers = flow.containers || [];
-      const edges = flow.edges || [];
+      // Use published version if the session was started from public page
+      const containers = flow.published_containers || flow.containers || [];
+      const edges = flow.published_edges || flow.edges || [];
       let state = session.state as SessionState;
 
       // Handle user message
