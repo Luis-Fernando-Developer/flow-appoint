@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Handle, Position } from "reactflow";
 import { Filter, Settings, Plus, GripVertical, Trash2 } from "lucide-react";
 import { Node, ConditionGroup, ConditionComparison } from "@/types/chatbot";
 import { Input } from "@/components/ui/input";
@@ -86,7 +87,6 @@ export const ConditionNodeItem = ({
         {conditions.map((condition, idx) => (
           <div
             key={condition.id}
-            data-condition-id={condition.id}
             className="group relative flex items-center"
           >
             <div
@@ -127,6 +127,20 @@ export const ConditionNodeItem = ({
                 )}
               </span>
             </div>
+            
+            {/* Condition handle - positioned at container edge (half in, half out) */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={`${node.id}-cond-${condition.id}`}
+              style={{ 
+                position: 'absolute',
+                right: 0,
+                top: '50%',
+                transform: 'translate(50%, -50%)',
+              }}
+              className="!bg-purple-500 !w-3 !h-3"
+            />
           </div>
         ))}
 
@@ -149,14 +163,23 @@ export const ConditionNodeItem = ({
           </div>
         )}
 
-        {/* Else/Default row */}
-        <div 
-          data-else-id={node.id}
-          className="relative flex items-center mt-3 pt-2 border-t border-dashed border-purple-300"
-        >
+        {/* Else/Default handle */}
+        <div className="relative flex items-center mt-3 pt-2 border-t border-dashed border-purple-300">
           <div className="flex-1 px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-xs text-gray-500 font-medium">
             Senão
           </div>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={`${node.id}-else`}
+            style={{ 
+              position: 'absolute',
+              right: 0,
+              top: '50%',
+              transform: 'translate(50%, -50%)',
+            }}
+            className="!bg-gray-400 !w-3 !h-3"
+          />
         </div>
       </div>
     </div>

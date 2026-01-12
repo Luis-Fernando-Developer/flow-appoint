@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Handle, Position } from "reactflow";
 import { Settings, Plus, GripVertical } from "lucide-react";
 import { Node, ButtonConfig } from "@/types/chatbot";
 import { Input } from "@/components/ui/input";
@@ -120,7 +121,6 @@ export const ButtonGroupNodeItem = ({
         {buttons.map((button) => (
           <div
             key={button.id}
-            data-button-id={button.id}
             className="group relative flex items-center"
           >
             {editingButtonId === button.id ? (
@@ -161,17 +161,40 @@ export const ButtonGroupNodeItem = ({
                 </span>
               </div>
             )}
+            
+            {/* Individual button handle - positioned at container edge (half in, half out) */}
+            <Handle
+              type="source"
+              position={Position.Right}
+              id={`${node.id}-btn-${button.id}`}
+              style={{ 
+                position: 'absolute',
+                right: 0,
+                top: '50%',
+                transform: 'translate(50%, -50%)',
+              }}
+              className="!bg-orange-500 !w-3 !h-3"
+            />
           </div>
         ))}
 
-        {/* Default/Fallback row */}
-        <div 
-          data-default-id={node.id}
-          className="relative flex items-center mt-3 pt-2 border-t border-dashed border-gray-300"
-        >
+        {/* Default/Fallback handle */}
+        <div className="relative flex items-center mt-3 pt-2 border-t border-dashed border-gray-300">
           <div className="flex-1 px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-md text-xs text-gray-500 font-medium">
             Padrão
           </div>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={`${node.id}-default`}
+            style={{ 
+              position: 'absolute',
+              right: 0,
+              top: '50%',
+              transform: 'translate(50%, -50%)',
+            }}
+            className="!bg-gray-400 !w-3 !h-3"
+          />
         </div>
 
         {/* Add new button inline - at the bottom */}
