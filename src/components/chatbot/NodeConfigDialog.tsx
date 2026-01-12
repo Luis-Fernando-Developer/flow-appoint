@@ -34,9 +34,13 @@ export const NodeConfigDialog = ({ node, open, onClose, onSave, containers = [] 
 
   const ConfigComponent = nodeConfigComponents[node.type];
 
+  // Complex nodes need larger dialog
+  const isComplexNode = ['http-request', 'webhook', 'start'].includes(node.type);
+  const dialogSize = isComplexNode ? 'max-w-2xl h-[80vh]' : 'max-w-72 h-96';
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className='max-w-72 h-96 overflow-hidden bg-background/95 backdrop-blur border border-border rounded-lg gap-5 flex flex-col justify-between px-0'>
+      <DialogContent className={`${dialogSize} overflow-hidden bg-background/95 backdrop-blur border border-border rounded-lg gap-5 flex flex-col justify-between px-0`}>
         <DialogHeader className="w-full pt-5 flex items-center justify-center pb-0 uppercase underline underline-offset-8">
           <DialogTitle className='w-full text-center text-foreground'>{node.type}</DialogTitle>
         </DialogHeader>

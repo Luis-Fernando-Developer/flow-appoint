@@ -29,10 +29,10 @@ interface WebhookConfigProps {
     responseVariable?: string;
     allowedOrigins?: string;
   };
-  onChange: (config: WebhookConfigProps["config"]) => void;
+  setConfig: (config: WebhookConfigProps["config"]) => void;
 }
 
-export const WebhookConfig = ({ config, onChange }: WebhookConfigProps) => {
+export const WebhookConfig = ({ config, setConfig }: WebhookConfigProps) => {
   const [method, setMethod] = useState(config.method || "POST");
   const [path, setPath] = useState(config.path || "");
   const [authentication, setAuthentication] = useState(
@@ -57,7 +57,7 @@ export const WebhookConfig = ({ config, onChange }: WebhookConfigProps) => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    onChange({
+    setConfig({
       method,
       path,
       authentication,

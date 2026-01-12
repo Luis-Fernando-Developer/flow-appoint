@@ -16,10 +16,10 @@ interface StartConfigProps {
     description?: string;
     initialVariables?: InitialVariable[];
   };
-  onChange: (config: StartConfigProps["config"]) => void;
+  setConfig: (config: StartConfigProps["config"]) => void;
 }
 
-export const StartConfig = ({ config, onChange }: StartConfigProps) => {
+export const StartConfig = ({ config, setConfig }: StartConfigProps) => {
   const [flowName, setFlowName] = useState(config.flowName || "");
   const [description, setDescription] = useState(config.description || "");
   const [initialVariables, setInitialVariables] = useState<InitialVariable[]>(
@@ -27,7 +27,7 @@ export const StartConfig = ({ config, onChange }: StartConfigProps) => {
   );
 
   useEffect(() => {
-    onChange({
+    setConfig({
       flowName,
       description,
       initialVariables,
