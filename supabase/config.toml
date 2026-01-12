@@ -2,3 +2,12 @@ project_id = "rprvesldwwgotoqtuhrz"
 
 [functions.get-availability]
 verify_jwt = false
+
+[functions.create-booking]
+verify_jwt = false
+
+[functions.chatbot-runtime]
+verify_jwt = false
+
+[functions.chatbot-webhook]
+verify_jwt = false

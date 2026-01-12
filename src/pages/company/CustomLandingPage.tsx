@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Divide as Hamburger } from 'hamburger-react';
 import { custom } from "zod";
+import { ChatWidget } from "@/components/chatbot/ChatWidget";
 
 interface CustomizationData {
   header_position: string;
@@ -73,6 +74,7 @@ export default function CustomLandingPage() {
   const [optionHeader, setOptionHeader] = useState(false);
   const [visibleServices, setVisibleServices] = useState(4);
   const [visibleEmployees, setVisibleEmployees] = useState(4);
+  const [activeFlowId, setActiveFlowId] = useState<string | null>(null);
 
   useEffect(() => {
     if ( slug) {
@@ -193,6 +195,18 @@ export default function CustomLandingPage() {
         .maybeSingle();
 
       setCustomization(customizationData);
+
+      // Fetch active chatbot flow
+      const { data: activeFlow } = await supabase
+        .from('chatbot_flows')
+        .select('id')
+        .eq('company_id', companyData.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (activeFlow) {
+        setActiveFlowId(activeFlow.id);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -905,6 +919,16 @@ export default function CustomLandingPage() {
             </div>
           </div>
         </footer>
+
+        {/* Chatbot Widget */}
+        {activeFlowId && company && (
+          <ChatWidget
+            flowId={activeFlowId}
+            companyId={company.id}
+            companyName={company.name}
+            primaryColor={customization?.button_color || "#3b82f6"}
+          />
+        )}
       </div>
     </div>
   );
