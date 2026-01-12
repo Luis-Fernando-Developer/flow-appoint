@@ -8,6 +8,53 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useVariables } from "@/contexts/VariablesContext";
 import { renderTextSegments } from "@/lib/textParser";
 
+// Execute JavaScript code or return literal value
+const executeJavaScript = (
+  code: string,
+  vars: Record<string, any>,
+  setVar: (name: string, value: string) => void,
+  getVar: (name: string) => string | undefined,
+  replaceVars: (text: string, extraVars?: Record<string, string>) => string
+): string => {
+  const trimmedCode = (code ?? "").trim();
+  
+  // If empty, return empty
+  if (!trimmedCode) return "";
+  
+  // If doesn't contain 'return', treat as literal value with variable substitution
+  if (!trimmedCode.includes("return")) {
+    return replaceVars(trimmedCode, vars);
+  }
+  
+  try {
+    // Create a function with available variables and helpers in scope
+    const varNames = Object.keys(vars);
+    const varValues = Object.values(vars);
+    
+    // Build function that has access to all variables and helpers
+    const fn = new Function(
+      ...varNames,
+      "setVariable",
+      "getVariable",
+      "variables",
+      trimmedCode
+    );
+    
+    // Execute and return result
+    const result = fn(
+      ...varValues,
+      setVar,
+      getVar,
+      vars
+    );
+    
+    return result !== undefined ? String(result) : "";
+  } catch (error: any) {
+    console.error("Erro ao executar código JavaScript:", error);
+    return `[Erro: ${error.message}]`;
+  }
+};
+
 // Evaluate a single comparison
 const evaluateComparison = (varValue: string, operator: string, compareValue: string): boolean => {
   const normalizedVar = (varValue ?? "").toString().trim();
@@ -231,11 +278,64 @@ export const TestPanel = ({ isOpen, onClose, startContainer, allContainers, edge
 
     if (node.type === "set-variable") {
       const variableName = node.config.variableName;
-      const value = node.config.value || "";
+      const rawValue = node.config.customValue || node.config.value || "";
+      
       if (variableName) {
-        setVariable(variableName, replaceVariablesInText(value, extraVars));
-        extraVars[variableName] = replaceVariablesInText(value, extraVars);
+        // Merge current variables with extraVars for the execution context
+        const allVars = { ...variables, ...extraVars };
+        
+        // Execute the JavaScript code or get literal value
+        const executedValue = executeJavaScript(
+          rawValue,
+          allVars,
+          (name: string, val: string) => {
+            setVariable(name, val);
+            extraVars[name] = val;
+          },
+          (name: string) => allVars[name],
+          replaceVariablesInText
+        );
+        
+        setVariable(variableName, executedValue);
+        extraVars[variableName] = executedValue;
       }
+      processNextNode(container, nodeIndex + 1, extraVars);
+      return;
+    }
+
+    // Handle script node - executes JavaScript without necessarily setting a specific variable
+    if (node.type === "script") {
+      const code = node.config.code || "";
+      
+      if (code.trim()) {
+        const allVars = { ...variables, ...extraVars };
+        
+        try {
+          const varNames = Object.keys(allVars);
+          const varValues = Object.values(allVars);
+          
+          const fn = new Function(
+            ...varNames,
+            "setVariable",
+            "getVariable",
+            "variables",
+            code
+          );
+          
+          fn(
+            ...varValues,
+            (name: string, val: string) => {
+              setVariable(name, val);
+              extraVars[name] = val;
+            },
+            (name: string) => allVars[name],
+            allVars
+          );
+        } catch (error: any) {
+          console.error("Erro ao executar script:", error);
+        }
+      }
+      
       processNextNode(container, nodeIndex + 1, extraVars);
       return;
     }
