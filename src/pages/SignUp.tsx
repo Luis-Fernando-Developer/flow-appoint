@@ -167,7 +167,7 @@ export default function SignUp() {
         return;
       }
 
-      // 1. Criar a empresa
+      // 1. Criar a empresa (usando apenas campos que existem no schema)
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert([{
@@ -175,15 +175,15 @@ export default function SignUp() {
           slug: formData.customUrl,
           owner_name: formData.ownerName,
           owner_email: formData.ownerMail,
-          owner_cpf: formData.ownerCpf.replace(/\D/g, ""),
-          cnpj: formData.companyCnpj.replace(/\D/g, ""),
-          status: 'active',
-          plan: selectedPlan?.name.toLowerCase() || 'starter'
+          status: 'active'
         }])
         .select()
         .single();
 
-      if (companyError) throw companyError;
+      if (companyError) {
+        console.error('Erro ao criar empresa:', companyError);
+        throw companyError;
+      }
 
       // 2. Criar o usuário no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -223,7 +223,6 @@ export default function SignUp() {
             plan_id: selectedPlan.id,
             billing_period: period,
             original_price: selectedPlan.price,
-            discounted_price: selectedPlan.price,
             status: 'pending'
           }]);
       }
