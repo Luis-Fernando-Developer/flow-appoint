@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { User } from '@supabase/supabase-js';
 import { PublishDialog } from '@/components/chatbot/PublishDialog';
 import { BotSettingsDialog } from '@/components/chatbot/BotSettingsDialog';
+import { slugifyBotName } from '@/lib/slugify';
 
 interface FlowData {
   id: string;
@@ -32,10 +33,10 @@ interface CompanyData {
 
 function ChatbotEditorContent({ 
   companyData, 
-  flowId,
+  botName,
 }: { 
   companyData: CompanyData; 
-  flowId: string;
+  botName: string;
 }) {
   const navigate = useNavigate();
   const [flow, setFlow] = useState<FlowData | null>(null);
@@ -50,44 +51,51 @@ function ChatbotEditorContent({
   const getCenterPositionRef = useRef<(() => { x: number; y: number }) | null>(null);
 
   useEffect(() => {
-    loadFlow();
-  }, [flowId]);
+    if (companyData?.id && botName) loadFlow();
+  }, [companyData?.id, botName]);
 
   const loadFlow = async () => {
     try {
+      // Busca todos os fluxos da empresa
       const { data, error } = await supabase
         .from('chatbot_flows')
         .select('*')
-        .eq('id', flowId)
-        .single();
+        .eq('company_id', companyData.id);
 
       if (error) throw error;
-      if (data) {
-        const flowData = data as any;
-        setFlow({
-          id: flowData.id,
-          name: flowData.name,
-          description: flowData.description,
-          containers: (flowData.containers as Container[]) || [],
-          edges: (flowData.edges as Edge[]) || [],
-          is_published: flowData.is_published ?? false,
-          public_id: flowData.public_id ?? null,
-          settings: (flowData.settings as Record<string, any>) || {},
-        });
-        setContainers((data.containers as unknown as Container[]) || []);
-        setEdges((data.edges as unknown as Edge[]) || []);
+
+      // Encontra o fluxo pelo nome slugificado
+      const targetFlow = (data as any[])?.find(f => slugifyBotName(f.name) === botName);
+      
+      if (!targetFlow) {
+        toast.error('Fluxo não encontrado');
+        navigate(`/${companyData.slug}/admin/chatbot`);
+        return;
       }
+
+      setFlow({
+        id: targetFlow.id,
+        name: targetFlow.name,
+        description: targetFlow.description,
+        containers: (targetFlow.containers as Container[]) || [],
+        edges: (targetFlow.edges as Edge[]) || [],
+        is_published: targetFlow.is_published ?? false,
+        public_id: targetFlow.public_id ?? null,
+        settings: (targetFlow.settings as Record<string, any>) || {},
+      });
+      setContainers((targetFlow.containers as Container[]) || []);
+      setEdges((targetFlow.edges as Edge[]) || []);
     } catch (error) {
       console.error('Error loading flow:', error);
       toast.error('Erro ao carregar fluxo');
-      navigate(`/${companyData.slug}/chatbot`);
+      navigate(`/${companyData.slug}/admin/chatbot`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSave = async () => {
-    if (!flowId) return;
+    if (!flow?.id) return;
     setIsSaving(true);
     try {
       const { error } = await supabase
@@ -97,7 +105,7 @@ function ChatbotEditorContent({
           edges: edges as any,
           updated_at: new Date().toISOString()
         })
-        .eq('id', flowId);
+        .eq('id', flow.id);
 
       if (error) throw error;
       toast.success('Fluxo salvo!');
@@ -272,7 +280,7 @@ function ChatbotEditorContent({
       <PublishDialog
         open={showPublishDialog}
         onOpenChange={setShowPublishDialog}
-        flowId={flowId}
+        flowId={flow.id}
         currentPublicId={flow.public_id}
         isPublished={flow.is_published}
         companySlug={companyData.slug}
@@ -284,7 +292,7 @@ function ChatbotEditorContent({
       <BotSettingsDialog
         open={showSettingsDialog}
         onOpenChange={setShowSettingsDialog}
-        flowId={flowId}
+        flowId={flow.id}
         flowName={flow.name}
         flowDescription={flow.description}
         settings={flow.settings}
@@ -295,7 +303,7 @@ function ChatbotEditorContent({
 }
 
 export default function ChatbotEditor() {
-  const { slug, botId } = useParams();
+  const { slug, botName } = useParams();
   const navigate = useNavigate();
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -335,7 +343,7 @@ export default function ChatbotEditor() {
     }
   }, [slug, navigate]);
 
-  if (isLoading || !companyData || !botId) {
+  if (isLoading || !companyData || !botName) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -346,7 +354,7 @@ export default function ChatbotEditor() {
   return (
     <ChatbotEditorContent 
       companyData={companyData} 
-      flowId={botId}
+      botName={botName}
     />
   );
 }

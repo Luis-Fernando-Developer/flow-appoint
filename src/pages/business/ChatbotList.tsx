@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { User } from '@supabase/supabase-js';
 import { ImportExportDialog } from '@/components/chatbot/ImportExportDialog';
+import { slugifyBotName } from '@/lib/slugify';
 
 interface FlowListItem {
   id: string;
@@ -110,9 +111,10 @@ function ChatbotListContent({
 
       toast.success('Fluxo criado com sucesso!');
       setShowCreateDialog(false);
+      const botSlug = slugifyBotName(data.name);
       setNewFlowName('');
       setNewFlowDescription('');
-      navigate(`/${companyData.slug}/admin/chatbot/${data.id}/edit`);
+      navigate(`/${companyData.slug}/admin/chatbot/${botSlug}/edit`);
     } catch (error) {
       console.error('Error creating flow:', error);
       toast.error('Erro ao criar fluxo');
@@ -313,7 +315,7 @@ function ChatbotListContent({
               <Card 
                 key={flowItem.id}
                 className="cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => navigate(`/${companyData.slug}/admin/chatbot/${flowItem.id}/edit`)}
+                onClick={() => navigate(`/${companyData.slug}/admin/chatbot/${slugifyBotName(flowItem.name)}/edit`)}
               >
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                   <div className="flex-1">
