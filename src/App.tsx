@@ -68,7 +68,7 @@ const App = () => (
           {/* rota chatbot lista painel admin empresa */}
           <Route path="/:slug/admin/chatbot" element={<ChatbotList />} />
           {/* rota chatbot editor com ID do bot na URL */}
-          <Route path="/:slug/admin/chatbot/:botId/edit" element={<ChatbotEditor />} />
+          <Route path="/:slug/admin/chatbot/:botName/edit" element={<ChatbotEditor />} />
           {/* rota horários painel admin empresa */}
           <Route path="/:slug/admin/horarios" element={<BusinessSchedule />} />
 
