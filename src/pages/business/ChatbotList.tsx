@@ -62,6 +62,9 @@ function ChatbotListContent({
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renameFlowId, setRenameFlowId] = useState<string | null>(null);
+  const [renameFlowName, setRenameFlowName] = useState('');
   const [newFlowName, setNewFlowName] = useState('');
   const [newFlowDescription, setNewFlowDescription] = useState('');
 
@@ -245,6 +248,36 @@ function ChatbotListContent({
     setShowImportDialog(false);
   };
 
+  const openRenameDialog = (flow: FlowListItem) => {
+    setRenameFlowId(flow.id);
+    setRenameFlowName(flow.name);
+    setShowRenameDialog(true);
+  };
+
+  const handleRenameFlow = async () => {
+    if (!renameFlowId || !renameFlowName.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('chatbot_flows')
+        .update({ name: renameFlowName.trim() })
+        .eq('id', renameFlowId);
+
+      if (error) throw error;
+
+      setFlows(prev => prev.map(f => 
+        f.id === renameFlowId ? { ...f, name: renameFlowName.trim() } : f
+      ));
+      toast.success('Nome atualizado!');
+      setShowRenameDialog(false);
+      setRenameFlowId(null);
+      setRenameFlowName('');
+    } catch (error) {
+      console.error('Error renaming flow:', error);
+      toast.error('Erro ao renomear fluxo');
+    }
+  };
+
   const getPublicUrl = (publicId: string) => {
     const baseUrl = window.location.origin;
     return `${baseUrl}/${companyData.slug}/flow/${publicId}`;
@@ -321,7 +354,16 @@ function ChatbotListContent({
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                   <div className="flex-1">
                     <CardTitle className="text-base flex items-center gap-2 flex-wrap">
-                      {flowItem.name}
+                      <span 
+                        className="cursor-pointer hover:text-primary hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRenameDialog(flowItem);
+                        }}
+                        title="Clique para renomear"
+                      >
+                        {flowItem.name}
+                      </span>
                       {flowItem.is_active && (
                         <Badge variant="default" className="text-xs">Ativo</Badge>
                       )}
@@ -469,6 +511,37 @@ function ChatbotListContent({
           companyId={companyData.id}
           onSuccess={handleImportSuccess}
         />
+
+        {/* Rename Dialog */}
+        <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Renomear Fluxo</DialogTitle>
+              <DialogDescription>
+                Digite o novo nome para este fluxo de chatbot
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="renameName">Novo Nome</Label>
+                <Input
+                  id="renameName"
+                  value={renameFlowName}
+                  onChange={(e) => setRenameFlowName(e.target.value)}
+                  placeholder="Ex: Atendimento Principal"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleRenameFlow} disabled={!renameFlowName.trim()}>
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </BusinessLayout>
   );

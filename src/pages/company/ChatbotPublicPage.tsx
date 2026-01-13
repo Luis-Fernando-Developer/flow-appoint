@@ -99,17 +99,19 @@ export default function ChatbotPublicPage() {
       setCompany(companyData);
 
       // Get flow by public_id directly - query the correct columns
+      // Must be published AND active to be accessible
       const { data: flowData, error: flowError } = await supabaseClient
         .from('chatbot_flows')
-        .select('id, name, settings, is_published, public_id')
+        .select('id, name, settings, is_published, is_active, public_id')
         .eq('company_id', companyData.id)
         .eq('public_id', publicId)
         .eq('is_published', true)
+        .eq('is_active', true) // Only allow active bots
         .maybeSingle();
 
       if (flowError || !flowData) {
         console.error('Flow query error:', flowError);
-        setError('Chatbot não encontrado ou não está publicado');
+        setError('Chatbot não encontrado, não está publicado ou está desativado');
         setIsLoading(false);
         return;
       }
