@@ -181,6 +181,53 @@ export type Database = {
           },
         ]
       }
+      business_hours: {
+        Row: {
+          break_end: string | null
+          break_start: string | null
+          close_time: string | null
+          company_id: string
+          created_at: string
+          day_of_week: number
+          id: string
+          is_open: boolean | null
+          open_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          break_end?: string | null
+          break_start?: string | null
+          close_time?: string | null
+          company_id: string
+          created_at?: string
+          day_of_week: number
+          id?: string
+          is_open?: boolean | null
+          open_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          break_end?: string | null
+          break_start?: string | null
+          close_time?: string | null
+          company_id?: string
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          is_open?: boolean | null
+          open_time?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_hours_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chatbot_flows: {
         Row: {
           company_id: string
@@ -283,6 +330,80 @@ export type Database = {
             columns: ["flow_id"]
             isOneToOne: false
             referencedRelation: "chatbot_flows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_rewards: {
+        Row: {
+          client_id: string | null
+          company_id: string
+          count_specific_service: boolean | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          required_procedures: number
+          reward_service_id: string | null
+          specific_service_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          company_id: string
+          count_specific_service?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          required_procedures?: number
+          reward_service_id?: string | null
+          specific_service_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          company_id?: string
+          count_specific_service?: boolean | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          required_procedures?: number
+          reward_service_id?: string | null
+          specific_service_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_rewards_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_rewards_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_rewards_reward_service_id_fkey"
+            columns: ["reward_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_rewards_specific_service_id_fkey"
+            columns: ["specific_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -420,6 +541,50 @@ export type Database = {
           },
         ]
       }
+      company_schedule_settings: {
+        Row: {
+          allow_simultaneous_breaks: boolean | null
+          company_id: string
+          created_at: string
+          id: string
+          max_advance_days: number | null
+          max_simultaneous_breaks: number | null
+          min_advance_hours: number | null
+          slot_duration_minutes: number | null
+          updated_at: string
+        }
+        Insert: {
+          allow_simultaneous_breaks?: boolean | null
+          company_id: string
+          created_at?: string
+          id?: string
+          max_advance_days?: number | null
+          max_simultaneous_breaks?: number | null
+          min_advance_hours?: number | null
+          slot_duration_minutes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          allow_simultaneous_breaks?: boolean | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          max_advance_days?: number | null
+          max_simultaneous_breaks?: number | null
+          min_advance_hours?: number | null
+          slot_duration_minutes?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_schedule_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_subscriptions: {
         Row: {
           billing_period: string
@@ -479,6 +644,162 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_absences: {
+        Row: {
+          absence_type: string
+          company_id: string
+          created_at: string
+          employee_id: string | null
+          end_date: string
+          id: string
+          reason: string | null
+          start_date: string
+        }
+        Insert: {
+          absence_type: string
+          company_id: string
+          created_at?: string
+          employee_id?: string | null
+          end_date: string
+          id?: string
+          reason?: string | null
+          start_date: string
+        }
+        Update: {
+          absence_type?: string
+          company_id?: string
+          created_at?: string
+          employee_id?: string | null
+          end_date?: string
+          id?: string
+          reason?: string | null
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_absences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_absences_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_availability: {
+        Row: {
+          available_date: string
+          break_end: string | null
+          break_start: string | null
+          company_id: string
+          created_at: string
+          employee_id: string | null
+          end_time: string
+          id: string
+          start_time: string
+        }
+        Insert: {
+          available_date: string
+          break_end?: string | null
+          break_start?: string | null
+          company_id: string
+          created_at?: string
+          employee_id?: string | null
+          end_time: string
+          id?: string
+          start_time: string
+        }
+        Update: {
+          available_date?: string
+          break_end?: string | null
+          break_start?: string | null
+          company_id?: string
+          created_at?: string
+          employee_id?: string | null
+          end_time?: string
+          id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_availability_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_availability_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_schedules: {
+        Row: {
+          break_end: string | null
+          break_start: string | null
+          company_id: string
+          created_at: string
+          day_of_week: number
+          employee_id: string | null
+          end_time: string | null
+          id: string
+          is_working: boolean | null
+          start_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          break_end?: string | null
+          break_start?: string | null
+          company_id: string
+          created_at?: string
+          day_of_week: number
+          employee_id?: string | null
+          end_time?: string | null
+          id?: string
+          is_working?: boolean | null
+          start_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          break_end?: string | null
+          break_start?: string | null
+          company_id?: string
+          created_at?: string
+          day_of_week?: number
+          employee_id?: string | null
+          end_time?: string | null
+          id?: string
+          is_working?: boolean | null
+          start_time?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_schedules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -690,6 +1011,7 @@ export type Database = {
           created_at: string
           description: string | null
           duration: number
+          duration_minutes: number | null
           id: string
           is_active: boolean | null
           name: string
@@ -701,6 +1023,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration?: number
+          duration_minutes?: number | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -712,6 +1035,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration?: number
+          duration_minutes?: number | null
           id?: string
           is_active?: boolean | null
           name?: string
