@@ -364,8 +364,10 @@ function ChatbotListContent({
                       >
                         {flowItem.name}
                       </span>
-                      {flowItem.is_active && (
+                      {flowItem.is_active ? (
                         <Badge variant="default" className="text-xs">Ativo</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs text-muted-foreground">Desativado</Badge>
                       )}
                       {flowItem.is_published && (
                         <Badge variant="secondary" className="text-xs">
