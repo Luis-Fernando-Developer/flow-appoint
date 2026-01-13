@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getEdgeFunctionUrl } from "@/lib/supabaseHelpers";
 
 interface Service {
   id: string;
@@ -460,7 +461,7 @@ export default function ClientBooking() {
             let allHaveSlot = true;
             for (const sId of serviceIds) {
               const response = await fetch(
-                `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${sId}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
+                `${getEdgeFunctionUrl('get-availability')}?company_id=${company.id}&service_id=${sId}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
                 { method: 'GET', headers: { 'Content-Type': 'application/json' } }
               );
               if (!response.ok) { allHaveSlot = false; break; }
@@ -473,7 +474,7 @@ export default function ClientBooking() {
             continue;
           }
           const response = await fetch(
-            `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${selectedService.id}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
+            `${getEdgeFunctionUrl('get-availability')}?company_id=${company.id}&service_id=${selectedService.id}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
             {
               method: 'GET',
               headers: {
@@ -531,7 +532,7 @@ export default function ClientBooking() {
               return;
             }
           const response = await fetch(
-              `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${firstServiceId}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
+              `${getEdgeFunctionUrl('get-availability')}?company_id=${company.id}&service_id=${firstServiceId}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
               { method: 'GET', headers: { 'Content-Type': 'application/json' } }
             );
           if (!response.ok) throw new Error('Erro ao buscar disponibilidade');
@@ -550,7 +551,7 @@ export default function ClientBooking() {
         }
       
       const response = await fetch(
-        `https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/get-availability?company_id=${company.id}&service_id=${selectedService.id}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
+        `${getEdgeFunctionUrl('get-availability')}?company_id=${company.id}&service_id=${selectedService.id}&employee_id=${selectedEmployee.id}&date=${dateStr}`,
         {
           method: 'GET',
           headers: {
@@ -658,7 +659,7 @@ export default function ClientBooking() {
       }
 
       
-      const response = await fetch(`https://rprvesldwwgotoqtuhrz.supabase.co/functions/v1/create-booking`, {
+      const response = await fetch(getEdgeFunctionUrl('create-booking'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
