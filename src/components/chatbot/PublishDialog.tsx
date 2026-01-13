@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import { Container, Edge } from '@/types/chatbot';
 
@@ -84,7 +84,7 @@ export function PublishDialog({
     setIsPublishing(true);
     try {
       // Check if public_id is already in use by another flow
-      const { data: allFlows } = await supabase
+      const { data: allFlows } = await supabaseClient
         .from('chatbot_flows')
         .select('id')
         .neq('id', flowId);
@@ -105,7 +105,7 @@ export function PublishDialog({
         published_edges: edges,
       };
 
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('chatbot_flows')
         .update(updateData)
         .eq('id', flowId);
@@ -127,7 +127,7 @@ export function PublishDialog({
     setIsUnpublishing(true);
     try {
       const updateData: any = { is_published: false };
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('chatbot_flows')
         .update(updateData)
         .eq('id', flowId);
