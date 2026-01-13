@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MapPin, Phone, Mail, Menu, LogInIcon, UserPlus2, ChevronDown, DoorClosedIcon, X, ChevronRight, TimerIcon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseClient } from "@/lib/supabaseClient";
 import { BookingLogo } from "@/components/BookingLogo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +102,7 @@ export default function CustomLandingPage() {
   const fetchData = async () => {
     try {
       // Fetch company data
-      const { data: companyData, error: companyError } = await supabase
+      const { data: companyData, error: companyError } = await supabaseClient
         .from('companies')
         .select('*')
         .eq('slug', slug)
@@ -117,7 +117,7 @@ export default function CustomLandingPage() {
       setCompany(companyData);
 
       // Fetch services data
-      const { data: servicesData } = await supabase
+      const { data: servicesData } = await supabaseClient
         .from('services')
         .select('*')
         .eq('company_id', companyData.id)
@@ -126,7 +126,7 @@ export default function CustomLandingPage() {
       setServices(servicesData || []);
 
       // Buscar combos e mapear services para cada item (caso não haja FKs)
-      const { data: combosData, error: combosError } = await supabase
+      const { data: combosData, error: combosError } = await supabaseClient
         .from('service_combos')
         .select('*, items:service_combo_items(*)')
         .eq('company_id', companyData.id)
@@ -148,7 +148,7 @@ export default function CustomLandingPage() {
 
         let servicesMap: Record<string, any> = {};
         if (serviceIds.length > 0) {
-          const { data: servicesList } = await supabase
+          const { data: servicesList } = await supabaseClient
             .from('services')
             .select('id, name, price, image_url')
             .in('id', serviceIds);
@@ -170,7 +170,7 @@ export default function CustomLandingPage() {
       }
 
       // Fetch employees data - apenas funcionários ativos
-      const { data: employeesData } = await supabase
+      const { data: employeesData } = await supabaseClient
         .from('employees')
         .select('*')
         .eq('company_id', companyData.id)
@@ -180,7 +180,7 @@ export default function CustomLandingPage() {
 
       // Fetch employee services relationship
       if (employeesData && employeesData.length > 0) {
-        const { data: employeeServicesData } = await supabase
+        const { data: employeeServicesData } = await supabaseClient
           .from('employee_services')
           .select(`
             employee_id,
@@ -196,7 +196,7 @@ export default function CustomLandingPage() {
       }
 
       // Fetch customization data
-      const { data: customizationData } = await supabase
+      const { data: customizationData } = await supabaseClient
         .from('company_customizations')
         .select('*')
         .eq('company_id', companyData.id)
@@ -216,7 +216,7 @@ export default function CustomLandingPage() {
       }
 
       // Fetch active chatbot flow
-      const { data: activeFlow } = await supabase
+      const { data: activeFlow } = await supabaseClient
         .from('chatbot_flows')
         .select('id')
         .eq('company_id', companyData.id)
@@ -262,7 +262,7 @@ export default function CustomLandingPage() {
     if (!customization) return null;
     
     if (customization.logo_type === 'upload' && customization.logo_upload_path) {
-      const { data } = supabase.storage
+      const { data } = supabaseClient.storage
         .from('company-logos')
         .getPublicUrl(customization.logo_upload_path);
       return data.publicUrl;

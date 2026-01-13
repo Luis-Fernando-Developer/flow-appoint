@@ -10,7 +10,7 @@ import { Container, NodeType, Edge } from '@/types/chatbot';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -74,7 +74,7 @@ function ChatbotBuilderContent({
 
   const loadFlows = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('chatbot_flows')
         .select('id, name, description, is_active, created_at, updated_at')
         .eq('company_id', companyData.id)
@@ -92,7 +92,7 @@ function ChatbotBuilderContent({
 
   const loadFlow = async (flowId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('chatbot_flows')
         .select('*')
         .eq('id', flowId)
@@ -115,7 +115,7 @@ function ChatbotBuilderContent({
     if (!newFlowName.trim()) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('chatbot_flows')
         .insert([{
           company_id: companyData.id,
@@ -144,7 +144,7 @@ function ChatbotBuilderContent({
   const handleSave = async () => {
     if (!selectedFlowId) return;
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('chatbot_flows')
         .update({ 
           containers: containers as any, 
@@ -163,7 +163,7 @@ function ChatbotBuilderContent({
 
   const handleDeleteFlow = async (flowId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('chatbot_flows')
         .delete()
         .eq('id', flowId);
@@ -180,13 +180,13 @@ function ChatbotBuilderContent({
   const handleToggleActive = async (flowId: string, currentState: boolean) => {
     try {
       if (!currentState) {
-        await supabase
+        await supabaseClient
           .from('chatbot_flows')
           .update({ is_active: false })
           .eq('company_id', companyData.id);
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('chatbot_flows')
         .update({ is_active: !currentState })
         .eq('id', flowId);
@@ -496,14 +496,14 @@ export default function ChatbotBuilder() {
   useEffect(() => {
     async function loadData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) {
           navigate(`/${slug}/admin/login`);
           return;
         }
         setCurrentUser(user);
 
-        const { data: company, error: companyError } = await supabase
+        const { data: company, error: companyError } = await supabaseClient
           .from('companies')
           .select('id, name, slug')
           .eq('slug', slug)
@@ -516,7 +516,7 @@ export default function ChatbotBuilder() {
         }
         setCompanyData(company);
 
-        const { data: employee } = await supabase
+        const { data: employee } = await supabaseClient
           .from('employees')
           .select('role')
           .eq('company_id', company.id)

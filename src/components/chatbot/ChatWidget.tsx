@@ -3,7 +3,7 @@ import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { supabase } from "@/integrations/supabase/client";
+import { getEdgeFunctionUrl } from "@/lib/supabaseHelpers";
 
 interface Message {
   id: string;
@@ -43,8 +43,13 @@ export const ChatWidget = ({
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const runtimeUrl = import.meta.env.VITE_CHATBOT_RUNTIME_URL ||
-    `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
+  const getRuntimeUrl = () => {
+    try {
+      return getEdgeFunctionUrl('chatbot-runtime');
+    } catch {
+      return `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chatbot-runtime`;
+    }
+  };
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -70,7 +75,7 @@ export const ChatWidget = ({
     setError(null);
 
     try {
-      const response = await fetch(`${runtimeUrl}/chatbot-runtime/start`, {
+      const response = await fetch(`${getRuntimeUrl()}/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -108,7 +113,7 @@ export const ChatWidget = ({
     setInput("");
 
     try {
-      const response = await fetch(`${runtimeUrl}/chatbot-runtime/message`, {
+      const response = await fetch(`${getRuntimeUrl()}/message`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

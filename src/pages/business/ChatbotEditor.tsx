@@ -7,7 +7,7 @@ import { TestPanel } from '@/components/chatbot/TestPanel';
 import { NodesSidebar } from '@/components/chatbot/NodesSidebar';
 import { Container, NodeType, Edge } from '@/types/chatbot';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import { User } from '@supabase/supabase-js';
 import { PublishDialog } from '@/components/chatbot/PublishDialog';
@@ -57,7 +57,7 @@ function ChatbotEditorContent({
   const loadFlow = async () => {
     try {
       // Busca todos os fluxos da empresa
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('chatbot_flows')
         .select('*')
         .eq('company_id', companyData.id);
@@ -98,7 +98,7 @@ function ChatbotEditorContent({
     if (!flow?.id) return;
     setIsSaving(true);
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('chatbot_flows')
         .update({ 
           containers: containers as any, 
@@ -312,14 +312,14 @@ export default function ChatbotEditor() {
   useEffect(() => {
     async function loadData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) {
           navigate(`/${slug}/admin/login`);
           return;
         }
         setCurrentUser(user);
 
-        const { data: company, error: companyError } = await supabase
+        const { data: company, error: companyError } = await supabaseClient
           .from('companies')
           .select('id, name, slug')
           .eq('slug', slug)

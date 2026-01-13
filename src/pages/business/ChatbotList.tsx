@@ -5,7 +5,7 @@ import { BusinessLayout } from '@/components/business/BusinessLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -70,18 +70,18 @@ function ChatbotListContent({
 
   const loadFlows = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('chatbot_flows')
-        .select('id, name, description, is_active, created_at, updated_at')
+        .select('id, name, description, is_active, is_published, public_id, published_at, created_at, updated_at')
         .eq('company_id', companyData.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setFlows((data || []).map(f => ({
         ...f,
-        is_published: (f as any).is_published ?? false,
-        public_id: (f as any).public_id ?? null,
-        published_at: (f as any).published_at ?? null,
+        is_published: f.is_published ?? false,
+        public_id: f.public_id ?? null,
+        published_at: f.published_at ?? null,
       })));
     } catch (error) {
       console.error('Error loading flows:', error);
@@ -95,7 +95,7 @@ function ChatbotListContent({
     if (!newFlowName.trim()) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('chatbot_flows')
         .insert([{
           company_id: companyData.id,
@@ -123,7 +123,7 @@ function ChatbotListContent({
 
   const handleDeleteFlow = async (flowId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('chatbot_flows')
         .delete()
         .eq('id', flowId);
@@ -140,13 +140,13 @@ function ChatbotListContent({
   const handleToggleActive = async (flowId: string, currentState: boolean) => {
     try {
       if (!currentState) {
-        await supabase
+        await supabaseClient
           .from('chatbot_flows')
           .update({ is_active: false })
           .eq('company_id', companyData.id);
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('chatbot_flows')
         .update({ is_active: !currentState })
         .eq('id', flowId);
@@ -167,7 +167,7 @@ function ChatbotListContent({
 
   const handleDuplicate = async (flowId: string) => {
     try {
-      const { data: flow, error: fetchError } = await supabase
+      const { data: flow, error: fetchError } = await supabaseClient
         .from('chatbot_flows')
         .select('*')
         .eq('id', flowId)
@@ -175,7 +175,7 @@ function ChatbotListContent({
 
       if (fetchError || !flow) throw fetchError;
 
-      const { data: newFlow, error: insertError } = await supabase
+      const { data: newFlow, error: insertError } = await supabaseClient
         .from('chatbot_flows')
         .insert([{
           company_id: companyData.id,
@@ -204,7 +204,7 @@ function ChatbotListContent({
 
   const handleExport = async (flowId: string) => {
     try {
-      const { data: flow, error } = await supabase
+      const { data: flow, error } = await supabaseClient
         .from('chatbot_flows')
         .select('name, description, containers, edges')
         .eq('id', flowId)
@@ -484,14 +484,14 @@ export default function ChatbotList() {
   useEffect(() => {
     async function loadData() {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabaseClient.auth.getUser();
         if (!user) {
           navigate(`/${slug}/admin/login`);
           return;
         }
         setCurrentUser(user);
 
-        const { data: company, error: companyError } = await supabase
+        const { data: company, error: companyError } = await supabaseClient
           .from('companies')
           .select('id, name, slug')
           .eq('slug', slug)
@@ -504,7 +504,7 @@ export default function ChatbotList() {
         }
         setCompanyData(company);
 
-        const { data: employee } = await supabase
+        const { data: employee } = await supabaseClient
           .from('employees')
           .select('role')
           .eq('company_id', company.id)
