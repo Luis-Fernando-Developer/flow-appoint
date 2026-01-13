@@ -20,6 +20,9 @@ interface Employee {
   role: string | null;
   is_active: boolean | null;
   created_at: string;
+  // Optional fields for EditEmployeeDialog compatibility
+  employee_type?: string;
+  avatar_url?: string;
 }
 
 interface Company {
@@ -222,7 +225,6 @@ export default function BusinessEmployees() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-12 h-12">
-                      <AvatarImage src={employee.avatar_url} />
                       <AvatarFallback>{getInitials(employee.name)}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -298,7 +300,13 @@ export default function BusinessEmployees() {
         </div>
 
         <EditEmployeeDialog
-          employee={editingEmployee}
+          employee={editingEmployee ? {
+            ...editingEmployee,
+            email: editingEmployee.email || "",
+            role: editingEmployee.role || "employee",
+            employee_type: editingEmployee.employee_type || "fixo",
+            is_active: editingEmployee.is_active ?? true
+          } : null}
           companyId={company.id}
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
