@@ -21,6 +21,7 @@ interface PublishDialogProps {
   flowId: string;
   currentPublicId: string | null;
   isPublished: boolean;
+  companyId: string;
   companySlug: string;
   containers: Container[];
   edges: Edge[];
@@ -33,6 +34,7 @@ export function PublishDialog({
   flowId,
   currentPublicId,
   isPublished,
+  companyId,
   companySlug,
   containers,
   edges,
@@ -83,15 +85,17 @@ export function PublishDialog({
 
     setIsPublishing(true);
     try {
-      // Check if public_id is already in use by another flow
-      const { data: allFlows } = await supabaseClient
+      // Check if public_id is already in use by another flow within the same company
+      const { data: existingFlow } = await supabaseClient
         .from('chatbot_flows')
         .select('id')
-        .neq('id', flowId);
+        .eq('company_id', companyId)
+        .eq('public_id', publicId)
+        .neq('id', flowId)
+        .maybeSingle();
 
-      const existing = (allFlows as any[])?.find(f => (f as any).public_id === publicId);
-      if (existing) {
-        setValidationError('Este ID já está em uso por outro fluxo');
+      if (existingFlow) {
+        setValidationError('Este ID público já está em uso por outro chatbot da sua empresa');
         setIsPublishing(false);
         return;
       }
