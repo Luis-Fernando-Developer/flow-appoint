@@ -56,16 +56,13 @@ export default function SignUp() {
       if (error || !data) return;
 
       let price = data.monthly_price;
-      let checkoutUrl = data.monthly_checkout_url;
       let periodLabel = 'mensal';
 
       if (period === 'quarterly') {
         price = data.quarterly_price;
-        checkoutUrl = data.quarterly_checkout_url;
         periodLabel = 'trimestral';
       } else if (period === 'annual') {
         price = data.annual_price;
-        checkoutUrl = data.annual_checkout_url;
         periodLabel = 'anual';
       }
 
@@ -74,7 +71,7 @@ export default function SignUp() {
         name: data.name,
         price,
         period: periodLabel,
-        checkoutUrl
+        checkoutUrl: null // Checkout URLs not in current schema
       });
     } catch (error) {
       console.error('Error fetching plan:', error);

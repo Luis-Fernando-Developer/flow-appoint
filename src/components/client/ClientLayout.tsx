@@ -14,16 +14,17 @@ import { ClientCancelDialog } from "./ClientCancelDialog";
 interface Booking {
   id: string;
   booking_date: string;
-  booking_time: string;
-  duration_minutes: number;
-  price: number;
-  booking_status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
+  start_time: string;
+  end_time: string;
+  status: string;
   notes?: string;
   service_id: string;
   employee_id?: string;
   service: {
     name: string;
     description?: string;
+    duration_minutes?: number;
+    price?: number;
   };
   company: {
     name: string;
@@ -124,7 +125,7 @@ export default function ClientLayout() {
         .from('bookings')
         .select(`
           *,
-          service:services(name, description),
+          service:services(name, description, duration_minutes, price),
           company:companies(name, slug)
         `)
         .eq('client_id', clientData.id)
@@ -149,7 +150,7 @@ export default function ClientLayout() {
     try {
       const { error } = await supabase
         .from('bookings')
-        .update({ booking_status: 'cancelled' })
+        .update({ status: 'cancelled' })
         .eq('id', bookingId);
 
       if (error) throw error;
@@ -157,7 +158,7 @@ export default function ClientLayout() {
       setBookings(prev => 
         prev.map(booking => 
           booking.id === bookingId 
-            ? { ...booking, booking_status: 'cancelled' }
+            ? { ...booking, status: 'cancelled' }
             : booking
         )
       );
@@ -189,14 +190,14 @@ export default function ClientLayout() {
 
   const canModifyBooking = (booking: Booking) => {
     // Only pending or confirmed can be modified
-    if (booking.booking_status !== 'pending' && booking.booking_status !== 'confirmed') {
+    if (booking.status !== 'pending' && booking.status !== 'confirmed') {
       return false;
     }
     
     // Check if booking time has passed or is within 30 minutes
     const now = new Date();
     const [year, month, day] = booking.booking_date.split('-').map(Number);
-    const [hours, minutes] = booking.booking_time.split(':').map(Number);
+    const [hours, minutes] = booking.start_time.split(':').map(Number);
     const bookingDateTime = new Date(year, month - 1, day, hours, minutes);
     
     // Must be at least 30 minutes before the appointment
@@ -295,23 +296,23 @@ export default function ClientLayout() {
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-semibold text-lg">{booking.service.name}</h3>
-                                <Badge variant={statusLabels[booking.booking_status]?.variant || "outline"}>
-                                  {statusLabels[booking.booking_status]?.label || booking.booking_status}
+                                <h3 className="font-semibold text-lg">{booking.service?.name}</h3>
+                                <Badge variant={statusLabels[booking.status]?.variant || "outline"}>
+                                  {statusLabels[booking.status]?.label || booking.status}
                                 </Badge>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-muted-foreground mb-3">
                                 <div className="flex items-center gap-1">
                                   <Calendar className="h-4 w-4" />
-                                  {booking.booking_date} às {booking.booking_time}
+                                  {booking.booking_date} às {booking.start_time}
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Clock className="h-4 w-4" />
-                                  {booking.duration_minutes} minutos
+                                  {booking.service?.duration_minutes || 30} minutos
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <DollarSign className="h-4 w-4" />
-                                  R$ {booking.price.toFixed(2)}
+                                  R$ {(booking.service?.price || 0).toFixed(2)}
                                 </div>
                               </div>
                               {booking.notes && (

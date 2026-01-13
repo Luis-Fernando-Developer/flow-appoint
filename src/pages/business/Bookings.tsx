@@ -170,7 +170,7 @@ export default function BusinessBookings() {
       `)
       .eq('company_id', companyId)
       .order('booking_date', { ascending: false })
-      .order('booking_time', { ascending: true });
+      .order('start_time', { ascending: true });
 
     console.log('bookingsData:', bookingsData);
     setBookings(bookingsData || []);
@@ -180,7 +180,7 @@ export default function BusinessBookings() {
     let filtered = [...bookings];
 
     if (filters.status) {
-      filtered = filtered.filter(booking => booking.booking_status === filters.status);
+      filtered = filtered.filter(booking => booking.status === filters.status);
     }
 
     if (filters.payment) {
@@ -208,7 +208,7 @@ export default function BusinessBookings() {
     try {
       const { error } = await supabase
         .from('bookings')
-        .update({ booking_status: status })
+        .update({ status: status })
         .eq('id', bookingId);
 
       if (error) throw error;

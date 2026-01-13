@@ -50,15 +50,17 @@ export function usePermissions(companyId?: string, user?: User | null) {
 
     const fetchUserRole = async () => {
       try {
+        // Get role directly from employees table since get_user_role function doesn't exist
         const { data, error } = await supabase
-          .rpc('get_user_role', { 
-            _company_id: companyId, 
-            _user_id: user.id 
-          });
+          .from('employees')
+          .select('role')
+          .eq('company_id', companyId)
+          .eq('user_id', user.id)
+          .single();
 
         if (error) throw error;
 
-        const role = data as UserRole;
+        const role = (data?.role || 'employee') as UserRole;
         setUserRole(role);
         setPermissions(getPermissionsByRole(role));
       } catch (error) {

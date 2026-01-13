@@ -9,16 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface Plan {
   id: string;
   name: string;
-  description: string;
   features: string[];
   monthly_price: number;
   quarterly_price: number;
   annual_price: number;
-  monthly_checkout_url: string | null;
-  quarterly_checkout_url: string | null;
-  annual_checkout_url: string | null;
-  is_popular: boolean;
-  display_order: number;
+  is_active: boolean;
 }
 
 const iconMap: Record<string, any> = {
@@ -151,18 +146,19 @@ export function Pricing() {
           </div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {plans.map((plan) => {
+            {plans.map((plan, index) => {
               const Icon = iconMap[plan.name] || Zap;
+              const isPopular = index === 1; // Middle plan is popular
               return (
                 <Card 
                   key={plan.id} 
                   className={`relative card-glow transition-all duration-300 ${
-                    plan.is_popular 
+                    isPopular 
                       ? 'border-primary bg-gradient-to-b from-primary/10 to-transparent scale-105' 
                       : 'bg-card/50 backdrop-blur-sm border-primary/20'
                   }`}
                 >
-                  {plan.is_popular && (
+                  {isPopular && (
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                       <div className="bg-gradient-primary text-white px-4 py-1 rounded-full text-sm font-medium animate-pulse-glow">
                         Mais Popular
@@ -175,7 +171,7 @@ export function Pricing() {
                       <Icon className="w-8 h-8 text-white" />
                     </div>
                     <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
+                    <CardDescription>Plano {plan.name}</CardDescription>
                     <div className="pt-4">
                       <span className="text-4xl font-bold text-gradient">{formatPrice(getPrice(plan))}</span>
                       <span className="text-muted-foreground">{getPeriodLabel()}</span>
@@ -193,12 +189,12 @@ export function Pricing() {
                     </ul>
 
                     <Button 
-                      variant={plan.is_popular ? "neon" : "outline"} 
+                      variant={isPopular ? "neon" : "outline"} 
                       className="w-full"
                       size="lg"
                       onClick={() => handleSelectPlan(plan)}
                     >
-                      {plan.is_popular ? "Começar Agora" : "Escolher Plano"}
+                      {isPopular ? "Começar Agora" : "Escolher Plano"}
                     </Button>
                   </CardContent>
                 </Card>

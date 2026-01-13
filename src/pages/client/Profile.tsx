@@ -109,11 +109,11 @@ export default function ClientProfile() {
         email: clientData.email || "",
         phone: clientData.phone || "",
         cpf: clientData.cpf ? formatCPF(clientData.cpf) : "",
-        address: clientData.address || "",
-        city: clientData.city || "",
-        state: clientData.state || "",
-        zip_code: clientData.zip_code || "",
-        accepts_marketing: clientData.accepts_marketing ?? true
+        address: "",
+        city: "",
+        state: "",
+        zip_code: "",
+        accepts_marketing: true
       });
     } catch (error) {
       console.error("Error fetching data:", error);

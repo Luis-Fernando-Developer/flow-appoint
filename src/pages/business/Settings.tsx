@@ -17,18 +17,11 @@ interface Company {
   id: string;
   name: string;
   slug: string;
-  owner_name: string;
-  owner_email: string;
-  owner_cpf: string;
-  cnpj?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip_code?: string;
-  logo_url?: string;
-  status: string;
-  plan: string;
+  owner_name: string | null;
+  owner_email: string | null;
+  owner_phone: string | null;
+  address: string | null;
+  status: string | null;
 }
 
 interface Employee {
@@ -45,14 +38,9 @@ export default function BusinessSettings() {
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  // Settings state
   const [companyData, setCompanyData] = useState({
     name: "",
-    phone: "",
     address: "",
-    city: "",
-    state: "",
-    zip_code: "",
   });
 
   const [businessSettings, setBusinessSettings] = useState({
@@ -81,11 +69,7 @@ export default function BusinessSettings() {
       setCompany(companyData);
       setCompanyData({
         name: companyData.name || "",
-        phone: companyData.phone || "",
         address: companyData.address || "",
-        city: companyData.city || "",
-        state: companyData.state || "",
-        zip_code: companyData.zip_code || "",
       });
 
       // Buscar dados do funcionário
@@ -216,51 +200,11 @@ export default function BusinessSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Telefone</Label>
+                <Label htmlFor="address">Endereço</Label>
                 <Input
-                  id="phone"
-                  value={companyData.phone}
-                  onChange={(e) => setCompanyData(prev => ({...prev, phone: e.target.value}))}
-                  disabled={!canEditSettings}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="address">Endereço</Label>
-              <Input
-                id="address"
-                value={companyData.address}
-                onChange={(e) => setCompanyData(prev => ({...prev, address: e.target.value}))}
-                disabled={!canEditSettings}
-              />
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="city">Cidade</Label>
-                <Input
-                  id="city"
-                  value={companyData.city}
-                  onChange={(e) => setCompanyData(prev => ({...prev, city: e.target.value}))}
-                  disabled={!canEditSettings}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">Estado</Label>
-                <Input
-                  id="state"
-                  value={companyData.state}
-                  onChange={(e) => setCompanyData(prev => ({...prev, state: e.target.value}))}
-                  disabled={!canEditSettings}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="zip_code">CEP</Label>
-                <Input
-                  id="zip_code"
-                  value={companyData.zip_code}
-                  onChange={(e) => setCompanyData(prev => ({...prev, zip_code: e.target.value}))}
+                  id="address"
+                  value={companyData.address}
+                  onChange={(e) => setCompanyData(prev => ({...prev, address: e.target.value}))}
                   disabled={!canEditSettings}
                 />
               </div>
@@ -389,7 +333,7 @@ export default function BusinessSettings() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold capitalize">{company.plan}</h3>
+                <h3 className="font-semibold capitalize">Starter</h3>
                 <p className="text-sm text-muted-foreground">Status: {company.status}</p>
               </div>
               <Button variant="outline">
