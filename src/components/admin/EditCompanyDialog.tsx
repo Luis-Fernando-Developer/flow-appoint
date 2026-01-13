@@ -48,7 +48,7 @@ interface Subscription {
   billing_period: string;
   original_price: number;
   discount_percentage: number;
-  discounted_price: number;
+  discounted_price?: number;
   discount_cycles_remaining: number;
 }
 
