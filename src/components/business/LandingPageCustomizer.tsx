@@ -12,7 +12,7 @@ import { ColorPicker } from "./ColorPicker";
 import { CodeEditor } from "./CodeEditor";
 import { LogoUploader } from "./LogoUploader";
 import { Save, Lock, Unlock, Upload, Link, Palette, Type, Image, Layout, Code, Camera } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { BookingLogo } from "../BookingLogo";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";

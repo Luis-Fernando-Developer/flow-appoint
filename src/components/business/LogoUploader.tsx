@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Camera, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import { toast } from "@/hooks/use-toast";
 
 interface LogoUploaderProps {

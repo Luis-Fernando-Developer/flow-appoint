@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BookingLogo } from "@/components/BookingLogo";
 import { Calendar, Clock, Star, MapPin, Phone, Mail, User, Lock, ArrowRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import CustomLandingPage from "../company/CustomLandingPage";
 

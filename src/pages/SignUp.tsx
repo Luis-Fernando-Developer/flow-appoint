@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BookingLogo } from "@/components/BookingLogo";
 import { Building2, User, Mail, FileText, Check, X, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 
 interface SelectedPlan {
   id: string;

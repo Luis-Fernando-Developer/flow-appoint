@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { BusinessLayout } from "@/components/business/BusinessLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { BusinessHoursConfig } from "@/components/business/schedule/BusinessHoursConfig";
 import { EmployeeScheduleConfig } from "@/components/business/schedule/EmployeeScheduleConfig";

@@ -6,7 +6,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { usePermissions } from '@/hooks/use-permissions';
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 
 const ClienteMenuItems = [
   { title: 'Dashboard', url: '/client/dashboard', icon: LayoutDashboard, current: true },

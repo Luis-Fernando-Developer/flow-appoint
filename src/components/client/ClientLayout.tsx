@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import { SidebarProvider, SidebarTrigger } from "../ui/sidebar";
 import { ClientSidebar } from "./ClientSidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
