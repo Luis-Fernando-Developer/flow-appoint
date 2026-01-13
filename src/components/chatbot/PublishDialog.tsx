@@ -101,9 +101,11 @@ export function PublishDialog({
       }
 
       // Publish the flow - use any to bypass type checking for new columns
+      // Also activate the bot when publishing
       const updateData: any = {
         public_id: publicId,
         is_published: true,
+        is_active: true, // Automatically activate when publishing
         published_at: new Date().toISOString(),
         published_containers: containers,
         published_edges: edges,
@@ -116,7 +118,7 @@ export function PublishDialog({
 
       if (error) throw error;
 
-      toast.success('Bot publicado com sucesso!');
+      toast.success('Bot publicado e ativado com sucesso!');
       onPublishSuccess(publicId, true);
       onOpenChange(false);
     } catch (error: any) {
@@ -130,7 +132,8 @@ export function PublishDialog({
   const handleUnpublish = async () => {
     setIsUnpublishing(true);
     try {
-      const updateData: any = { is_published: false };
+      // Also deactivate the bot when unpublishing
+      const updateData: any = { is_published: false, is_active: false };
       const { error } = await supabaseClient
         .from('chatbot_flows')
         .update(updateData)
@@ -138,7 +141,7 @@ export function PublishDialog({
 
       if (error) throw error;
 
-      toast.success('Bot despublicado');
+      toast.success('Bot despublicado e desativado');
       onPublishSuccess(publicId, false);
       onOpenChange(false);
     } catch (error: any) {
