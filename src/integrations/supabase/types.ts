@@ -69,7 +69,15 @@ export type Database = {
           updated_at?: string
           variables?: Json | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_flows_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chatbot_sessions: {
         Row: {
@@ -111,6 +119,191 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      companies: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          name: string
+          owner_email: string | null
+          owner_name: string | null
+          owner_phone: string | null
+          slug: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          slug: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          slug?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_customizations: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          logo_type: string | null
+          logo_upload_path: string | null
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          theme: Json | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          logo_type?: string | null
+          logo_upload_path?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          theme?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          logo_type?: string | null
+          logo_upload_path?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          theme?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_customizations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_subscriptions: {
+        Row: {
+          billing_period: string
+          company_id: string
+          created_at: string
+          discount_cycles_remaining: number | null
+          discount_percentage: number | null
+          discount_reason: string | null
+          ends_at: string | null
+          id: string
+          original_price: number
+          plan_id: string
+          starts_at: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_period?: string
+          company_id: string
+          created_at?: string
+          discount_cycles_remaining?: number | null
+          discount_percentage?: number | null
+          discount_reason?: string | null
+          ends_at?: string | null
+          id?: string
+          original_price?: number
+          plan_id: string
+          starts_at?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_period?: string
+          company_id?: string
+          created_at?: string
+          discount_cycles_remaining?: number | null
+          discount_percentage?: number | null
+          discount_reason?: string | null
+          ends_at?: string | null
+          id?: string
+          original_price?: number
+          plan_id?: string
+          starts_at?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_plans: {
+        Row: {
+          annual_price: number
+          created_at: string
+          features: Json | null
+          id: string
+          is_active: boolean | null
+          monthly_price: number
+          name: string
+          quarterly_price: number
+          updated_at: string
+        }
+        Insert: {
+          annual_price?: number
+          created_at?: string
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          monthly_price?: number
+          name: string
+          quarterly_price?: number
+          updated_at?: string
+        }
+        Update: {
+          annual_price?: number
+          created_at?: string
+          features?: Json | null
+          id?: string
+          is_active?: boolean | null
+          monthly_price?: number
+          name?: string
+          quarterly_price?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
