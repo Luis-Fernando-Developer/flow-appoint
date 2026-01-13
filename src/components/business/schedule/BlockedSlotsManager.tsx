@@ -22,15 +22,14 @@ interface Employee {
   name: string;
 }
 
+// Aligned with database schema - blocked_slots table uses start_datetime/end_datetime
 interface BlockedSlot {
   id: string;
   employee_id: string | null;
   employee_name?: string;
-  blocked_date: string;
-  start_time: string | null;
-  end_time: string | null;
+  start_datetime: string;
+  end_datetime: string;
   reason: string | null;
-  is_company_wide: boolean;
 }
 
 export function BlockedSlotsManager({ companyId }: BlockedSlotsManagerProps) {
@@ -66,13 +65,13 @@ export function BlockedSlotsManager({ companyId }: BlockedSlotsManagerProps) {
       setEmployees(employeesData || []);
 
       // Fetch blocked slots
-      const today = format(new Date(), 'yyyy-MM-dd');
+      const today = new Date().toISOString();
       const { data: slotsData, error } = await supabase
         .from('blocked_slots')
-        .select('*')
+        .select('id, employee_id, start_datetime, end_datetime, reason')
         .eq('company_id', companyId)
-        .gte('blocked_date', today)
-        .order('blocked_date');
+        .gte('start_datetime', today)
+        .order('start_datetime');
 
       if (error) throw error;
 
@@ -104,16 +103,22 @@ export function BlockedSlotsManager({ companyId }: BlockedSlotsManagerProps) {
     }
 
     try {
+      // Build datetime strings
+      const startDatetime = newSlot.all_day 
+        ? `${newSlot.blocked_date}T00:00:00` 
+        : `${newSlot.blocked_date}T${newSlot.start_time}:00`;
+      const endDatetime = newSlot.all_day 
+        ? `${newSlot.blocked_date}T23:59:59` 
+        : `${newSlot.blocked_date}T${newSlot.end_time}:00`;
+
       const { error } = await supabase
         .from('blocked_slots')
         .insert({
           company_id: companyId,
           employee_id: newSlot.is_company_wide ? null : newSlot.employee_id,
-          blocked_date: newSlot.blocked_date,
-          start_time: newSlot.all_day ? null : newSlot.start_time,
-          end_time: newSlot.all_day ? null : newSlot.end_time,
+          start_datetime: startDatetime,
+          end_datetime: endDatetime,
           reason: newSlot.reason || null,
-          is_company_wide: newSlot.is_company_wide,
         });
 
       if (error) throw error;
@@ -167,6 +172,22 @@ export function BlockedSlotsManager({ companyId }: BlockedSlotsManagerProps) {
         variant: "destructive"
       });
     }
+  };
+
+  const isCompanyWide = (slot: BlockedSlot) => !slot.employee_id;
+
+  const formatSlotDateTime = (slot: BlockedSlot) => {
+    const start = parseISO(slot.start_datetime);
+    const end = parseISO(slot.end_datetime);
+    const dateStr = format(start, "EEEE, dd 'de' MMMM", { locale: ptBR });
+    const startTime = format(start, 'HH:mm');
+    const endTime = format(end, 'HH:mm');
+    
+    // Check if it's all day (starts at 00:00 and ends at 23:59)
+    if (startTime === '00:00' && endTime === '23:59') {
+      return { date: dateStr, time: 'Dia inteiro' };
+    }
+    return { date: dateStr, time: `${startTime} - ${endTime}` };
   };
 
   if (loading) {
@@ -297,49 +318,47 @@ export function BlockedSlotsManager({ companyId }: BlockedSlotsManagerProps) {
               Nenhum bloqueio registrado.
             </p>
           ) : (
-            blockedSlots.map(slot => (
-              <div 
-                key={slot.id}
-                className="flex items-center justify-between p-4 rounded-lg border border-destructive/30 bg-destructive/5"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    {slot.is_company_wide ? (
-                      <Badge className="bg-destructive text-white">
-                        <Building className="w-3 h-3 mr-1" />
-                        Toda Empresa
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">
-                        <User className="w-3 h-3 mr-1" />
-                        {slot.employee_name}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
-                    {format(parseISO(slot.blocked_date), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-                    {slot.start_time && slot.end_time && (
-                      <span>({slot.start_time} - {slot.end_time})</span>
-                    )}
-                    {!slot.start_time && (
-                      <span>(Dia inteiro)</span>
-                    )}
-                  </div>
-                  {slot.reason && (
-                    <p className="text-sm text-muted-foreground">{slot.reason}</p>
-                  )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDeleteSlot(slot.id)}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            blockedSlots.map(slot => {
+              const { date, time } = formatSlotDateTime(slot);
+              return (
+                <div 
+                  key={slot.id}
+                  className="flex items-center justify-between p-4 rounded-lg border border-destructive/30 bg-destructive/5"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      {isCompanyWide(slot) ? (
+                        <Badge className="bg-destructive text-white">
+                          <Building className="w-3 h-3 mr-1" />
+                          Toda Empresa
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline">
+                          <User className="w-3 h-3 mr-1" />
+                          {slot.employee_name}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="w-4 h-4" />
+                      {date}
+                      <span>({time})</span>
+                    </div>
+                    {slot.reason && (
+                      <p className="text-sm text-muted-foreground">{slot.reason}</p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteSlot(slot.id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              );
+            })
           )}
         </div>
       </CardContent>

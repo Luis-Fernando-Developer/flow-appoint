@@ -25,14 +25,15 @@ interface Service {
   price: number;
 }
 
+// Aligned with database schema - client_rewards table
 interface Reward {
   id: string;
-  reward_service_id: string;
+  name: string;
+  description: string | null;
+  reward_service_id: string | null;
   required_procedures: number;
   count_specific_service: boolean;
   specific_service_id: string | null;
-  requires_payment_confirmed: boolean;
-  requires_completed_booking: boolean;
   is_active: boolean;
   reward_service?: Service;
   specific_service?: Service;
@@ -51,12 +52,12 @@ export function RewardsConfig({ companyId }: RewardsConfigProps) {
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
   
   const [formData, setFormData] = useState({
+    name: "",
+    description: "",
     reward_service_id: "",
     required_procedures: 10,
     count_specific_service: false,
     specific_service_id: "",
-    requires_payment_confirmed: true,
-    requires_completed_booking: true,
     is_active: true
   });
 
@@ -86,7 +87,14 @@ export function RewardsConfig({ companyId }: RewardsConfigProps) {
       if (rewardsData) {
         // Enrich with service names
         const enrichedRewards = rewardsData.map(reward => ({
-          ...reward,
+          id: reward.id,
+          name: reward.name,
+          description: reward.description,
+          reward_service_id: reward.reward_service_id,
+          required_procedures: reward.required_procedures,
+          count_specific_service: reward.count_specific_service ?? false,
+          specific_service_id: reward.specific_service_id,
+          is_active: reward.is_active ?? true,
           reward_service: servicesData?.find(s => s.id === reward.reward_service_id),
           specific_service: servicesData?.find(s => s.id === reward.specific_service_id)
         }));
@@ -103,23 +111,23 @@ export function RewardsConfig({ companyId }: RewardsConfigProps) {
     if (reward) {
       setEditingReward(reward);
       setFormData({
-        reward_service_id: reward.reward_service_id,
+        name: reward.name,
+        description: reward.description || "",
+        reward_service_id: reward.reward_service_id || "",
         required_procedures: reward.required_procedures,
         count_specific_service: reward.count_specific_service,
         specific_service_id: reward.specific_service_id || "",
-        requires_payment_confirmed: reward.requires_payment_confirmed,
-        requires_completed_booking: reward.requires_completed_booking,
         is_active: reward.is_active
       });
     } else {
       setEditingReward(null);
       setFormData({
+        name: "",
+        description: "",
         reward_service_id: "",
         required_procedures: 10,
         count_specific_service: false,
         specific_service_id: "",
-        requires_payment_confirmed: true,
-        requires_completed_booking: true,
         is_active: true
       });
     }
@@ -129,15 +137,24 @@ export function RewardsConfig({ companyId }: RewardsConfigProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name.trim()) {
+      toast({
+        title: "Erro",
+        description: "O nome do brinde é obrigatório.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const rewardData = {
         company_id: companyId,
-        reward_service_id: formData.reward_service_id,
+        name: formData.name,
+        description: formData.description || null,
+        reward_service_id: formData.reward_service_id || null,
         required_procedures: formData.required_procedures,
         count_specific_service: formData.count_specific_service,
-        specific_service_id: formData.count_specific_service ? formData.specific_service_id : null,
-        requires_payment_confirmed: formData.requires_payment_confirmed,
-        requires_completed_booking: formData.requires_completed_booking,
+        specific_service_id: formData.count_specific_service ? formData.specific_service_id || null : null,
         is_active: formData.is_active
       };
 
@@ -219,7 +236,7 @@ export function RewardsConfig({ companyId }: RewardsConfigProps) {
             Configure brindes para fidelizar seus clientes
           </p>
         </div>
-        <Button variant="neon" onClick={() => handleOpenDialog()}>
+        <Button variant="default" onClick={() => handleOpenDialog()}>
           <Plus className="w-4 h-4 mr-2" />
           Novo Brinde
         </Button>
@@ -246,16 +263,16 @@ export function RewardsConfig({ companyId }: RewardsConfigProps) {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
                       <Star className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        {reward.reward_service?.name || "Serviço não encontrado"}
+                        {reward.name}
                         {!reward.is_active && <Badge variant="secondary">Inativo</Badge>}
                       </CardTitle>
                       <CardDescription>
-                        {reward.reward_service ? formatPrice(reward.reward_service.price) : ''} de valor
+                        {reward.reward_service ? `Serviço: ${reward.reward_service.name} (${formatPrice(reward.reward_service.price)})` : 'Sem serviço vinculado'}
                       </CardDescription>
                     </div>
                   </div>
@@ -284,17 +301,12 @@ export function RewardsConfig({ companyId }: RewardsConfigProps) {
                       }
                     </p>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">Requisitos</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {reward.requires_payment_confirmed && (
-                        <Badge variant="outline" className="text-xs">Pagamento confirmado</Badge>
-                      )}
-                      {reward.requires_completed_booking && (
-                        <Badge variant="outline" className="text-xs">Procedimento realizado</Badge>
-                      )}
+                  {reward.description && (
+                    <div className="md:col-span-2">
+                      <p className="text-muted-foreground">Descrição</p>
+                      <p className="font-medium">{reward.description}</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -313,6 +325,24 @@ export function RewardsConfig({ companyId }: RewardsConfigProps) {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome do Brinde *</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Ex: Corte grátis após 10 procedimentos"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Descrição (opcional)</Label>
+              <Input
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Descrição do brinde..."
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>Serviço como Brinde</Label>
               <Select
@@ -379,39 +409,19 @@ export function RewardsConfig({ companyId }: RewardsConfigProps) {
               </div>
             )}
 
-            <div className="space-y-3 pt-4 border-t border-primary/10">
-              <p className="font-medium text-sm">Requisitos para Validar</p>
-              
-              <div className="flex items-center justify-between">
-                <Label>Pagamento Confirmado</Label>
-                <Switch
-                  checked={formData.requires_payment_confirmed}
-                  onCheckedChange={(checked) => setFormData({ ...formData, requires_payment_confirmed: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label>Procedimento Realizado</Label>
-                <Switch
-                  checked={formData.requires_completed_booking}
-                  onCheckedChange={(checked) => setFormData({ ...formData, requires_completed_booking: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Label>Brinde Ativo</Label>
-                <Switch
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-              </div>
+            <div className="flex items-center justify-between pt-4 border-t border-primary/10">
+              <Label>Brinde Ativo</Label>
+              <Switch
+                checked={formData.is_active}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+              />
             </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" variant="neon">
+              <Button type="submit">
                 {editingReward ? "Salvar" : "Criar Brinde"}
               </Button>
             </DialogFooter>

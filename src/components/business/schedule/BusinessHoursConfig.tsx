@@ -12,14 +12,15 @@ interface BusinessHoursConfigProps {
   companyId: string;
 }
 
+// Aligned with database schema - business_hours table uses break_start/break_end for intervals
 interface BusinessHour {
   id?: string;
   day_of_week: number;
   is_open: boolean;
   open_time: string;
   close_time: string;
-  second_open_time: string | null;
-  second_close_time: string | null;
+  break_start: string | null;
+  break_end: string | null;
 }
 
 const DAYS_OF_WEEK = [
@@ -37,8 +38,8 @@ const DEFAULT_HOURS: BusinessHour[] = DAYS_OF_WEEK.map(day => ({
   is_open: day.value !== 0, // Fechado aos domingos por padrão
   open_time: "08:00",
   close_time: "18:00",
-  second_open_time: null,
-  second_close_time: null,
+  break_start: null,
+  break_end: null,
 }));
 
 export function BusinessHoursConfig({ companyId }: BusinessHoursConfigProps) {
@@ -71,8 +72,8 @@ export function BusinessHoursConfig({ companyId }: BusinessHoursConfigProps) {
             is_open: existing.is_open ?? true,
             open_time: existing.open_time || "08:00",
             close_time: existing.close_time || "18:00",
-            second_open_time: existing.second_open_time,
-            second_close_time: existing.second_close_time,
+            break_start: existing.break_start,
+            break_end: existing.break_end,
           } : DEFAULT_HOURS[day.value];
         });
         setHours(mergedHours);
@@ -108,8 +109,8 @@ export function BusinessHoursConfig({ companyId }: BusinessHoursConfigProps) {
             is_open: h.is_open,
             open_time: h.open_time,
             close_time: h.close_time,
-            second_open_time: h.second_open_time || null,
-            second_close_time: h.second_close_time || null,
+            break_start: h.break_start || null,
+            break_end: h.break_end || null,
           })),
           { onConflict: 'company_id,day_of_week' }
         );
@@ -146,7 +147,7 @@ export function BusinessHoursConfig({ companyId }: BusinessHoursConfigProps) {
         <CardTitle>Horário de Funcionamento</CardTitle>
         <CardDescription>
           Configure os horários de abertura e fechamento do estabelecimento por dia da semana.
-          Para intervalos (ex: fecha para almoço), preencha o segundo período.
+          Para intervalos (ex: fecha para almoço), preencha o horário de intervalo.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -172,9 +173,9 @@ export function BusinessHoursConfig({ companyId }: BusinessHoursConfigProps) {
 
                 {hour.is_open && (
                   <>
-                    {/* First period */}
+                    {/* Main period */}
                     <div className="flex items-center gap-2">
-                      <Label className="text-sm text-muted-foreground">1º Período:</Label>
+                      <Label className="text-sm text-muted-foreground">Horário:</Label>
                       <Input
                         type="time"
                         value={hour.open_time}
@@ -190,21 +191,21 @@ export function BusinessHoursConfig({ companyId }: BusinessHoursConfigProps) {
                       />
                     </div>
 
-                    {/* Second period (optional) */}
+                    {/* Break period (optional) */}
                     <div className="flex items-center gap-2">
-                      <Label className="text-sm text-muted-foreground">2º Período:</Label>
+                      <Label className="text-sm text-muted-foreground">Intervalo:</Label>
                       <Input
                         type="time"
-                        value={hour.second_open_time || ""}
-                        onChange={(e) => handleHourChange(index, 'second_open_time', e.target.value || null)}
+                        value={hour.break_start || ""}
+                        onChange={(e) => handleHourChange(index, 'break_start', e.target.value || null)}
                         className="w-28"
                         placeholder="--:--"
                       />
                       <span className="text-muted-foreground">às</span>
                       <Input
                         type="time"
-                        value={hour.second_close_time || ""}
-                        onChange={(e) => handleHourChange(index, 'second_close_time', e.target.value || null)}
+                        value={hour.break_end || ""}
+                        onChange={(e) => handleHourChange(index, 'break_end', e.target.value || null)}
                         className="w-28"
                         placeholder="--:--"
                       />

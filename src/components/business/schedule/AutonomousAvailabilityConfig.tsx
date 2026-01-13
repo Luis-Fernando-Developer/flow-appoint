@@ -57,11 +57,11 @@ export function AutonomousAvailabilityConfig({ companyId }: AutonomousAvailabili
 
   const fetchEmployees = async () => {
     try {
+      // Fetch all active employees (no employee_type filter since column doesn't exist)
       const { data, error } = await supabase
         .from('employees')
         .select('id, name')
         .eq('company_id', companyId)
-        .eq('employee_type', 'autonomo')
         .eq('is_active', true)
         .order('name');
 
@@ -83,7 +83,7 @@ export function AutonomousAvailabilityConfig({ companyId }: AutonomousAvailabili
       const today = format(new Date(), 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from('employee_availability')
-        .select('*')
+        .select('id, available_date, start_time, end_time, break_start, break_end')
         .eq('employee_id', selectedEmployee)
         .gte('available_date', today)
         .order('available_date');
@@ -100,6 +100,7 @@ export function AutonomousAvailabilityConfig({ companyId }: AutonomousAvailabili
       const { error } = await supabase
         .from('employee_availability')
         .upsert({
+          company_id: companyId,
           employee_id: selectedEmployee,
           available_date: format(newAvailability.date, 'yyyy-MM-dd'),
           start_time: newAvailability.start_time,
@@ -165,7 +166,7 @@ export function AutonomousAvailabilityConfig({ companyId }: AutonomousAvailabili
       <Card className="card-glow">
         <CardContent className="py-8 text-center">
           <p className="text-muted-foreground">
-            Nenhum colaborador autônomo cadastrado. Adicione colaboradores do tipo "Autônomo" para configurar disponibilidade.
+            Nenhum colaborador cadastrado. Adicione colaboradores para configurar disponibilidade.
           </p>
         </CardContent>
       </Card>
@@ -175,9 +176,9 @@ export function AutonomousAvailabilityConfig({ companyId }: AutonomousAvailabili
   return (
     <Card className="card-glow">
       <CardHeader>
-        <CardTitle>Disponibilidade dos Autônomos</CardTitle>
+        <CardTitle>Disponibilidade por Data</CardTitle>
         <CardDescription>
-          Colaboradores autônomos podem definir sua disponibilidade por data específica.
+          Colaboradores podem definir sua disponibilidade por data específica.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

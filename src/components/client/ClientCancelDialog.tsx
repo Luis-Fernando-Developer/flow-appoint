@@ -26,9 +26,10 @@ export function ClientCancelDialog({
     setIsLoading(true);
 
     try {
+      // Use 'status' column as per database schema
       const { error } = await supabase
         .from('bookings')
-        .update({ booking_status: 'cancelled' })
+        .update({ status: 'cancelled' })
         .eq('id', booking.id);
 
       if (error) throw error;
@@ -62,6 +63,31 @@ export function ClientCancelDialog({
     });
   };
 
+  // Get time from start_time field (database schema uses start_time, not booking_time)
+  const getBookingTime = () => {
+    if (booking?.start_time) {
+      return booking.start_time.slice(0, 5);
+    }
+    if (booking?.booking_time) {
+      return booking.booking_time.slice(0, 5);
+    }
+    return '--:--';
+  };
+
+  // Get duration - may need to calculate from start_time and end_time
+  const getDuration = () => {
+    if (booking?.duration_minutes) {
+      return booking.duration_minutes;
+    }
+    // Calculate from start and end time if available
+    if (booking?.start_time && booking?.end_time) {
+      const [startH, startM] = booking.start_time.split(':').map(Number);
+      const [endH, endM] = booking.end_time.split(':').map(Number);
+      return (endH * 60 + endM) - (startH * 60 + startM);
+    }
+    return 0;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card border-primary/20">
@@ -80,7 +106,7 @@ export function ClientCancelDialog({
             {/* Booking summary */}
             <div className="p-4 bg-background/50 rounded-lg border border-primary/20 space-y-3">
               <div>
-                <h4 className="font-semibold text-lg">{booking.service?.name}</h4>
+                <h4 className="font-semibold text-lg">{booking.service?.name || 'Serviço'}</h4>
                 {booking.service?.description && (
                   <p className="text-sm text-muted-foreground">{booking.service.description}</p>
                 )}
@@ -93,12 +119,14 @@ export function ClientCancelDialog({
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span>{booking.booking_time?.slice(0, 5)} ({booking.duration_minutes} minutos)</span>
+                  <span>{getBookingTime()} ({getDuration()} minutos)</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                  <span>R$ {Number(booking.price).toFixed(2)}</span>
-                </div>
+                {booking.price && (
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-muted-foreground" />
+                    <span>R$ {Number(booking.price).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             </div>
 
