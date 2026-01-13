@@ -7,9 +7,9 @@ import { TestPanel } from '@/components/chatbot/TestPanel';
 import { NodesSidebar } from '@/components/chatbot/NodesSidebar';
 import { Container, NodeType, Edge } from '@/types/chatbot';
 import { Button } from '@/components/ui/button';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { User } from '@supabase/supabase-js';
 import { PublishDialog } from '@/components/chatbot/PublishDialog';
 import { BotSettingsDialog } from '@/components/chatbot/BotSettingsDialog';
 import { slugifyBotName } from '@/lib/slugify';
@@ -57,7 +57,7 @@ function ChatbotEditorContent({
   const loadFlow = async () => {
     try {
       // Busca todos os fluxos da empresa
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from('chatbot_flows')
         .select('*')
         .eq('company_id', companyData.id);
@@ -98,7 +98,7 @@ function ChatbotEditorContent({
     if (!flow?.id) return;
     setIsSaving(true);
     try {
-      const { error } = await supabaseClient
+      const { error } = await supabase
         .from('chatbot_flows')
         .update({ 
           containers: containers as any, 
@@ -305,21 +305,16 @@ function ChatbotEditorContent({
 export default function ChatbotEditor() {
   const { slug, botName } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
-      try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) {
-          navigate(`/${slug}/admin/login`);
-          return;
-        }
-        setCurrentUser(user);
+      if (!user) return;
 
-        const { data: company, error: companyError } = await supabaseClient
+      try {
+        const { data: company, error: companyError } = await supabase
           .from('companies')
           .select('id, name, slug')
           .eq('slug', slug)
@@ -338,10 +333,10 @@ export default function ChatbotEditor() {
       }
     }
 
-    if (slug) {
+    if (slug && user) {
       loadData();
     }
-  }, [slug, navigate]);
+  }, [slug, navigate, user]);
 
   if (isLoading || !companyData || !botName) {
     return (

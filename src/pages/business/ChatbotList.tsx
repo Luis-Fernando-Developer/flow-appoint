@@ -5,7 +5,8 @@ import { BusinessLayout } from '@/components/business/BusinessLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabaseClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -70,7 +71,7 @@ function ChatbotListContent({
 
   const loadFlows = async () => {
     try {
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from('chatbot_flows')
         .select('id, name, description, is_active, is_published, public_id, published_at, created_at, updated_at')
         .eq('company_id', companyData.id)
@@ -95,7 +96,7 @@ function ChatbotListContent({
     if (!newFlowName.trim()) return;
 
     try {
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabase
         .from('chatbot_flows')
         .insert([{
           company_id: companyData.id,
@@ -123,7 +124,7 @@ function ChatbotListContent({
 
   const handleDeleteFlow = async (flowId: string) => {
     try {
-      const { error } = await supabaseClient
+      const { error } = await supabase
         .from('chatbot_flows')
         .delete()
         .eq('id', flowId);
@@ -140,13 +141,13 @@ function ChatbotListContent({
   const handleToggleActive = async (flowId: string, currentState: boolean) => {
     try {
       if (!currentState) {
-        await supabaseClient
+        await supabase
           .from('chatbot_flows')
           .update({ is_active: false })
           .eq('company_id', companyData.id);
       }
 
-      const { error } = await supabaseClient
+      const { error } = await supabase
         .from('chatbot_flows')
         .update({ is_active: !currentState })
         .eq('id', flowId);
@@ -167,7 +168,7 @@ function ChatbotListContent({
 
   const handleDuplicate = async (flowId: string) => {
     try {
-      const { data: flow, error: fetchError } = await supabaseClient
+      const { data: flow, error: fetchError } = await supabase
         .from('chatbot_flows')
         .select('*')
         .eq('id', flowId)
@@ -175,7 +176,7 @@ function ChatbotListContent({
 
       if (fetchError || !flow) throw fetchError;
 
-      const { data: newFlow, error: insertError } = await supabaseClient
+      const { data: newFlow, error: insertError } = await supabase
         .from('chatbot_flows')
         .insert([{
           company_id: companyData.id,
@@ -204,7 +205,7 @@ function ChatbotListContent({
 
   const handleExport = async (flowId: string) => {
     try {
-      const { data: flow, error } = await supabaseClient
+      const { data: flow, error } = await supabase
         .from('chatbot_flows')
         .select('name, description, containers, edges')
         .eq('id', flowId)
@@ -476,22 +477,17 @@ function ChatbotListContent({
 export default function ChatbotList() {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string>('employee');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
+      if (!user) return;
+      
       try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) {
-          navigate(`/${slug}/admin/login`);
-          return;
-        }
-        setCurrentUser(user);
-
-        const { data: company, error: companyError } = await supabaseClient
+        const { data: company, error: companyError } = await supabase
           .from('companies')
           .select('id, name, slug')
           .eq('slug', slug)
@@ -504,7 +500,7 @@ export default function ChatbotList() {
         }
         setCompanyData(company);
 
-        const { data: employee } = await supabaseClient
+        const { data: employee } = await supabase
           .from('employees')
           .select('role')
           .eq('company_id', company.id)
@@ -512,7 +508,7 @@ export default function ChatbotList() {
           .single();
 
         if (employee) {
-          setUserRole(employee.role);
+          setUserRole(employee.role || 'employee');
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -521,10 +517,10 @@ export default function ChatbotList() {
       }
     }
 
-    if (slug) {
+    if (slug && user) {
       loadData();
     }
-  }, [slug, navigate]);
+  }, [slug, navigate, user]);
 
   if (isLoading || !companyData) {
     return (
@@ -538,7 +534,7 @@ export default function ChatbotList() {
     <ChatbotListContent 
       companyData={companyData} 
       userRole={userRole} 
-      currentUser={currentUser}
+      currentUser={user}
     />
   );
 }
