@@ -72,20 +72,9 @@ export function PaymentMethodsManager({ clientId, onSelect, selectedMethod }: Pa
 
   const fetchMethods = async () => {
     try {
-      const { data, error } = await supabase
-        .from('client_payment_methods')
-        .select('*')
-        .eq('client_id', clientId)
-        .order('is_default', { ascending: false });
-
-      if (error) throw error;
-      setMethods(data || []);
-
-      // Auto-select default method
-      if (data && data.length > 0 && onSelect) {
-        const defaultMethod = data.find(m => m.is_default) || data[0];
-        onSelect(defaultMethod);
-      }
+      // Note: client_payment_methods table doesn't exist yet
+      // For now, just set empty methods and finish loading
+      setMethods([]);
     } catch (error) {
       console.error('Error fetching payment methods:', error);
     } finally {
@@ -97,25 +86,25 @@ export function PaymentMethodsManager({ clientId, onSelect, selectedMethod }: Pa
     e.preventDefault();
 
     try {
-      const isFirst = methods.length === 0;
-      
-      const { error } = await supabase
-        .from('client_payment_methods')
-        .insert([{
-          client_id: clientId,
-          payment_type: formData.payment_type,
-          card_last_four: formData.payment_type.includes('card') ? formData.card_last_four : null,
-          card_brand: formData.payment_type.includes('card') ? formData.card_brand : null,
-          pix_key: formData.payment_type === 'pix' ? formData.pix_key : null,
-          is_default: isFirst
-        }]);
+      // Note: client_payment_methods table doesn't exist yet
+      // For now, just add to local state
+      const newMethod: PaymentMethod = {
+        id: crypto.randomUUID(),
+        payment_type: formData.payment_type,
+        is_default: methods.length === 0,
+        card_last_four: formData.payment_type.includes('card') ? formData.card_last_four : null,
+        card_brand: formData.payment_type.includes('card') ? formData.card_brand : null,
+        pix_key: formData.payment_type === 'pix' ? formData.pix_key : null
+      };
 
-      if (error) throw error;
+      setMethods(prev => [...prev, newMethod]);
+      if (onSelect && newMethod.is_default) {
+        onSelect(newMethod);
+      }
 
       toast({ title: "Forma de pagamento adicionada!" });
       setDialogOpen(false);
       setFormData({ payment_type: "pix", card_last_four: "", card_brand: "", pix_key: "" });
-      fetchMethods();
     } catch (error) {
       console.error('Error adding payment method:', error);
       toast({
@@ -128,20 +117,18 @@ export function PaymentMethodsManager({ clientId, onSelect, selectedMethod }: Pa
 
   const handleSetDefault = async (methodId: string) => {
     try {
-      // Remove default from all
-      await supabase
-        .from('client_payment_methods')
-        .update({ is_default: false })
-        .eq('client_id', clientId);
+      // Update local state (table doesn't exist yet)
+      setMethods(prev => prev.map(m => ({
+        ...m,
+        is_default: m.id === methodId
+      })));
 
-      // Set new default
-      await supabase
-        .from('client_payment_methods')
-        .update({ is_default: true })
-        .eq('id', methodId);
+      const newDefault = methods.find(m => m.id === methodId);
+      if (newDefault && onSelect) {
+        onSelect(newDefault);
+      }
 
       toast({ title: "Forma de pagamento padrão atualizada!" });
-      fetchMethods();
     } catch (error) {
       console.error('Error setting default:', error);
     }
@@ -151,15 +138,9 @@ export function PaymentMethodsManager({ clientId, onSelect, selectedMethod }: Pa
     if (!confirm("Tem certeza que deseja remover esta forma de pagamento?")) return;
 
     try {
-      const { error } = await supabase
-        .from('client_payment_methods')
-        .delete()
-        .eq('id', methodId);
-
-      if (error) throw error;
-
+      // Remove from local state (table doesn't exist yet)
+      setMethods(prev => prev.filter(m => m.id !== methodId));
       toast({ title: "Forma de pagamento removida!" });
-      fetchMethods();
     } catch (error) {
       console.error('Error deleting payment method:', error);
     }

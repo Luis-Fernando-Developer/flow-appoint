@@ -205,7 +205,7 @@ export default function ClientBooking() {
     try {
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
-        .select('id, name, slug, logo_url')
+        .select('id, name, slug')
         .eq('slug', slug)
         .single();
 
@@ -398,7 +398,7 @@ export default function ClientBooking() {
          // buscar dados dos employees elegíveis (apenas do mesmo company)
         const { data: employeesData } = await supabase
           .from('employees')
-          .select('id, name, email, avatar_url')
+          .select('id, name, email')
           .in('id', eligibleEmployeeIds)
           .eq('company_id', company.id)
           .eq('is_active', true);
@@ -413,8 +413,7 @@ export default function ClientBooking() {
         .select(`
           id, 
           name, 
-          email, 
-          avatar_url,
+          email,
           employee_services!inner(
             service_id
           )

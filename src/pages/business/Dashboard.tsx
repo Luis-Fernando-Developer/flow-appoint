@@ -109,24 +109,24 @@ export default function BusinessDashboard() {
       // Agendamentos por status
       const { data: bookingsByStatus } = await supabase
         .from('bookings')
-        .select('booking_status')
+        .select('status')
         .eq('company_id', companyId)
         .gte('booking_date', startOfMonth.toISOString().split('T')[0]);
 
       const statusCounts = bookingsByStatus?.reduce((acc: any, booking: any) => {
-        acc[booking.booking_status] = (acc[booking.booking_status] || 0) + 1;
+        acc[booking.status] = (acc[booking.status] || 0) + 1;
         return acc;
       }, {}) || {};
 
-      // Receita do mês (simplificado - agendamentos confirmados/completados)
-      const { data: monthlyRevenue } = await supabase
+      // Receita do mês (simplificado - usando preço do serviço)
+      const { data: monthlyBookings } = await supabase
         .from('bookings')
-        .select('price')
+        .select('service:services(price)')
         .eq('company_id', companyId)
-        .in('booking_status', ['confirmed', 'completed'])
+        .in('status', ['confirmed', 'completed'])
         .gte('booking_date', startOfMonth.toISOString().split('T')[0]);
 
-      const totalRevenue = monthlyRevenue?.reduce((sum, booking) => sum + Number(booking.price), 0) || 0;
+      const totalRevenue = monthlyBookings?.reduce((sum, booking: any) => sum + Number(booking.service?.price || 0), 0) || 0;
 
       setStats({
         todayBookings: todayCount || 0,

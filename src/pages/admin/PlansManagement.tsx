@@ -30,17 +30,11 @@ import { useToast } from "@/hooks/use-toast";
 interface Plan {
   id: string;
   name: string;
-  description: string;
   features: string[];
   monthly_price: number;
   quarterly_price: number;
   annual_price: number;
-  monthly_checkout_url: string | null;
-  quarterly_checkout_url: string | null;
-  annual_checkout_url: string | null;
-  is_popular: boolean;
   is_active: boolean;
-  display_order: number;
 }
 
 export default function PlansManagement() {
@@ -52,15 +46,10 @@ export default function PlansManagement() {
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [formData, setFormData] = useState({
     name: "",
-    description: "",
     features: "",
     monthly_price: 0,
     quarterly_price: 0,
     annual_price: 0,
-    monthly_checkout_url: "",
-    quarterly_checkout_url: "",
-    annual_checkout_url: "",
-    is_popular: false,
     is_active: true
   });
 
@@ -100,30 +89,20 @@ export default function PlansManagement() {
       setEditingPlan(plan);
       setFormData({
         name: plan.name,
-        description: plan.description || "",
         features: plan.features.join("\n"),
         monthly_price: plan.monthly_price,
         quarterly_price: plan.quarterly_price,
         annual_price: plan.annual_price,
-        monthly_checkout_url: plan.monthly_checkout_url || "",
-        quarterly_checkout_url: plan.quarterly_checkout_url || "",
-        annual_checkout_url: plan.annual_checkout_url || "",
-        is_popular: plan.is_popular,
         is_active: plan.is_active
       });
     } else {
       setEditingPlan(null);
       setFormData({
         name: "",
-        description: "",
         features: "",
         monthly_price: 0,
         quarterly_price: 0,
         annual_price: 0,
-        monthly_checkout_url: "",
-        quarterly_checkout_url: "",
-        annual_checkout_url: "",
-        is_popular: false,
         is_active: true
       });
     }
@@ -138,15 +117,10 @@ export default function PlansManagement() {
       
       const planData = {
         name: formData.name,
-        description: formData.description,
         features: featuresArray,
         monthly_price: formData.monthly_price,
         quarterly_price: formData.quarterly_price,
         annual_price: formData.annual_price,
-        monthly_checkout_url: formData.monthly_checkout_url || null,
-        quarterly_checkout_url: formData.quarterly_checkout_url || null,
-        annual_checkout_url: formData.annual_checkout_url || null,
-        is_popular: formData.is_popular,
         is_active: formData.is_active
       };
 
@@ -161,7 +135,7 @@ export default function PlansManagement() {
       } else {
         const { error } = await supabase
           .from('subscription_plans')
-          .insert([{ ...planData, display_order: plans.length + 1 }]);
+          .insert([planData]);
         
         if (error) throw error;
         toast({ title: "Plano criado com sucesso!" });
@@ -245,16 +219,11 @@ export default function PlansManagement() {
 
         <div className="grid gap-6">
           {plans.map((plan) => (
-            <Card key={plan.id} className={`card-glow bg-card/50 backdrop-blur-sm ${plan.is_popular ? 'border-primary' : 'border-primary/20'}`}>
+            <Card key={plan.id} className={`card-glow bg-card/50 backdrop-blur-sm border-primary/20`}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
                     <CardTitle className="text-xl">{plan.name}</CardTitle>
-                    {plan.is_popular && (
-                      <span className="bg-primary/20 text-primary text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                        <Star className="w-3 h-3" /> Popular
-                      </span>
-                    )}
                     {!plan.is_active && (
                       <span className="bg-destructive/20 text-destructive text-xs px-2 py-1 rounded-full">
                         Inativo
@@ -270,36 +239,21 @@ export default function PlansManagement() {
                     </Button>
                   </div>
                 </div>
-                <CardDescription>{plan.description}</CardDescription>
+                <CardDescription>Plano {plan.name}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Mensal</p>
                     <p className="text-2xl font-bold text-gradient">{formatPrice(plan.monthly_price)}</p>
-                    {plan.monthly_checkout_url && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <LinkIcon className="w-3 h-3" /> Link configurado
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Trimestral</p>
                     <p className="text-2xl font-bold text-gradient">{formatPrice(plan.quarterly_price)}</p>
-                    {plan.quarterly_checkout_url && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <LinkIcon className="w-3 h-3" /> Link configurado
-                      </p>
-                    )}
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Anual</p>
                     <p className="text-2xl font-bold text-gradient">{formatPrice(plan.annual_price)}</p>
-                    {plan.annual_checkout_url && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <LinkIcon className="w-3 h-3" /> Link configurado
-                      </p>
-                    )}
                   </div>
                 </div>
                 
@@ -341,28 +295,12 @@ export default function PlansManagement() {
               <div className="space-y-2 flex items-center gap-4 pt-6">
                 <div className="flex items-center gap-2">
                   <Switch
-                    checked={formData.is_popular}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_popular: checked })}
-                  />
-                  <Label>Popular</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
                     checked={formData.is_active}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                   />
                   <Label>Ativo</Label>
                 </div>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
             </div>
 
             <div className="space-y-2">
@@ -408,39 +346,6 @@ export default function PlansManagement() {
                   value={formData.annual_price}
                   onChange={(e) => setFormData({ ...formData, annual_price: parseFloat(e.target.value) })}
                   required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-primary/10">
-              <h4 className="font-medium flex items-center gap-2">
-                <LinkIcon className="w-4 h-4" /> Links de Checkout (Braip)
-              </h4>
-              <div className="space-y-2">
-                <Label htmlFor="monthly_checkout_url">Link Checkout Mensal</Label>
-                <Input
-                  id="monthly_checkout_url"
-                  value={formData.monthly_checkout_url}
-                  onChange={(e) => setFormData({ ...formData, monthly_checkout_url: e.target.value })}
-                  placeholder="https://pay.braip.com/..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="quarterly_checkout_url">Link Checkout Trimestral</Label>
-                <Input
-                  id="quarterly_checkout_url"
-                  value={formData.quarterly_checkout_url}
-                  onChange={(e) => setFormData({ ...formData, quarterly_checkout_url: e.target.value })}
-                  placeholder="https://pay.braip.com/..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="annual_checkout_url">Link Checkout Anual</Label>
-                <Input
-                  id="annual_checkout_url"
-                  value={formData.annual_checkout_url}
-                  onChange={(e) => setFormData({ ...formData, annual_checkout_url: e.target.value })}
-                  placeholder="https://pay.braip.com/..."
                 />
               </div>
             </div>

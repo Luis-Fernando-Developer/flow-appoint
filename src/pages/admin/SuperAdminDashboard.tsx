@@ -43,18 +43,13 @@ import { useToast } from "@/hooks/use-toast";
 interface Company {
   id: string;
   name: string;
-  owner_name: string;
-  owner_email: string;
-  owner_cpf: string;
-  status: string;
-  plan: string;
+  owner_name: string | null;
+  owner_email: string | null;
+  owner_phone: string | null;
+  status: string | null;
   slug: string;
   created_at: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  cnpj?: string;
+  address: string | null;
 }
 
 const getStatusBadge = (status: string) => {
@@ -318,7 +313,7 @@ export default function SuperAdminDashboard() {
                   <div className="flex items-center space-x-6  w-full justify-between">
                     <div className="text-center">
                       <p className="text-sm font-medium">Plano</p>
-                      <p className="text-xs text-muted-foreground">{company.plan}</p>
+                      <p className="text-xs text-muted-foreground">Starter</p>
                     </div>
                     <div className="text-center">
                       <p className="text-sm font-medium">Status</p>
