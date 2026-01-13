@@ -283,6 +283,7 @@ function ChatbotEditorContent({
         flowId={flow.id}
         currentPublicId={flow.public_id}
         isPublished={flow.is_published}
+        companyId={companyData.id}
         companySlug={companyData.slug}
         containers={containers}
         edges={edges}
