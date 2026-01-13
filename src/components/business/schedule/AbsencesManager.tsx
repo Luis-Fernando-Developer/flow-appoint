@@ -24,7 +24,7 @@ interface Employee {
 
 interface Absence {
   id: string;
-  employee_id: string;
+  employee_id: string | null;
   employee_name?: string;
   absence_type: string;
   start_date: string;
@@ -71,17 +71,11 @@ export function AbsencesManager({ companyId }: AbsencesManagerProps) {
 
       setEmployees(employeesData || []);
 
-      // Fetch absences
+      // Fetch absences - using employee_absences table
       const { data: absencesData, error } = await supabase
         .from('employee_absences')
-        .select(`
-          id,
-          employee_id,
-          absence_type,
-          start_date,
-          end_date,
-          reason
-        `)
+        .select('id, employee_id, absence_type, start_date, end_date, reason')
+        .eq('company_id', companyId)
         .order('start_date', { ascending: false });
 
       if (error) throw error;
@@ -117,8 +111,9 @@ export function AbsencesManager({ companyId }: AbsencesManagerProps) {
       const { error } = await supabase
         .from('employee_absences')
         .insert({
+          company_id: companyId,
           employee_id: newAbsence.employee_id,
-          absence_type: newAbsence.absence_type as "vacation" | "day_off" | "sick_leave" | "suspension" | "other",
+          absence_type: newAbsence.absence_type,
           start_date: newAbsence.start_date,
           end_date: newAbsence.end_date,
           reason: newAbsence.reason || null,

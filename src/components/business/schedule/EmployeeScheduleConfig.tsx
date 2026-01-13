@@ -17,9 +17,9 @@ interface EmployeeScheduleConfigProps {
 interface Employee {
   id: string;
   name: string;
-  employee_type: string;
 }
 
+// Aligned with database schema - employee_schedules table
 interface EmployeeSchedule {
   id?: string;
   employee_id: string;
@@ -29,7 +29,6 @@ interface EmployeeSchedule {
   end_time: string | null;
   break_start: string | null;
   break_end: string | null;
-  allows_overtime: boolean;
 }
 
 const DAYS_OF_WEEK = [
@@ -63,11 +62,11 @@ export function EmployeeScheduleConfig({ companyId }: EmployeeScheduleConfigProp
 
   const fetchEmployees = async () => {
     try {
+      // Fetch all active employees (no employee_type filter since column doesn't exist)
       const { data, error } = await supabase
         .from('employees')
-        .select('id, name, employee_type')
+        .select('id, name')
         .eq('company_id', companyId)
-        .eq('employee_type', 'fixo')
         .eq('is_active', true)
         .order('name');
 
@@ -88,14 +87,14 @@ export function EmployeeScheduleConfig({ companyId }: EmployeeScheduleConfigProp
     try {
       const { data, error } = await supabase
         .from('employee_schedules')
-        .select('*')
+        .select('id, employee_id, day_of_week, is_working, start_time, end_time, break_start, break_end')
         .eq('employee_id', selectedEmployee)
         .order('day_of_week');
 
       if (error) throw error;
 
       // Create default schedules for all days
-      const defaultSchedules = DAYS_OF_WEEK.map(day => ({
+      const defaultSchedules: EmployeeSchedule[] = DAYS_OF_WEEK.map(day => ({
         employee_id: selectedEmployee,
         day_of_week: day.value,
         is_working: day.value !== 0 && day.value !== 6, // Work Mon-Fri by default
@@ -103,7 +102,6 @@ export function EmployeeScheduleConfig({ companyId }: EmployeeScheduleConfigProp
         end_time: "18:00",
         break_start: "12:00",
         break_end: "13:00",
-        allows_overtime: false,
       }));
 
       if (data && data.length > 0) {
@@ -112,14 +110,13 @@ export function EmployeeScheduleConfig({ companyId }: EmployeeScheduleConfigProp
           const existing = schedulesMap.get(ds.day_of_week);
           return existing ? {
             id: existing.id,
-            employee_id: existing.employee_id,
+            employee_id: existing.employee_id || selectedEmployee,
             day_of_week: existing.day_of_week,
             is_working: existing.is_working ?? true,
             start_time: existing.start_time || "08:00",
             end_time: existing.end_time || "18:00",
             break_start: existing.break_start,
             break_end: existing.break_end,
-            allows_overtime: existing.allows_overtime ?? false,
           } : ds;
         });
         setSchedules(mergedSchedules);
@@ -144,6 +141,7 @@ export function EmployeeScheduleConfig({ companyId }: EmployeeScheduleConfigProp
         .from('employee_schedules')
         .upsert(
           schedules.map(s => ({
+            company_id: companyId,
             employee_id: selectedEmployee,
             day_of_week: s.day_of_week,
             is_working: s.is_working,
@@ -151,7 +149,6 @@ export function EmployeeScheduleConfig({ companyId }: EmployeeScheduleConfigProp
             end_time: s.end_time,
             break_start: s.break_start || null,
             break_end: s.break_end || null,
-            allows_overtime: s.allows_overtime,
           })),
           { onConflict: 'employee_id,day_of_week' }
         );
@@ -195,7 +192,7 @@ export function EmployeeScheduleConfig({ companyId }: EmployeeScheduleConfigProp
       <Card className="card-glow">
         <CardContent className="py-8 text-center">
           <p className="text-muted-foreground">
-            Nenhum colaborador fixo cadastrado. Adicione colaboradores do tipo "Fixo" para configurar jornadas.
+            Nenhum colaborador cadastrado. Adicione colaboradores para configurar jornadas.
           </p>
         </CardContent>
       </Card>
@@ -205,9 +202,9 @@ export function EmployeeScheduleConfig({ companyId }: EmployeeScheduleConfigProp
   return (
     <Card className="card-glow">
       <CardHeader>
-        <CardTitle>Jornada dos Colaboradores Fixos</CardTitle>
+        <CardTitle>Jornada dos Colaboradores</CardTitle>
         <CardDescription>
-          Configure a jornada de trabalho semanal para cada colaborador fixo, incluindo horário de intervalo.
+          Configure a jornada de trabalho semanal para cada colaborador, incluindo horário de intervalo.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -305,14 +302,6 @@ export function EmployeeScheduleConfig({ companyId }: EmployeeScheduleConfigProp
                             placeholder="--:--"
                           />
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={schedule.allows_overtime}
-                          onCheckedChange={(checked) => handleScheduleChange(index, 'allows_overtime', checked)}
-                        />
-                        <Label className="text-sm">Permitir hora extra neste dia</Label>
                       </div>
                     </div>
                   )}
