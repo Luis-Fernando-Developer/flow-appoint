@@ -10,41 +10,49 @@ import { custom } from "zod";
 import { ChatWidget } from "@/components/chatbot/ChatWidget";
 
 interface CustomizationData {
-  header_position: string;
-  header_background_type: string;
-  header_background_color: string;
-  header_background_gradient: any;
-  logo_type?: string;
-  logo_url?: string;
-  logo_upload_path?: string;
-  font_family: string;
-  font_size_base: number;
-  font_color_type: string;
-  font_color: string;
-  font_gradient: any;
-  hero_banner_type: string;
-  hero_banner_urls: string[];
-  hero_background_type: string;
-  hero_background_color: string;
-  hero_background_gradient: any;
-  hero_title: string;
-  hero_description: string;
-  hero_content_position: string;
-  button_color_type: string;
-  button_color: string;
-  button_gradient: any;
-  cards_show_images: boolean;
-  cards_layout: string;
-  cards_font_family: string;
-  cards_color_type: string;
-  cards_color: string;
-  cards_gradient: any;
-  extra_section_enabled: boolean;
-  extra_section_code: string;
-  footer_background_type: string;
-  footer_background_color: string;
-  footer_background_gradient: any;
-  footer_font_family: string;
+  company_id: string;
+  id: string;
+  logo_type?: string | null;
+  logo_url?: string | null;
+  logo_upload_path?: string | null;
+  primary_color?: string | null;
+  secondary_color?: string | null;
+  theme?: any;
+  created_at: string;
+  updated_at: string;
+  // Extended theme properties (stored in theme JSON)
+  header_position?: string;
+  header_background_type?: string;
+  header_background_color?: string;
+  header_background_gradient?: any;
+  font_family?: string;
+  font_size_base?: number;
+  font_color_type?: string;
+  font_color?: string;
+  font_gradient?: any;
+  hero_banner_type?: string;
+  hero_banner_urls?: string[];
+  hero_background_type?: string;
+  hero_background_color?: string;
+  hero_background_gradient?: any;
+  hero_title?: string;
+  hero_description?: string;
+  hero_content_position?: string;
+  button_color_type?: string;
+  button_color?: string;
+  button_gradient?: any;
+  cards_show_images?: boolean;
+  cards_layout?: string;
+  cards_font_family?: string;
+  cards_color_type?: string;
+  cards_color?: string;
+  cards_gradient?: any;
+  extra_section_enabled?: boolean;
+  extra_section_code?: string;
+  footer_background_type?: string;
+  footer_background_color?: string;
+  footer_background_gradient?: any;
+  footer_font_family?: string;
 }
 
 interface Combo {
@@ -194,7 +202,18 @@ export default function CustomLandingPage() {
         .eq('company_id', companyData.id)
         .maybeSingle();
 
-      setCustomization(customizationData);
+      // Merge base customization with theme data
+      if (customizationData) {
+        const themeData = typeof customizationData.theme === 'object' && customizationData.theme !== null 
+          ? customizationData.theme as Record<string, any>
+          : {};
+        setCustomization({
+          ...customizationData,
+          ...themeData
+        } as CustomizationData);
+      } else {
+        setCustomization(null);
+      }
 
       // Fetch active chatbot flow
       const { data: activeFlow } = await supabase

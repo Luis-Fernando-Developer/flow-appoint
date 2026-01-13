@@ -24,15 +24,14 @@ interface Company {
 interface ClientData {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string | null;
   cpf: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  zip_code: string | null;
-  avatar_url: string | null;
-  accepts_marketing: boolean;
+  company_id: string;
+  user_id: string | null;
+  is_active: boolean | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function ClientProfile() {
@@ -160,12 +159,7 @@ export default function ClientProfile() {
           name: formData.name.trim(),
           email: formData.email.trim(),
           phone: formData.phone.trim() || null,
-          cpf: cleanedCpf || null,
-          address: formData.address.trim() || null,
-          city: formData.city.trim() || null,
-          state: formData.state.trim() || null,
-          zip_code: formData.zip_code.trim() || null,
-          accepts_marketing: formData.accepts_marketing
+          cpf: cleanedCpf || null
         })
         .eq('id', client.id);
 
@@ -198,16 +192,9 @@ export default function ClientProfile() {
       const { error } = await supabase
         .from('clients')
         .update({
-          data_deleted_at: new Date().toISOString(),
-          accepts_marketing: false,
           phone: null,
           cpf: null,
-          address: null,
-          city: null,
-          state: null,
-          zip_code: null,
-          avatar_url: null,
-          notes: null
+          is_active: false
         })
         .eq('id', client.id);
 
@@ -271,7 +258,6 @@ export default function ClientProfile() {
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-20 h-20">
-                      <AvatarImage src={client?.avatar_url || ""} />
                       <AvatarFallback className="bg-gradient-primary text-2xl text-white">
                         {client?.name?.charAt(0)?.toUpperCase() || "U"}
                       </AvatarFallback>

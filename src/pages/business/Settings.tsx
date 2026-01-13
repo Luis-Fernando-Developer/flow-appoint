@@ -316,7 +316,7 @@ export default function BusinessSettings() {
         {/* Personalização da Landing Page */}
         <LandingPageCustomizer 
           companyId={company.id}
-          companyPlan={company.plan}
+          companyPlan="starter"
           canEdit={canEditSettings}
           className=" flex w-full flex-col "
           
