@@ -24,3 +24,6 @@ export const supabaseClient = createClient<Database>(
     }
   }
 );
+
+// Export also as 'supabase' for backward compatibility
+export const supabase = supabaseClient;

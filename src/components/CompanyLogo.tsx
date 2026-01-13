@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BookingLogo } from "./BookingLogo";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 
 interface CompanyLogoProps {
   companySlug: string;

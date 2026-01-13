@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { User, Mail, Lock, Phone, ArrowLeft, CreditCard } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { formatCPF, cleanCPF, validateCPF } from "@/lib/cpfValidation";

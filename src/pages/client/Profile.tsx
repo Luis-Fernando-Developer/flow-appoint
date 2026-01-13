@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ClientSidebar } from "@/components/client/ClientSidebar";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCPF, cleanCPF, validateCPF } from "@/lib/cpfValidation";
 import { User, Mail, Phone, MapPin, CreditCard, Shield, Trash2, Save, Camera } from "lucide-react";
