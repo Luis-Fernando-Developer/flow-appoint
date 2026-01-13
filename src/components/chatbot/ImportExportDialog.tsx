@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseClient } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 
 interface ImportExportDialogProps {
@@ -108,7 +108,7 @@ export function ImportExportDialog({
 
     setIsProcessing(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('chatbot_flows')
         .insert([{
           company_id: companyId,
@@ -139,7 +139,7 @@ export function ImportExportDialog({
 
     setIsProcessing(true);
     try {
-      const { data: flow, error } = await supabase
+      const { data: flow, error } = await supabaseClient
         .from('chatbot_flows')
         .select('name, description, containers, edges')
         .eq('id', flowId)

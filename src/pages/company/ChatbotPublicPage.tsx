@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/integrations/supabase/client';
+import { supabaseClient } from '@/lib/supabaseClient';
+import { getEdgeFunctionUrl } from '@/lib/supabaseHelpers';
 
 interface Message {
   id: string;
@@ -59,8 +60,13 @@ export default function ChatbotPublicPage() {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const runtimeUrl = import.meta.env.VITE_CHATBOT_RUNTIME_URL || 
-    `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
+  const getRuntimeUrl = () => {
+    try {
+      return getEdgeFunctionUrl('chatbot-runtime');
+    } catch {
+      return `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chatbot-runtime`;
+    }
+  };
 
   useEffect(() => {
     loadFlowAndStartChat();
@@ -79,7 +85,7 @@ export default function ChatbotPublicPage() {
   const loadFlowAndStartChat = async () => {
     try {
       // Get company
-      const { data: companyData, error: companyError } = await supabase
+      const { data: companyData, error: companyError } = await supabaseClient
         .from('companies')
         .select('id, name, slug')
         .eq('slug', slug)
@@ -92,29 +98,30 @@ export default function ChatbotPublicPage() {
       }
       setCompany(companyData);
 
-      // Get flow by public_id - using raw query since columns may not exist yet
-      const { data: flowData, error: flowError } = await supabase
+      // Get flow by public_id directly - query the correct columns
+      const { data: flowData, error: flowError } = await supabaseClient
         .from('chatbot_flows')
-        .select('*')
+        .select('id, name, settings, is_published, public_id')
         .eq('company_id', companyData.id)
-        .single();
+        .eq('public_id', publicId)
+        .eq('is_published', true)
+        .maybeSingle();
 
-      // Filter by public_id manually since column might not exist
-      const flow = flowData as any;
-      if (flowError || !flow || flow.public_id !== publicId || !flow.is_published) {
+      if (flowError || !flowData) {
+        console.error('Flow query error:', flowError);
         setError('Chatbot não encontrado ou não está publicado');
         setIsLoading(false);
         return;
       }
 
       setFlow({
-        id: flow.id,
-        name: flow.name,
-        settings: (flow.settings as FlowData['settings']) || {},
+        id: flowData.id,
+        name: flowData.name,
+        settings: (flowData.settings as FlowData['settings']) || {},
       });
 
       // Start chat session using published version
-      const response = await fetch(`${runtimeUrl}/chatbot-runtime/start-public`, {
+      const response = await fetch(`${getRuntimeUrl()}/start-public`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -147,7 +154,7 @@ export default function ChatbotPublicPage() {
 
     setIsSending(true);
     try {
-      const response = await fetch(`${runtimeUrl}/chatbot-runtime/message`, {
+      const response = await fetch(`${getRuntimeUrl()}/message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
