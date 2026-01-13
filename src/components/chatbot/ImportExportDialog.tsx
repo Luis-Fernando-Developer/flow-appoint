@@ -127,6 +127,8 @@ export function ImportExportDialog({
       onSuccess?.();
       onOpenChange(false);
       resetState();
+      // Reload the page to show the newly imported flow
+      window.location.reload();
     } catch (err: any) {
       setError(err.message || 'Erro ao salvar fluxo');
     } finally {

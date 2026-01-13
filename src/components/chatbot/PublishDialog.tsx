@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, Copy, Check, Send, XCircle, ExternalLink } from 'lucide-react';
+import { Globe, Copy, Check, Send, XCircle, ExternalLink, AlertTriangle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,6 +55,7 @@ export function PublishDialog({
   const [isUnpublishing, setIsUnpublishing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [showUnpublishConfirm, setShowUnpublishConfirm] = useState(false);
 
   useEffect(() => {
     if (currentPublicId) {
@@ -129,7 +140,12 @@ export function PublishDialog({
     }
   };
 
-  const handleUnpublish = async () => {
+  const handleUnpublishClick = () => {
+    setShowUnpublishConfirm(true);
+  };
+
+  const handleUnpublishConfirm = async () => {
+    setShowUnpublishConfirm(false);
     setIsUnpublishing(true);
     try {
       // Also deactivate the bot when unpublishing
@@ -244,7 +260,7 @@ export function PublishDialog({
           {isPublished && (
             <Button
               variant="outline"
-              onClick={handleUnpublish}
+              onClick={handleUnpublishClick}
               disabled={isUnpublishing}
               className="text-destructive hover:text-destructive"
             >
@@ -261,6 +277,30 @@ export function PublishDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Unpublish Confirmation Dialog */}
+      <AlertDialog open={showUnpublishConfirm} onOpenChange={setShowUnpublishConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Confirmar Despublicação
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja despublicar este chatbot? A URL pública deixará de funcionar imediatamente e o bot será desativado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleUnpublishConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Despublicar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
