@@ -50,9 +50,6 @@ interface Company {
   slug: string;
   created_at: string;
   address: string | null;
-  // Optional fields for EditCompanyDialog compatibility
-  plan?: string;
-  owner_cpf?: string;
 }
 
 const getStatusBadge = (status: string) => {
@@ -374,9 +371,9 @@ export default function SuperAdminDashboard() {
           ...editingCompany,
           owner_name: editingCompany.owner_name || "",
           owner_email: editingCompany.owner_email || "",
+          owner_phone: editingCompany.owner_phone || "",
           status: editingCompany.status || "active",
-          plan: editingCompany.plan || "starter",
-          owner_cpf: editingCompany.owner_cpf || ""
+          address: editingCompany.address || ""
         } : null}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}

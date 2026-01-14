@@ -99,10 +99,16 @@ export function BusinessHoursConfig({ companyId }: BusinessHoursConfigProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Upsert all hours
+      // Delete existing hours first, then insert new ones
+      await supabase
+        .from('business_hours')
+        .delete()
+        .eq('company_id', companyId);
+
+      // Insert all hours
       const { error } = await supabase
         .from('business_hours')
-        .upsert(
+        .insert(
           hours.map(h => ({
             company_id: companyId,
             day_of_week: h.day_of_week,
@@ -111,8 +117,7 @@ export function BusinessHoursConfig({ companyId }: BusinessHoursConfigProps) {
             close_time: h.close_time,
             break_start: h.break_start || null,
             break_end: h.break_end || null,
-          })),
-          { onConflict: 'company_id,day_of_week' }
+          }))
         );
 
       if (error) throw error;

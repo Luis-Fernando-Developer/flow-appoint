@@ -32,7 +32,6 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
     phone: "",
     password: "",
     role: "employee" as const,
-    employee_type: "fixo" as const,
     is_active: true,
     services: [] as string[]
   });
@@ -88,7 +87,6 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
             email: formData.email,
             phone: formData.phone,
             role: formData.role,
-            employee_type: formData.employee_type,
             is_active: formData.is_active
           }])
           .select();
@@ -122,7 +120,6 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
         phone: "",
         password: "",
         role: "employee",
-        employee_type: "fixo",
         is_active: true,
         services: []
       });
@@ -229,18 +226,6 @@ export function AddEmployeeDialog({ companyId, onEmployeeAdded }: AddEmployeeDia
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="employee_type">Tipo de Funcionário *</Label>
-            <Select value={formData.employee_type} onValueChange={(value: any) => setFormData(prev => ({ ...prev, employee_type: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fixo">Funcionário Fixo</SelectItem>
-                <SelectItem value="autonomo">Funcionário Autônomo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
           <div className="space-y-3">
             <Label>Serviços Vinculados</Label>
