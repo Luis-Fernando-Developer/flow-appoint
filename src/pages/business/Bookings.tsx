@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BusinessLayout } from "@/components/business/BusinessLayout";
+import { AddBookingDialog } from "@/components/business/AddBookingDialog";
 import { 
   Calendar, 
   Clock, 
@@ -288,8 +289,8 @@ export default function BusinessBookings() {
     );
   }
 
-  // Verificar se pode gerenciar funcionários
-  // const canManageEmployeesRoles = ['owner', 'admin', 'manager'].includes(canManageEmployees.role);
+  // Verificar se pode gerenciar agendamentos
+  const canManageBookings = ['owner', 'admin', 'manager', 'receptionist'].includes(employee?.role || '');
 
   return (
     <BusinessLayout 
@@ -308,13 +309,13 @@ export default function BusinessBookings() {
               Gerencie todos os agendamentos do estabelecimento
             </p>
           </div>
-          {/* adicionar o dialog para criar agendamentos atraves da empresa */}
-          {/* {canManageEmployeesRoles && (
+          {canManageBookings && (
             <AddBookingDialog
               companyId={company.id}
+              companySlug={company.slug}
               onBookingAdded={() => fetchBookings(company.id)}
             />
-          )} */}
+          )}
         </div>
 
         {/* Filters */}
