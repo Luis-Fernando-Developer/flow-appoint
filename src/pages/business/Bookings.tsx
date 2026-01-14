@@ -33,6 +33,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { RescheduleBookingDialog } from "@/components/business/RescheduleBookingDialog";
 
+
 const statusConfig = {
   pending: { label: "Pendente", color: "bg-yellow-500", variant: "secondary" as const },
   confirmed: { label: "Confirmado", color: "bg-green-500", variant: "default" as const },
@@ -47,6 +48,12 @@ const paymentConfig = {
   cancelled: { label: "Cancelado", color: "bg-red-500" },
   free: { label: "Isento", color: "bg-blue-500" }
 };
+
+interface Company {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 export default function BusinessBookings() {
   const { slug } = useParams();
@@ -281,6 +288,9 @@ export default function BusinessBookings() {
     );
   }
 
+  // Verificar se pode gerenciar funcionários
+  // const canManageEmployeesRoles = ['owner', 'admin', 'manager'].includes(canManageEmployees.role);
+
   return (
     <BusinessLayout 
       companySlug={company.slug} 
@@ -298,10 +308,13 @@ export default function BusinessBookings() {
               Gerencie todos os agendamentos do estabelecimento
             </p>
           </div>
-          <Button variant="neon" className="w-full md:w-auto">
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Agendamento
-          </Button>
+          {/* adicionar o dialog para criar agendamentos atraves da empresa */}
+          {/* {canManageEmployeesRoles && (
+            <AddBookingDialog
+              companyId={company.id}
+              onBookingAdded={() => fetchBookings(company.id)}
+            />
+          )} */}
         </div>
 
         {/* Filters */}

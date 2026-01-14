@@ -39,6 +39,7 @@ export interface Node {
 export interface Container {
   id: string;
   nodes: Node[];
+  nameContainer?: string;
   position: { x: number; y: number };
 }
 
