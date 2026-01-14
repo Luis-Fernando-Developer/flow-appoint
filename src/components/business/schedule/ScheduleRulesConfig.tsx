@@ -72,18 +72,42 @@ export function ScheduleRulesConfig({ companyId }: ScheduleRulesConfigProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
+      // Check if settings exist
+      const { data: existing } = await supabase
         .from('company_schedule_settings')
-        .upsert({
-          company_id: companyId,
-          slot_duration_minutes: settings.slot_duration_minutes,
-          min_advance_hours: settings.min_advance_hours,
-          max_advance_days: settings.max_advance_days,
-          allow_simultaneous_breaks: settings.allow_simultaneous_breaks,
-          max_simultaneous_breaks: settings.max_simultaneous_breaks,
-        }, { onConflict: 'company_id' });
+        .select('id')
+        .eq('company_id', companyId)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (existing) {
+        // Update existing
+        const { error } = await supabase
+          .from('company_schedule_settings')
+          .update({
+            slot_duration_minutes: settings.slot_duration_minutes,
+            min_advance_hours: settings.min_advance_hours,
+            max_advance_days: settings.max_advance_days,
+            allow_simultaneous_breaks: settings.allow_simultaneous_breaks,
+            max_simultaneous_breaks: settings.max_simultaneous_breaks,
+          })
+          .eq('company_id', companyId);
+
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase
+          .from('company_schedule_settings')
+          .insert({
+            company_id: companyId,
+            slot_duration_minutes: settings.slot_duration_minutes,
+            min_advance_hours: settings.min_advance_hours,
+            max_advance_days: settings.max_advance_days,
+            allow_simultaneous_breaks: settings.allow_simultaneous_breaks,
+            max_simultaneous_breaks: settings.max_simultaneous_breaks,
+          });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Sucesso",

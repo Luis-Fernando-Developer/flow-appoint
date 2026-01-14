@@ -18,20 +18,16 @@ import { supabase } from "@/lib/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { Calculator, Percent } from "lucide-react";
 
+// Aligned with database schema - companies table
 interface Company {
   id: string;
   name: string;
-  owner_name: string;
-  owner_email: string;
-  status: string;
-  plan: string;
+  owner_name: string | null;
+  owner_email: string | null;
+  owner_phone: string | null;
+  status: string | null;
   slug: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  cnpj?: string;
-  owner_cpf: string;
+  address: string | null;
 }
 
 interface Plan {
@@ -48,7 +44,6 @@ interface Subscription {
   billing_period: string;
   original_price: number;
   discount_percentage: number;
-  discounted_price?: number;
   discount_cycles_remaining: number;
 }
 
@@ -65,19 +60,15 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [descontoEspecial, setDescontoEspecial] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("");
   
   const [formData, setFormData] = useState({
     name: "",
     owner_name: "",
     owner_email: "",
-    owner_cpf: "",
-    cnpj: "",
-    phone: "",
+    owner_phone: "",
     address: "",
-    city: "",
-    state: "",
     status: "active",
-    plan: "starter",
     slug: "",
   });
 
@@ -102,14 +93,9 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
         name: company.name || "",
         owner_name: company.owner_name || "",
         owner_email: company.owner_email || "",
-        owner_cpf: company.owner_cpf || "",
-        cnpj: company.cnpj || "",
-        phone: company.phone || "",
+        owner_phone: company.owner_phone || "",
         address: company.address || "",
-        city: company.city || "",
-        state: company.state || "",
         status: company.status || "active",
-        plan: company.plan || "starter",
         slug: company.slug || "",
       });
     }
@@ -135,6 +121,7 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
     
     if (data) {
       setSubscription(data);
+      setSelectedPlanId(data.plan_id);
       if (data.discount_percentage > 0) {
         setDescontoEspecial(true);
         setDiscountData({
@@ -146,8 +133,12 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
     }
   };
 
+  const getSelectedPlan = () => {
+    return plans.find(p => p.id === selectedPlanId);
+  };
+
   const getCurrentPlanPrice = () => {
-    const plan = plans.find(p => p.name.toLowerCase() === formData.plan.toLowerCase());
+    const plan = getSelectedPlan();
     if (!plan) return 0;
 
     switch (discountData.billingPeriod) {
@@ -190,21 +181,16 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
 
     setLoading(true);
     try {
-      // Update company
+      // Update company (only fields that exist in schema)
       const { error: companyError } = await supabase
         .from('companies')
         .update({
           name: formData.name,
           owner_name: formData.owner_name,
           owner_email: formData.owner_email,
-          owner_cpf: formData.owner_cpf,
-          cnpj: formData.cnpj,
-          phone: formData.phone,
+          owner_phone: formData.owner_phone,
           address: formData.address,
-          city: formData.city,
-          state: formData.state,
           status: formData.status,
-          plan: formData.plan,
           slug: formData.slug,
         })
         .eq('id', company.id);
@@ -212,41 +198,34 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
       if (companyError) throw companyError;
 
       // Handle subscription/discount
-      if (descontoEspecial) {
-        const plan = plans.find(p => p.name.toLowerCase() === formData.plan.toLowerCase());
-        
-        if (plan) {
-          const originalPrice = getCurrentPlanPrice();
-          const discountedPrice = calculateDiscountedPrice();
+      if (descontoEspecial && selectedPlanId) {
+        const originalPrice = getCurrentPlanPrice();
 
-          if (subscription) {
-            // Update existing subscription
-            await supabase
-              .from('company_subscriptions')
-              .update({
-                plan_id: plan.id,
-                billing_period: discountData.billingPeriod,
-                original_price: originalPrice,
-                discount_percentage: discountData.percentage,
-                discounted_price: discountedPrice,
-                discount_cycles_remaining: discountData.cycles,
-              })
-              .eq('id', subscription.id);
-          } else {
-            // Create new subscription
-            await supabase
-              .from('company_subscriptions')
-              .insert([{
-                company_id: company.id,
-                plan_id: plan.id,
-                billing_period: discountData.billingPeriod,
-                original_price: originalPrice,
-                discount_percentage: discountData.percentage,
-                discounted_price: discountedPrice,
-                discount_cycles_remaining: discountData.cycles,
-                status: 'active'
-              }]);
-          }
+        if (subscription) {
+          // Update existing subscription
+          await supabase
+            .from('company_subscriptions')
+            .update({
+              plan_id: selectedPlanId,
+              billing_period: discountData.billingPeriod,
+              original_price: originalPrice,
+              discount_percentage: discountData.percentage,
+              discount_cycles_remaining: discountData.cycles,
+            })
+            .eq('id', subscription.id);
+        } else {
+          // Create new subscription
+          await supabase
+            .from('company_subscriptions')
+            .insert([{
+              company_id: company.id,
+              plan_id: selectedPlanId,
+              billing_period: discountData.billingPeriod,
+              original_price: originalPrice,
+              discount_percentage: discountData.percentage,
+              discount_cycles_remaining: discountData.cycles,
+              status: 'active'
+            }]);
         }
       } else if (subscription && subscription.discount_percentage > 0) {
         // Remove discount
@@ -254,7 +233,6 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
           .from('company_subscriptions')
           .update({
             discount_percentage: 0,
-            discounted_price: subscription.original_price,
             discount_cycles_remaining: 0
           })
           .eq('id', subscription.id);
@@ -327,7 +305,6 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
                 id="owner_name"
                 value={formData.owner_name}
                 onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
@@ -337,61 +314,19 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
                 type="email"
                 value={formData.owner_email}
                 onChange={(e) => setFormData({ ...formData, owner_email: e.target.value })}
-                required
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="owner_cpf">CPF do Proprietário</Label>
+              <Label htmlFor="owner_phone">Telefone do Proprietário</Label>
               <Input
-                id="owner_cpf"
-                value={formData.owner_cpf}
-                onChange={(e) => setFormData({ ...formData, owner_cpf: e.target.value })}
-                required
+                id="owner_phone"
+                value={formData.owner_phone}
+                onChange={(e) => setFormData({ ...formData, owner_phone: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="cnpj">CNPJ</Label>
-              <Input
-                id="cnpj"
-                value={formData.cnpj}
-                onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="city">Cidade</Label>
-              <Input
-                id="city"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Endereço</Label>
-            <Textarea
-              id="address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              rows={2}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
@@ -405,19 +340,31 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan">Plano</Label>
-              <Select value={formData.plan} onValueChange={(value) => setFormData({ ...formData, plan: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-primary/20">
-                  <SelectItem value="starter">Starter</SelectItem>
-                  <SelectItem value="professional">Professional</SelectItem>
-                  <SelectItem value="enterprise">Enterprise</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Endereço</Label>
+            <Textarea
+              id="address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              rows={2}
+            />
+          </div>
+
+          {/* Plan Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="plan">Plano</Label>
+            <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um plano" />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-primary/20">
+                {plans.map(plan => (
+                  <SelectItem key={plan.id} value={plan.id}>{plan.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Discount Special Section */}
@@ -434,12 +381,12 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
                 />
               </div>
 
-              {descontoEspecial && (
+              {descontoEspecial && selectedPlanId && (
                 <div className="space-y-4 pt-4 border-t border-primary/10">
                   {/* Plan Info */}
                   <div className="bg-primary/5 p-3 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Plano Atual</p>
-                    <p className="font-semibold text-lg capitalize">{formData.plan}</p>
+                    <p className="text-sm text-muted-foreground">Plano Selecionado</p>
+                    <p className="font-semibold text-lg">{getSelectedPlan()?.name}</p>
                     <p className="text-sm text-muted-foreground">
                       Valor Base ({getPeriodLabel(discountData.billingPeriod)}): {formatPrice(getCurrentPlanPrice())}
                     </p>
@@ -498,28 +445,32 @@ export function EditCompanyDialog({ company, open, onOpenChange, onSuccess }: Ed
                       <span className="text-sm font-medium">Valor Calculado</span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-3xl font-bold text-gradient">
+                      <span className="text-2xl font-bold text-primary">
                         {formatPrice(calculateDiscountedPrice())}
                       </span>
-                      <span className="text-sm text-muted-foreground line-through">
-                        {formatPrice(getCurrentPlanPrice())}
-                      </span>
+                      {discountData.percentage > 0 && (
+                        <span className="text-sm text-muted-foreground line-through">
+                          {formatPrice(getCurrentPlanPrice())}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Economia de {formatPrice(getCurrentPlanPrice() - calculateDiscountedPrice())} por ciclo
-                    </p>
+                    {discountData.percentage > 0 && (
+                      <p className="text-xs text-green-500 mt-1">
+                        Economia de {formatPrice(getCurrentPlanPrice() - calculateDiscountedPrice())} ({discountData.percentage}% OFF)
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} variant="neon">
-              {loading ? "Salvando..." : "Salvar Alterações"}
+            <Button type="submit" disabled={loading}>
+              {loading ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </form>

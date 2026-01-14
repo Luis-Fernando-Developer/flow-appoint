@@ -16,13 +16,8 @@ interface CompanyForm {
   owner_name: string;
   owner_email: string;
   owner_password: string;
-  owner_cpf: string;
-  cnpj: string;
-  phone: string;
+  owner_phone: string;
   address: string;
-  city: string;
-  state: string;
-  zip_code: string;
 }
 
 export default function CreateCompany() {
@@ -35,13 +30,8 @@ export default function CreateCompany() {
     owner_name: "",
     owner_email: "",
     owner_password: "",
-    owner_cpf: "",
-    cnpj: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    zip_code: ""
+    owner_phone: "",
+    address: ""
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -69,16 +59,6 @@ export default function CreateCompany() {
     }
   };
 
-  const formatCpf = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-  };
-
-  const formatCnpj = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -101,7 +81,7 @@ export default function CreateCompany() {
         return;
       }
 
-      // 2. Primeiro criar a empresa diretamente
+      // 2. Primeiro criar a empresa diretamente (only use fields that exist in schema)
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .insert([{
@@ -109,15 +89,9 @@ export default function CreateCompany() {
           slug: formData.slug,
           owner_name: formData.owner_name,
           owner_email: formData.owner_email,
-          owner_cpf: formData.owner_cpf.replace(/\D/g, ""),
-          cnpj: formData.cnpj.replace(/\D/g, ""),
-          phone: formData.phone,
+          owner_phone: formData.owner_phone,
           address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zip_code: formData.zip_code,
-          status: 'active',
-          plan: 'starter'
+          status: 'active'
         }])
         .select()
         .single();
@@ -154,6 +128,7 @@ export default function CreateCompany() {
           user_id: authData.user.id,
           name: formData.owner_name,
           email: formData.owner_email,
+          phone: formData.owner_phone,
           role: 'owner',
           is_active: true
         }]);
@@ -278,82 +253,13 @@ export default function CreateCompany() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="owner_cpf">CPF do Proprietário *</Label>
+                  <Label htmlFor="owner_phone">Telefone do Proprietário</Label>
                   <Input
-                    id="owner_cpf"
-                    name="owner_cpf"
-                    value={formatCpf(formData.owner_cpf)}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      if (value.length <= 11) {
-                        setFormData(prev => ({ ...prev, owner_cpf: value }));
-                      }
-                    }}
-                    placeholder="000.000.000-00"
-                    maxLength={14}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cnpj">CNPJ (opcional)</Label>
-                  <Input
-                    id="cnpj"
-                    name="cnpj"
-                    value={formatCnpj(formData.cnpj)}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "");
-                      if (value.length <= 14) {
-                        setFormData(prev => ({ ...prev, cnpj: value }));
-                      }
-                    }}
-                    placeholder="00.000.000/0000-00"
-                    maxLength={18}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
+                    id="owner_phone"
+                    name="owner_phone"
+                    value={formData.owner_phone}
                     onChange={handleInputChange}
                     placeholder="(11) 99999-9999"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="city">Cidade</Label>
-                  <Input
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    placeholder="São Paulo"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="state">Estado</Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    placeholder="SP"
-                    maxLength={2}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="zip_code">CEP</Label>
-                  <Input
-                    id="zip_code"
-                    name="zip_code"
-                    value={formData.zip_code}
-                    onChange={handleInputChange}
-                    placeholder="00000-000"
                   />
                 </div>
               </div>
@@ -365,7 +271,7 @@ export default function CreateCompany() {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  placeholder="Rua das Flores, 123 - Centro"
+                  placeholder="Rua das Flores, 123 - Centro, São Paulo - SP"
                   rows={3}
                 />
               </div>

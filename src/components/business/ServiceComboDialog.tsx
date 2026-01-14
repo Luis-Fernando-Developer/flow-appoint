@@ -39,7 +39,7 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    combo_price: 0
+    price: 0
   });
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
   };
 
   const { totalPrice, totalDuration } = calculateTotals();
-  const savings = totalPrice - formData.combo_price;
+  const savings = totalPrice - formData.price;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -182,9 +182,7 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
           company_id: companyId,
           name: formData.name,
           description: formData.description,
-          combo_price: formData.combo_price,
-          original_total_price: totalPrice,
-          total_duration_minutes: totalDuration,
+          price: formData.price,
           is_active: true
         }])
         .select()
@@ -223,7 +221,7 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
       });
 
       setOpen(false);
-      setFormData({ name: "", description: "", combo_price: 0 });
+      setFormData({ name: "", description: "", price: 0 });
       setSelectedServices([]);
       onComboAdded?.();
     } catch (error) {
@@ -332,19 +330,19 @@ export function ServiceComboDialog({ companyId, onComboAdded }: ServiceComboDial
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="combo_price">Preço do Combo (R$)</Label>
+                  <Label htmlFor="price">Preço do Combo (R$)</Label>
                   <Input
-                    id="combo_price"
+                    id="price"
                     type="number"
                     step="5"
                     min='50'
-                    value={formData.combo_price}
-                    onChange={(e) => setFormData({ ...formData, combo_price: parseFloat(e.target.value) })}
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                     required
                   />
                 </div>
 
-                {formData.combo_price > 0 && formData.combo_price < totalPrice && (
+                {formData.price > 0 && formData.price < totalPrice && (
                   <div className="mt-3 p-2 bg-green-500/10 rounded-lg text-center">
                     <p className="text-sm text-green-600 font-medium">
                       🎉 Cliente economiza {formatPrice(savings)} ({Math.round((savings / totalPrice) * 100)}% OFF)
