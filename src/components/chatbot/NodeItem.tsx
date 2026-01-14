@@ -19,6 +19,7 @@ import {
   Play,
   Webhook,
   Send,
+  MoveIcon,
 } from "lucide-react";
 import { Node, NodeType } from "@/types/chatbot";
 import { renderTextSegments } from "@/lib/textParser";
@@ -155,7 +156,7 @@ export const NodeItem = ({ node, onClick }: NodeItemProps) => {
       className={cn(
         "nodrag nopan",
         nodeColors[node.type],
-        "rounded-lg p-3 cursor-pointer transition-all duration-200 select-none border relative overflow-hidden group"
+        "rounded-lg p-0 cursor-pointer transition-all duration-200 select-none border relative overflow-hidden group  border-border/60"
       )}
     >
       {/* Drag Handle - sempre visível */}
@@ -164,16 +165,16 @@ export const NodeItem = ({ node, onClick }: NodeItemProps) => {
         onDragStart={handleDragStart}
         onMouseDown={handleDragHandleMouseDown}
         onClick={(e) => e.stopPropagation()}
-        className="nodrag nopan absolute top-1 right-1 p-1.5 rounded-md bg-muted/80 hover:bg-muted border border-border/50 cursor-grab active:cursor-grabbing transition-all opacity-60 hover:opacity-100 z-10"
+        className="nodrag nopan absolute top-0 right-0 p-1 rounded-md bg-muted/80 hover:bg-muted border border-border/50 cursor-grab active:cursor-grabbing transition-all opacity-100 hover:opacity-100 z-10"
         title="Arraste para mover para outro bloco"
       >
-        <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+        <MoveIcon className="h-3.5 w-3.5 p-0  text-muted-foreground rounded-none" />
       </div>
 
-      <div className="flex items-center gap-2 pr-8">
+      <div className="flex items-center justify-center gap-2 pr-8 rounded-md px-1 min-h-[40px]">
         {nodeIcons[node.type]}
-        <div className="flex-1 min-w-0 flex flex-col gap-1">
-          <p className="text-xs font-semibold text-left max-w-[180px]">{nodeLabels[node.type]}</p>
+        <div className="flex-1 min-w-0 flex py-1 px-1 overflow-hidden max-w-[90%] flex-col gap-1">
+          <p className="text-xs font-semibold text-left w-full">{nodeLabels[node.type]}</p>
 
           {hasVideoPreview ? (
             <div className="mt-2">
@@ -225,11 +226,11 @@ export const NodeItem = ({ node, onClick }: NodeItemProps) => {
               </p>
             </div>
           ) : hasScriptPreview ? (
-            <div className="mt-2 p-3 space-y-2">
+            <div className="mt-2 p-3 space-y-2 border border-red-600">
               <div className="flex items-center gap-2">
-                <Code className="h-4 w-4 text-purple-400" />
+                
                 <span className="text-sm font-medium text-purple-700">
-                  {node.config.executeOnServer ? '🖥️ Server Script' : '💻 Client Script'}
+                  {node.config.executeOnServer ? 'Vai executar do lado do servidor' : 'Vai executar do lado do cliente'}
                 </span>
               </div>
               <pre className="text-xs bg-black/20 p-2 rounded overflow-hidden text-ellipsis whitespace-nowrap text-gray-700">
@@ -239,7 +240,7 @@ export const NodeItem = ({ node, onClick }: NodeItemProps) => {
             </div>
           ) : (
             messageValue && (
-              <p className="text-xs text-black text-justify max-w-[180px] h-auto leading-relaxed text-wrap py-0">
+              <p className="text-xs text-black text-left max-w-[180px] h-auto leading-relaxed text-wrap py-0">
                 {renderTextSegments(messageValue as string, {
                   variableClassName: "bg-orange-400 px-1 py-0.5 text-white rounded",
                   linkClassName: "text-blue-600 underline hover:text-blue-800"

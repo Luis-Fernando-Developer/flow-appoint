@@ -54,6 +54,9 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   const [insertIndex, setInsertIndex] = useState<number | null>(null);
   const nodesListRef = useRef<HTMLDivElement>(null);
 
+  const [isEditingContainerNameNode, setIsEditingContainerNameNode] = useState(false);
+  const [nameContainerNode, setNameContainerNode] = useState(container.nameContainer || `BLOCO #${container.id.slice(-6)}`);
+
   // Check if container has a button or condition node - if so, don't show bottom handle
   const hasButtonNode = container.nodes.some(n => n.type === 'input-buttons');
   const hasConditionNode = container.nodes.some(n => n.type === 'condition');
@@ -117,12 +120,12 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
   return (
     <div 
       className={cn(
-        'relative bg-card py-1 px-2 rounded-xl shadow-lg border border-border min-w-[280px] transition-all duration-200',
+        'relative bg-card py-1 px-0 rounded-xl shadow-lg border border-border max-w-[300px] transition-all duration-200',
         isDragOver && 'ring-2 ring-green-500 border-green-500 bg-green-50/10'
       )}
     >
       <div
-        className="bg-card p-4"
+        className="bg-card p-4 rounded-sm"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -131,8 +134,20 @@ export const ContainerNode = memo(({ data }: NodeProps<ContainerNodeData>) => {
           <Handle type="target" position={Position.Top} className="!bg-green-600 !w-4 !h-4 -top-2" />
         )}
 
-        <div className="flex items-center justify-between mb-3 rounded-sm border border-border/40">
-          <h3 className="font-semibold text-sm text-foreground px-0.5">Bloco #{container.id.slice(-6)}</h3>
+        <div className="flex items-center justify-between mb-4 rounded-md">
+        {isEditingContainerNameNode ? (
+          <input
+            type="text"
+            value={nameContainerNode}
+            autoFocus
+            onChange={(e) => setNameContainerNode(e.target.value)}
+            onBlur={() => setIsEditingContainerNameNode(false)}
+            placeholder='Renomear Bloco'
+            className=" rounded-md p-1.5 pl-2 placeholder:text-black focus:bg-gray-100/5 text-sm w-full focus:outline-none bg-gray-100/5 text-violet-800"
+          />
+        ) : (
+              <h3 onClick={() => setIsEditingContainerNameNode(true)} className="rounded-md p-1.5 w-full pl-2 border border-border/40 text-sm text-foreground px-0.5">{nameContainerNode || <span className='text-muted-foreground italic'>{`Bloco #${container.id.slice(-6)}`}</span>}</h3>
+        )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
