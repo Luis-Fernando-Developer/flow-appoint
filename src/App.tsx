@@ -62,12 +62,10 @@ const App = () => (
             <Route path="/:slug/admin/colaboradores" element={<RequireBusinessAuth><BusinessEmployees /></RequireBusinessAuth>} />
             <Route path="/:slug/admin/configuracoes" element={<RequireBusinessAuth><BusinessSettings /></RequireBusinessAuth>} />
             <Route path="/:slug/admin/perfil" element={<RequireBusinessAuth><BusinessProfile /></RequireBusinessAuth>} />
-            <Route path="/:slug/admin/chatbot" element={<RequireBusinessAuth><ChatbotList /></RequireBusinessAuth>} />
-            <Route path="/:slug/admin/chatbot/:botName/edit" element={<RequireBusinessAuth><ChatbotEditor /></RequireBusinessAuth>} />
+            <Route path="/:slug/admin/chatbot" element={<RequireBusinessAuth><ChatbotIntegracao /></RequireBusinessAuth>} />
+            <Route path="/:slug/admin/chatbot/integracao" element={<RequireBusinessAuth><ChatbotIntegracao /></RequireBusinessAuth>} />
+            <Route path="/:slug/admin/chatbot/talkmap" element={<RequireBusinessAuth><ChatbotTalkMap /></RequireBusinessAuth>} />
             <Route path="/:slug/admin/horarios" element={<RequireBusinessAuth><BusinessSchedule /></RequireBusinessAuth>} />
-
-            {/* rota página pública do chatbot */}
-            <Route path="/:slug/flow/:publicId" element={<ChatbotPublicPage />} />
 
             {/* rota landingpage empresa por parametro [slug] */}
             <Route path="/:slug" element={<CompanyLandingPage />} />
