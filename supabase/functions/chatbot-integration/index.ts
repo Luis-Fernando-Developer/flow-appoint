@@ -52,24 +52,12 @@ function getKeyPrefix(key: string): string {
 }
 
 async function encryptKey(key: string): Promise<string> {
-  const { data, error } = await admin.rpc("pgp_sym_encrypt_text" as never, {});
-  // Não dá pra chamar pgp_sym_encrypt diretamente via .rpc — usamos query crua via supabase-js v2 (sem método),
-  // então vamos fazer SQL inline com a função do banco. Encapsulamos numa função SQL helper.
-  if (error) console.warn("pgp_sym_encrypt_text rpc not available, fallback via SQL");
-  // Implementação real via SQL inline:
-  const { data: row, error: e2 } = await admin
-    .from("chatbot_integration")
-    .select("id")
-    .limit(0); // só pra garantir conexão antes do raw SQL abaixo
-  void row; void e2;
-  // Como supabase-js não expõe SQL bruto, criamos uma função SQL helper no banco (pgcrypto)
-  // que recebe (text, text) e devolve text. Veja migration complementar.
-  const { data: enc, error: e3 } = await admin.rpc("encrypt_chatbot_key", {
+  const { data, error } = await admin.rpc("encrypt_chatbot_key", {
     p_plain: key,
     p_secret: ENCRYPTION_SECRET,
   });
-  if (e3) throw e3;
-  return enc as unknown as string;
+  if (error) throw error;
+  return data as unknown as string;
 }
 
 async function decryptKey(encrypted: string): Promise<string> {
