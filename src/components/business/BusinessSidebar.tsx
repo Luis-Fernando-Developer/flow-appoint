@@ -36,7 +36,7 @@ const menuItems = [
   { title: "Horários", url: "/admin/horarios", icon: Clock },
   { title: "Serviços", url: "/admin/servicos", icon: Briefcase },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: Users },
-  { title: "Chatbot", url: "/admin/chatbot", icon: Bot },
+  { title: "Chatbot", url: "/admin/chatbot/integracao", icon: Bot },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
 

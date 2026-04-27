@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Divide as Hamburger } from 'hamburger-react';
 import { custom } from "zod";
-import { ChatWidget } from "@/components/chatbot/ChatWidget";
+// ChatWidget removido — o chatbot agora é gerenciado pelo builder externo (TalkMap).
 
 interface CustomizationData {
   company_id: string;
@@ -82,7 +82,7 @@ export default function CustomLandingPage() {
   const [optionHeader, setOptionHeader] = useState(false);
   const [visibleServices, setVisibleServices] = useState(4);
   const [visibleEmployees, setVisibleEmployees] = useState(4);
-  const [activeFlowId, setActiveFlowId] = useState<string | null>(null);
+  // activeFlowId removido — chatbot agora é gerenciado pelo builder externo (TalkMap).
 
   useEffect(() => {
     if ( slug) {
@@ -214,18 +214,7 @@ export default function CustomLandingPage() {
       } else {
         setCustomization(null);
       }
-
-      // Fetch active chatbot flow
-      const { data: activeFlow } = await supabaseClient
-        .from('chatbot_flows')
-        .select('id')
-        .eq('company_id', companyData.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (activeFlow) {
-        setActiveFlowId(activeFlow.id);
-      }
+      // Chatbot agora é gerenciado pelo builder externo (TalkMap), não há mais flow ativo a buscar aqui.
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -939,15 +928,7 @@ export default function CustomLandingPage() {
           </div>
         </footer>
 
-        {/* Chatbot Widget */}
-        {activeFlowId && company && (
-          <ChatWidget
-            flowId={activeFlowId}
-            companyId={company.id}
-            companyName={company.name}
-            primaryColor={customization?.button_color || "#3b82f6"}
-          />
-        )}
+        {/* Chatbot Widget removido — gerenciado pelo builder externo (TalkMap). */}
       </div>
     </div>
   );
