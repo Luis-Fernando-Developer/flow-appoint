@@ -20,8 +20,12 @@ import {
   User,
   LogOut,
   Bot,
-  Clock
+  Clock,
+  ChevronDown,
+  Plug,
+  MessageSquare
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { BookingLogo } from "@/components/BookingLogo";
 import { Button } from "@/components/ui/button";
