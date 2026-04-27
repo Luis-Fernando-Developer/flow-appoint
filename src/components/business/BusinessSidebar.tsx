@@ -189,21 +189,66 @@ export function BusinessSidebar({ companySlug, companyName, companyId, userRole,
             <SidebarGroupContent>
               
               <SidebarMenu>
-                {filteredMenuItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={`${basePath}${item.url}`} 
-                        className={({ isActive }) => 
-                          `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${getNavCls(isActive)}`
-                        }
-                      >
-                        <item.icon className="w-5 h-5 flex-shrink-0" />
-                        {state !== "collapsed" && <span>{item.title}</span>}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {filteredMenuItems.map((item) => {
+                  if (item.children && item.children.length > 0) {
+                    const childActive = item.children.some((c) => isActive(c.url));
+                    const collapsed = state === "collapsed";
+                    return (
+                      <Collapsible key={item.title} defaultOpen={childActive}>
+                        <SidebarMenuItem>
+                          <CollapsibleTrigger asChild>
+                            <SidebarMenuButton
+                              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors w-full ${
+                                childActive ? "bg-primary/20 text-primary" : "hover:bg-primary/10 hover:text-primary"
+                              }`}
+                            >
+                              <item.icon className="w-5 h-5 flex-shrink-0" />
+                              {!collapsed && (
+                                <>
+                                  <span className="flex-1 text-left">{item.title}</span>
+                                  <ChevronDown className="w-4 h-4 transition-transform data-[state=open]:rotate-180" />
+                                </>
+                              )}
+                            </SidebarMenuButton>
+                          </CollapsibleTrigger>
+                          {!collapsed && (
+                            <CollapsibleContent>
+                              <div className="ml-6 mt-1 flex flex-col gap-1 border-l border-primary/20 pl-2">
+                                {item.children.map((child) => (
+                                  <NavLink
+                                    key={child.title}
+                                    to={`${basePath}${child.url}`}
+                                    className={({ isActive }) =>
+                                      `flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors ${getNavCls(isActive)}`
+                                    }
+                                  >
+                                    <child.icon className="w-4 h-4" />
+                                    <span>{child.title}</span>
+                                  </NavLink>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          )}
+                        </SidebarMenuItem>
+                      </Collapsible>
+                    );
+                  }
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <NavLink 
+                          to={`${basePath}${item.url}`} 
+                          className={({ isActive }) => 
+                            `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${getNavCls(isActive)}`
+                          }
+                        >
+                          <item.icon className="w-5 h-5 flex-shrink-0" />
+                          {state !== "collapsed" && <span>{item.title}</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
