@@ -214,18 +214,7 @@ export default function CustomLandingPage() {
       } else {
         setCustomization(null);
       }
-
-      // Fetch active chatbot flow
-      const { data: activeFlow } = await supabaseClient
-        .from('chatbot_flows')
-        .select('id')
-        .eq('company_id', companyData.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (activeFlow) {
-        setActiveFlowId(activeFlow.id);
-      }
+      // Chatbot agora é gerenciado pelo builder externo (TalkMap), não há mais flow ativo a buscar aqui.
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
