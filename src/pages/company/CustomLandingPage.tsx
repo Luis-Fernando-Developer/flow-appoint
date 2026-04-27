@@ -928,15 +928,7 @@ export default function CustomLandingPage() {
           </div>
         </footer>
 
-        {/* Chatbot Widget */}
-        {activeFlowId && company && (
-          <ChatWidget
-            flowId={activeFlowId}
-            companyId={company.id}
-            companyName={company.name}
-            primaryColor={customization?.button_color || "#3b82f6"}
-          />
-        )}
+        {/* Chatbot Widget removido — gerenciado pelo builder externo (TalkMap). */}
       </div>
     </div>
   );
