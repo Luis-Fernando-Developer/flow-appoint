@@ -293,6 +293,51 @@ export type Database = {
           },
         ]
       }
+      chatbot_integration: {
+        Row: {
+          api_key_encrypted: string
+          api_key_prefix: string
+          builder_base_url: string | null
+          builder_user_id: string | null
+          builder_workspace_slug: string | null
+          company_id: string
+          connected_at: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_validated_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key_encrypted: string
+          api_key_prefix: string
+          builder_base_url?: string | null
+          builder_user_id?: string | null
+          builder_workspace_slug?: string | null
+          company_id: string
+          connected_at?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_validated_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key_encrypted?: string
+          api_key_prefix?: string
+          builder_base_url?: string | null
+          builder_user_id?: string | null
+          builder_workspace_slug?: string | null
+          company_id?: string
+          connected_at?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_validated_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chatbot_sessions: {
         Row: {
           client_id: string | null
