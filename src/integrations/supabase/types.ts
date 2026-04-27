@@ -1138,7 +1138,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      decrypt_chatbot_key: {
+        Args: { p_cipher: string; p_secret: string }
+        Returns: string
+      }
+      encrypt_chatbot_key: {
+        Args: { p_plain: string; p_secret: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
