@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Divide as Hamburger } from 'hamburger-react';
 import { custom } from "zod";
-import { ChatWidget } from "@/components/chatbot/ChatWidget";
+// ChatWidget removido — o chatbot agora é gerenciado pelo builder externo (TalkMap).
 
 interface CustomizationData {
   company_id: string;
