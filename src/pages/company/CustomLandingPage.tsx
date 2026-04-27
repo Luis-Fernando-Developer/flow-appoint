@@ -82,7 +82,7 @@ export default function CustomLandingPage() {
   const [optionHeader, setOptionHeader] = useState(false);
   const [visibleServices, setVisibleServices] = useState(4);
   const [visibleEmployees, setVisibleEmployees] = useState(4);
-  const [activeFlowId, setActiveFlowId] = useState<string | null>(null);
+  // activeFlowId removido — chatbot agora é gerenciado pelo builder externo (TalkMap).
 
   useEffect(() => {
     if ( slug) {
