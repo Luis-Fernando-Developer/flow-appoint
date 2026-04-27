@@ -34,13 +34,24 @@ import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/hooks/use-permissions";
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
-const menuItems = [
+type SubItem = { title: string; url: string; icon: typeof LayoutDashboard };
+type MenuItem = { title: string; url: string; icon: typeof LayoutDashboard; children?: SubItem[] };
+
+const menuItems: MenuItem[] = [
   { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
   { title: "Agendamentos", url: "/admin/agendamentos", icon: Calendar },
   { title: "Horários", url: "/admin/horarios", icon: Clock },
   { title: "Serviços", url: "/admin/servicos", icon: Briefcase },
   { title: "Colaboradores", url: "/admin/colaboradores", icon: Users },
-  { title: "Chatbot", url: "/admin/chatbot/integracao", icon: Bot },
+  {
+    title: "Chatbot",
+    url: "/admin/chatbot/integracao",
+    icon: Bot,
+    children: [
+      { title: "Integração", url: "/admin/chatbot/integracao", icon: Plug },
+      { title: "TalkMap", url: "/admin/chatbot/talkmap", icon: MessageSquare },
+    ],
+  },
   { title: "Configurações", url: "/admin/configuracoes", icon: Settings },
 ];
 
