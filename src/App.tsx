@@ -65,6 +65,7 @@ const App = () => (
             <Route path="/:slug/admin/chatbot" element={<RequireBusinessAuth><ChatbotIntegracao /></RequireBusinessAuth>} />
             <Route path="/:slug/admin/chatbot/integracao" element={<RequireBusinessAuth><ChatbotIntegracao /></RequireBusinessAuth>} />
             <Route path="/:slug/admin/chatbot/talkmap" element={<RequireBusinessAuth><ChatbotTalkMap /></RequireBusinessAuth>} />
+            <Route path="/:slug/admin/chatbot/talkmap/*" element={<RequireBusinessAuth><ChatbotTalkMap /></RequireBusinessAuth>} />
             <Route path="/:slug/admin/horarios" element={<RequireBusinessAuth><BusinessSchedule /></RequireBusinessAuth>} />
 
             {/* rota landingpage empresa por parametro [slug] */}
