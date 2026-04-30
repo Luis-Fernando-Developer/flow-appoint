@@ -8,17 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plug, CheckCircle2, AlertCircle, Loader2, Trash2, ExternalLink } from "lucide-react";
+import { Plug, CheckCircle2, AlertCircle, Loader2, Trash2, ExternalLink, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 interface IntegrationStatus {
   connected: boolean;
   integration: {
-    api_key_prefix: string;
+    api_key_prefix: string | null;
     builder_workspace_slug: string | null;
     builder_base_url: string;
     connected_at: string;
     is_active: boolean;
+    talkmap_provisioned?: boolean;
+    talkmap_provisioned_at?: string | null;
   } | null;
 }
 
