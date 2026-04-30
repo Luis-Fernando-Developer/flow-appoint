@@ -8,17 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plug, CheckCircle2, AlertCircle, Loader2, Trash2, ExternalLink } from "lucide-react";
+import { Plug, CheckCircle2, AlertCircle, Loader2, Trash2, ExternalLink, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 
 interface IntegrationStatus {
   connected: boolean;
   integration: {
-    api_key_prefix: string;
+    api_key_prefix: string | null;
     builder_workspace_slug: string | null;
     builder_base_url: string;
     connected_at: string;
     is_active: boolean;
+    talkmap_provisioned?: boolean;
+    talkmap_provisioned_at?: string | null;
   } | null;
 }
 
@@ -50,17 +52,61 @@ export default function ChatbotIntegracao() {
   }, [slug]);
 
   async function refreshStatus(cid: string) {
-    const { data, error } = await supabase.functions.invoke("chatbot-integration/status", {
-      method: "GET",
-      body: undefined as never,
-    } as never).catch(() => ({ data: null, error: null } as never));
-    // fallback: chamar via fetch direto pois invoke não suporta query string facilmente
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chatbot-integration/status?company_id=${cid}`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+    const { data } = await supabase
+      .from("chatbot_integration")
+      .select("api_key_prefix, builder_workspace_slug, builder_base_url, connected_at, is_active, talkmap_provisioned, talkmap_provisioned_at")
+      .eq("company_id", cid)
+      .maybeSingle();
+    setStatus({
+      connected: !!data?.is_active && !!data?.api_key_prefix,
+      integration: data
+        ? {
+            api_key_prefix: data.api_key_prefix,
+            builder_workspace_slug: data.builder_workspace_slug,
+            builder_base_url: data.builder_base_url ?? "https://talkbuilder.lovable.app",
+            connected_at: data.connected_at,
+            is_active: data.is_active,
+            talkmap_provisioned: data.talkmap_provisioned ?? false,
+            talkmap_provisioned_at: data.talkmap_provisioned_at,
+          }
+        : null,
     });
-    const json = await res.json();
-    setStatus(json);
+  }
+
+  async function toggleProvisioned(value: boolean) {
+    if (!companyId) return;
+    setSaving(true);
+    try {
+      // Garante que existe um registro (caso conta antiga sem stub)
+      const { data: existing } = await supabase
+        .from("chatbot_integration")
+        .select("id")
+        .eq("company_id", companyId)
+        .maybeSingle();
+      if (existing) {
+        await supabase
+          .from("chatbot_integration")
+          .update({
+            talkmap_provisioned: value,
+            talkmap_provisioned_at: value ? new Date().toISOString() : null,
+          })
+          .eq("company_id", companyId);
+      } else {
+        await supabase.from("chatbot_integration").insert({
+          company_id: companyId,
+          builder_base_url: "https://talkbuilder.lovable.app",
+          is_active: false,
+          talkmap_provisioned: value,
+          talkmap_provisioned_at: value ? new Date().toISOString() : null,
+        });
+      }
+      toast.success(value ? "Conta marcada como criada no TalkMap" : "Marcação removida");
+      await refreshStatus(companyId);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleConnect() {
@@ -120,6 +166,68 @@ export default function ChatbotIntegracao() {
           <h1 className="text-2xl font-bold flex items-center gap-2"><Plug className="h-6 w-6" /> Integração Chatbot</h1>
           <p className="text-muted-foreground mt-1">Conecte seu workspace do TalkMap para usar o construtor de chatbot dentro do Flow-Appoint.</p>
         </div>
+
+        {/* Card 1 — Status do provisionamento da conta TalkMap */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                {status?.integration?.talkmap_provisioned ? (
+                  <UserCheck className="h-5 w-5 text-green-600" />
+                ) : (
+                  <UserX className="h-5 w-5 text-amber-500" />
+                )}
+                Conta no TalkMap
+              </span>
+              {status?.integration?.talkmap_provisioned ? (
+                <Badge className="bg-green-600"><CheckCircle2 className="h-3 w-3 mr-1" /> Provisionada</Badge>
+              ) : (
+                <Badge variant="outline" className="border-amber-500 text-amber-600">
+                  <AlertCircle className="h-3 w-3 mr-1" /> Pendente
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              {status?.integration?.talkmap_provisioned
+                ? "Sua conta no TalkMap já foi criada. Você pode conectar a chave de API abaixo."
+                : "Você ainda precisa criar manualmente sua conta no TalkMap usando o mesmo e-mail e senha cadastrados aqui."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {!status?.integration?.talkmap_provisioned && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-md p-3 space-y-2 text-foreground/90">
+                <p className="font-medium">📝 Passos para criar sua conta no TalkMap:</p>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Acesse <a href="https://talkbuilder.lovable.app" target="_blank" rel="noopener" className="text-primary inline-flex items-center gap-1">talkbuilder.lovable.app <ExternalLink className="h-3 w-3" /></a></li>
+                  <li>Clique em <strong>Cadastrar</strong></li>
+                  <li>Use o <strong>mesmo e-mail e senha</strong> da sua conta Flow-Appoint</li>
+                  <li>No campo <strong>URL personalizada</strong>, use: <code className="bg-muted px-1.5 py-0.5 rounded">{status?.integration?.builder_workspace_slug || slug}</code></li>
+                  <li>Após concluir, volte aqui e marque como provisionada</li>
+                </ol>
+              </div>
+            )}
+            {status?.integration?.talkmap_provisioned && status.integration.talkmap_provisioned_at && (
+              <p className="text-muted-foreground">
+                Marcada em {new Date(status.integration.talkmap_provisioned_at).toLocaleString("pt-BR")}
+              </p>
+            )}
+            <Button
+              variant={status?.integration?.talkmap_provisioned ? "outline" : "default"}
+              size="sm"
+              onClick={() => toggleProvisioned(!status?.integration?.talkmap_provisioned)}
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : status?.integration?.talkmap_provisioned ? (
+                <UserX className="h-4 w-4 mr-2" />
+              ) : (
+                <UserCheck className="h-4 w-4 mr-2" />
+              )}
+              {status?.integration?.talkmap_provisioned ? "Desmarcar" : "Já criei minha conta no TalkMap"}
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
