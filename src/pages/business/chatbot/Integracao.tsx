@@ -167,6 +167,68 @@ export default function ChatbotIntegracao() {
           <p className="text-muted-foreground mt-1">Conecte seu workspace do TalkMap para usar o construtor de chatbot dentro do Flow-Appoint.</p>
         </div>
 
+        {/* Card 1 — Status do provisionamento da conta TalkMap */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                {status?.integration?.talkmap_provisioned ? (
+                  <UserCheck className="h-5 w-5 text-green-600" />
+                ) : (
+                  <UserX className="h-5 w-5 text-amber-500" />
+                )}
+                Conta no TalkMap
+              </span>
+              {status?.integration?.talkmap_provisioned ? (
+                <Badge className="bg-green-600"><CheckCircle2 className="h-3 w-3 mr-1" /> Provisionada</Badge>
+              ) : (
+                <Badge variant="outline" className="border-amber-500 text-amber-600">
+                  <AlertCircle className="h-3 w-3 mr-1" /> Pendente
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              {status?.integration?.talkmap_provisioned
+                ? "Sua conta no TalkMap já foi criada. Você pode conectar a chave de API abaixo."
+                : "Você ainda precisa criar manualmente sua conta no TalkMap usando o mesmo e-mail e senha cadastrados aqui."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {!status?.integration?.talkmap_provisioned && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-md p-3 space-y-2 text-foreground/90">
+                <p className="font-medium">📝 Passos para criar sua conta no TalkMap:</p>
+                <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                  <li>Acesse <a href="https://talkbuilder.lovable.app" target="_blank" rel="noopener" className="text-primary inline-flex items-center gap-1">talkbuilder.lovable.app <ExternalLink className="h-3 w-3" /></a></li>
+                  <li>Clique em <strong>Cadastrar</strong></li>
+                  <li>Use o <strong>mesmo e-mail e senha</strong> da sua conta Flow-Appoint</li>
+                  <li>No campo <strong>URL personalizada</strong>, use: <code className="bg-muted px-1.5 py-0.5 rounded">{status?.integration?.builder_workspace_slug || slug}</code></li>
+                  <li>Após concluir, volte aqui e marque como provisionada</li>
+                </ol>
+              </div>
+            )}
+            {status?.integration?.talkmap_provisioned && status.integration.talkmap_provisioned_at && (
+              <p className="text-muted-foreground">
+                Marcada em {new Date(status.integration.talkmap_provisioned_at).toLocaleString("pt-BR")}
+              </p>
+            )}
+            <Button
+              variant={status?.integration?.talkmap_provisioned ? "outline" : "default"}
+              size="sm"
+              onClick={() => toggleProvisioned(!status?.integration?.talkmap_provisioned)}
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : status?.integration?.talkmap_provisioned ? (
+                <UserX className="h-4 w-4 mr-2" />
+              ) : (
+                <UserCheck className="h-4 w-4 mr-2" />
+              )}
+              {status?.integration?.talkmap_provisioned ? "Desmarcar" : "Já criei minha conta no TalkMap"}
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
