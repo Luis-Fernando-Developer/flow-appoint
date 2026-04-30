@@ -52,17 +52,61 @@ export default function ChatbotIntegracao() {
   }, [slug]);
 
   async function refreshStatus(cid: string) {
-    const { data, error } = await supabase.functions.invoke("chatbot-integration/status", {
-      method: "GET",
-      body: undefined as never,
-    } as never).catch(() => ({ data: null, error: null } as never));
-    // fallback: chamar via fetch direto pois invoke não suporta query string facilmente
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chatbot-integration/status?company_id=${cid}`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+    const { data } = await supabase
+      .from("chatbot_integration")
+      .select("api_key_prefix, builder_workspace_slug, builder_base_url, connected_at, is_active, talkmap_provisioned, talkmap_provisioned_at")
+      .eq("company_id", cid)
+      .maybeSingle();
+    setStatus({
+      connected: !!data?.is_active && !!data?.api_key_prefix,
+      integration: data
+        ? {
+            api_key_prefix: data.api_key_prefix,
+            builder_workspace_slug: data.builder_workspace_slug,
+            builder_base_url: data.builder_base_url ?? "https://talkbuilder.lovable.app",
+            connected_at: data.connected_at,
+            is_active: data.is_active,
+            talkmap_provisioned: data.talkmap_provisioned ?? false,
+            talkmap_provisioned_at: data.talkmap_provisioned_at,
+          }
+        : null,
     });
-    const json = await res.json();
-    setStatus(json);
+  }
+
+  async function toggleProvisioned(value: boolean) {
+    if (!companyId) return;
+    setSaving(true);
+    try {
+      // Garante que existe um registro (caso conta antiga sem stub)
+      const { data: existing } = await supabase
+        .from("chatbot_integration")
+        .select("id")
+        .eq("company_id", companyId)
+        .maybeSingle();
+      if (existing) {
+        await supabase
+          .from("chatbot_integration")
+          .update({
+            talkmap_provisioned: value,
+            talkmap_provisioned_at: value ? new Date().toISOString() : null,
+          })
+          .eq("company_id", companyId);
+      } else {
+        await supabase.from("chatbot_integration").insert({
+          company_id: companyId,
+          builder_base_url: "https://talkbuilder.lovable.app",
+          is_active: false,
+          talkmap_provisioned: value,
+          talkmap_provisioned_at: value ? new Date().toISOString() : null,
+        });
+      }
+      toast.success(value ? "Conta marcada como criada no TalkMap" : "Marcação removida");
+      await refreshStatus(companyId);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleConnect() {
