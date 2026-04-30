@@ -295,8 +295,8 @@ export type Database = {
       }
       chatbot_integration: {
         Row: {
-          api_key_encrypted: string
-          api_key_prefix: string
+          api_key_encrypted: string | null
+          api_key_prefix: string | null
           builder_base_url: string | null
           builder_user_id: string | null
           builder_workspace_slug: string | null
@@ -306,11 +306,13 @@ export type Database = {
           id: string
           is_active: boolean
           last_validated_at: string | null
+          talkmap_provisioned: boolean
+          talkmap_provisioned_at: string | null
           updated_at: string
         }
         Insert: {
-          api_key_encrypted: string
-          api_key_prefix: string
+          api_key_encrypted?: string | null
+          api_key_prefix?: string | null
           builder_base_url?: string | null
           builder_user_id?: string | null
           builder_workspace_slug?: string | null
@@ -320,11 +322,13 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_validated_at?: string | null
+          talkmap_provisioned?: boolean
+          talkmap_provisioned_at?: string | null
           updated_at?: string
         }
         Update: {
-          api_key_encrypted?: string
-          api_key_prefix?: string
+          api_key_encrypted?: string | null
+          api_key_prefix?: string | null
           builder_base_url?: string | null
           builder_user_id?: string | null
           builder_workspace_slug?: string | null
@@ -334,6 +338,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_validated_at?: string | null
+          talkmap_provisioned?: boolean
+          talkmap_provisioned_at?: string | null
           updated_at?: string
         }
         Relationships: []
