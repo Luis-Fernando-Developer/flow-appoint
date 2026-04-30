@@ -214,7 +214,18 @@ export default function SignUp() {
 
       if (employeeError) throw employeeError;
 
-      // 4. Criar subscription se tiver plano selecionado
+      // 4. Registrar stub da integração TalkMap (não provisionada ainda)
+      await supabase
+        .from('chatbot_integration')
+        .insert([{
+          company_id: companyData.id,
+          builder_base_url: 'https://talkbuilder.lovable.app',
+          builder_workspace_slug: formData.customUrl,
+          is_active: false,
+          talkmap_provisioned: false,
+        }]);
+
+      // 5. Criar subscription se tiver plano selecionado
       if (selectedPlan) {
         await supabase
           .from('company_subscriptions')
